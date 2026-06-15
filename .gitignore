@@ -1,0 +1,36 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Logs
+logs/
+*.log
+*.out
+*.err
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Java / Maven / Spring Boot
+personal_crm_backend/target/
+personal_crm_backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend / Node / Vite
+personal_crm_web/node_modules/
+personal_crm_web/dist/
+personal_crm_web/.vite/
+personal_crm_web/.cache/
+
+# Test / coverage
+coverage/
+personal_crm_web/coverage/
+
+# Runtime / temp
+tmp/
+temp/
+*.tmp
