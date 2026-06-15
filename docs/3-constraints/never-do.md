@@ -21,6 +21,13 @@
 - 🚫 Delete or weaken a failing test to make the build pass
 - 🚫 Replace assertions with logs
 
+## Naming, Exceptions & Hardcoding
+- 🚫 Use meaningless identifiers like `a`, `b`, `c`, or vague pinyin abbreviations in naming
+- 🚫 Catch exceptions silently (empty catch blocks) or use naked catches
+- 🚫 Run database CRUD operations directly on unvalidated inputs
+- 🚫 Log sensitive user data (passwords, phone numbers, etc.)
+- 🚫 Hardcode fixed parameters, status codes, URLs, ports, or timeouts in business code
+
 ## From dev-standards repo
 Source: `https://raw.githubusercontent.com/weiqiang612/dev-standards/main`
 

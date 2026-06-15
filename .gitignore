@@ -18,6 +18,7 @@ logs/
 
 # Java / Maven / Spring Boot
 personal_crm_backend/target/
+personal_crm_backend/.m2repo/
 personal_crm_backend/.mvn/wrapper/maven-wrapper.jar
 
 # Frontend / Node / Vite

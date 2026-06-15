@@ -9,26 +9,30 @@
 ## 2. ER 实体关系图 (Entity Relationship Diagram)
 ```mermaid
 erDiagram
-    USER ||--o{ CONTACT : owns
-    USER ||--o{ TAG : owns
+    SYS_USER ||--o| USER_AVATAR : has
+    SYS_USER ||--o{ CONTACT : owns
     CONTACT ||--o| CONTACT_AVATAR : has
     CONTACT ||--o{ CONTACT_TODO : has
+    SYS_USER ||--o{ TAG : owns
     CONTACT ||--o{ CONTACT_TAG : links
     TAG ||--o{ CONTACT_TAG : links
-    USER ||--o{ AGENT_OPERATION_LOG : creates
+    SYS_USER ||--o{ AGENT_OPERATION_LOG : creates
 ```
 
 ## 3. 规划表基线 (Planned Tables)
 | 表名 | 作用 | 当前状态 |
 |---|---|---|
-| `user` | 登录用户与身份隔离 | 待设计 |
-| `contact` | 联系人基础信息与黑名单状态 | 待设计 |
-| `contact_avatar` | 联系人头像元数据 | 待设计 |
-| `contact_todo` | 联系人事项与状态流转 | 待设计 |
-| `tag` | 联系人标签 | 待设计 |
-| `contact_tag` | 联系人与标签多对多关系 | 待设计 |
-| `agent_operation_log` | Agent 输入、意图、确认与结果留痕 | 待设计 |
+| `sys_user` | 登录用户与身份隔离 | 已定稿 |
+| `user_avatar` | 用户头像元数据 | 已定稿 |
+| `contact` | 联系人基础信息与黑名单状态 | 已定稿 |
+| `contact_avatar` | 联系人头像元数据 | 已定稿 |
+| `contact_todo` | 联系人事项与状态流转 | 已定稿 |
+| `tag` | 联系人标签 | 已定稿（扩展） |
+| `contact_tag` | 联系人与标签多对多关系 | 已定稿（扩展） |
+| `agent_operation_log` | Agent 输入、意图、确认与结果留痕 | 已定稿（扩展） |
 
 ## 4. 已扫描的数据表结构 (Scanned Database Tables)
-- 暂无已实现 DDL、实体类或迁移文件。
-- 当前表清单来自 `docs/Personal CRM 智能联系人管理平台架构选型.md` 的规划基线，后续真实落地时必须同步更新本文件。
+- 当前初始化 DDL 已写入 `personal_crm_backend/src/main/resources/schema.sql`。
+- 当前表清单与 `docs/Personal CRM 智能联系人管理平台数据库设计.md` 和 `schema.sql` 保持一致。
+- 课程验收基线为 5 张表：`sys_user`、`user_avatar`、`contact`、`contact_avatar`、`contact_todo`。
+- 项目扩展表为：`tag`、`contact_tag`、`agent_operation_log`。

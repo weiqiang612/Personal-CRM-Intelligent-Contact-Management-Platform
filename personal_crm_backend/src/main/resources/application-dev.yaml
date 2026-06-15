@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:personal_crm}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 5MB
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+server:
+  port: ${SERVER_PORT:8080}
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+logging:
+  level:
+    root: info
+    com.weiqiang.personal_crm_backend: debug
+
+jwt:
+  secret: ${JWT_SECRET:personal-crm-dev-secret-key-change-me}
+  expiration-seconds: ${JWT_EXPIRATION_SECONDS:7200}
+  issuer: personal-crm
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+  storage:
+    upload-dir: ${UPLOAD_DIR:./uploads}
+    contact-avatar-dir: ${CONTACT_AVATAR_DIR:contact-avatar}
+    user-avatar-dir: ${USER_AVATAR_DIR:user-avatar}

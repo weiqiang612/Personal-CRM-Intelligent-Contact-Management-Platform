@@ -24,6 +24,15 @@
 - ✅ Re-run tests after each logical change
 - ✅ Sync long-lived Harness documents (`docs/1-requirements/`, `docs/2-designs/`, `docs/3-constraints/`, `AGENTS.md`) whenever you change what they describe
 
+## Naming, Formatting & Logic Optimization
+- ✅ Use semantic English words or standard Pinyin combinations for clear, readable names
+- ✅ Strictly follow naming conventions: UpperCamelCase for classes, lowerCamelCase for methods/variables, UPPER_SNAKE_CASE for constants, lowercase for packages
+- ✅ Provide accurate, concise comments (class purpose, method signatures/inputs/outputs/exceptions, member variable roles, inline explanations for complex flows)
+- ✅ Organize code with appropriate empty lines (between attributes, constructors, methods) and spaces around operators
+- ✅ Optimize code structures by using early returns, enums instead of numeric codes, and avoiding duplicate DB queries/API calls
+- ✅ Validate all inputs (null check, format, length, range) for strings, numbers, dates, and collections before execution
+- ✅ Handle edge cases (empty data, empty collections, missing pagination parameters, duplicate clicks) with logical fallback logic to prevent NPEs or indexing crashes
+
 ## From dev-standards repo
 Source: `https://raw.githubusercontent.com/weiqiang612/dev-standards/main`
 

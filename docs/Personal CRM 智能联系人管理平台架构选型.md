@@ -47,7 +47,7 @@ ECharts 用于实现数据看板中的联系人性别比例、未来 7 天事项
 后端建议采用：
 
 ```text
-Java 17 + Spring Boot 3 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
+Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
 ```
 
 ### 3.2 选型理由
@@ -72,13 +72,19 @@ JWT 用于登录认证和接口鉴权。用户登录成功后，后端签发 Tok
 4. 课程验收和部署环境友好，老师和面试官都容易理解。
 5. 后续可以通过索引优化搜索、筛选、排序和分页查询。
 
-核心表建议包括：
+课程基线表建议包括：
 
 ```text
-user
+sys_user
+user_avatar
 contact
 contact_avatar
 contact_todo
+```
+
+扩展表建议包括：
+
+```text
 tag
 contact_tag
 agent_operation_log
@@ -245,7 +251,7 @@ Nginx + Spring Boot Jar + MySQL + OSS / 本地持久化目录
 ```text
 前端：Vue 3 + Vite + TypeScript + Element Plus + Pinia + Vue Router + Axios + ECharts
 
-后端：Java 17 + Spring Boot 3 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
+后端：Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
 
 文件存储：本地文件存储为主，预留 OSS 扩展接口
 
