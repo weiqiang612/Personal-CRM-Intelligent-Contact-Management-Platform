@@ -35,21 +35,66 @@
     .stats-grid {
       gap: 16px;
     }
-    .stat-card {
-      padding: 22px 14px;
+    .card.stat-card {
+      padding: 24px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      border-radius: 16px;
     }
     .stat-icon {
-      width: 36px;
-      height: 36px;
-      font-size: 16px;
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .stat-icon i,
+    .stat-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
     }
     .stat-value {
-      font-size: 20px;
-      line-height: 1.2;
-      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1;
+      margin: 2px 0;
     }
     .stat-change {
-      font-size: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-top: 2px;
+    }
+    .stat-change .change-value {
+      font-weight: 600;
+    }
+    .stat-change.up .change-value,
+    .stat-change.up i {
+      color: var(--color-success);
+    }
+    .stat-change.down .change-value,
+    .stat-change.down i {
+      color: var(--color-danger);
+    }
+    .stat-change.down.success-color .change-value,
+    .stat-change.down.success-color i {
+      color: var(--color-success) !important;
     }
     .card {
       padding: 12px 16px;
@@ -807,7 +852,7 @@
               <span class="stat-label">联系人总数</span>
               <span class="stat-value">128</span>
               <span class="stat-change up">
-                较上周 +8
+                较上周 <span class="change-value">+8</span>
                 <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
@@ -821,7 +866,7 @@
               <span class="stat-label">今日事项</span>
               <span class="stat-value">5</span>
               <span class="stat-change up">
-                较昨日 +2
+                较昨日 <span class="change-value">+2</span>
                 <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
@@ -834,8 +879,8 @@
             <div class="stat-info">
               <span class="stat-label">逾期事项</span>
               <span class="stat-value">2</span>
-              <span class="stat-change up" style="color: var(--color-success);">
-                较昨日 -1
+              <span class="stat-change down success-color">
+                较昨日 <span class="change-value">-1</span>
                 <i data-lucide="arrow-down-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
@@ -849,7 +894,7 @@
               <span class="stat-label">待完成</span>
               <span class="stat-value">18</span>
               <span class="stat-change up">
-                较昨日 +3
+                较昨日 <span class="change-value">+3</span>
                 <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
