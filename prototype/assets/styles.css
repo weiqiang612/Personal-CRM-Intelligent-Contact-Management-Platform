@@ -314,9 +314,13 @@ button {
 
 .user-avatar-container {
   position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
 }
 
 .user-avatar {
+  display: block;
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
@@ -331,8 +335,8 @@ button {
   background-color: var(--color-success);
   border: 2px solid var(--bg-sidebar);
   position: absolute;
-  bottom: 0;
-  right: 0;
+  bottom: 1px;
+  right: 1px;
 }
 
 .user-meta {
