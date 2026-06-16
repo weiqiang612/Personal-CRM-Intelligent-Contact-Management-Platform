@@ -11,16 +11,85 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
     /* 页面特有微调 */
-    .dashboard-grid {
+    .dashboard-layout {
       display: grid;
       grid-template-columns: 1.6fr 1.2fr;
-      gap: 24px;
+      gap: 16px;
+      margin-bottom: 16px;
     }
     
-    .dashboard-column {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+    .charts-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 16px;
+    }
+
+    /* 紧凑响应式设计 - 避免 Y 轴滚动条以一屏完整展示 */
+    .topbar {
+      padding: 16px 20px 8px 20px;
+    }
+    .content-body {
+      padding: 16px 20px;
+      gap: 16px;
+    }
+    .stats-grid {
+      gap: 16px;
+    }
+    .stat-card {
+      padding: 12px 16px;
+    }
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+    }
+    .stat-value {
+      font-size: 20px;
+      line-height: 1.2;
+      margin: 0;
+    }
+    .stat-change {
+      font-size: 10px;
+    }
+    .card {
+      padding: 16px;
+    }
+    .card-header {
+      margin-bottom: 12px;
+    }
+    .contact-card {
+      padding: 12px 6px;
+    }
+    .contact-card .card-avatar {
+      width: 52px;
+      height: 52px;
+      margin-bottom: 8px;
+    }
+    .contact-card .card-name {
+      font-size: 13.5px;
+    }
+    .contact-card .card-company {
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+    .contact-card .card-actions {
+      gap: 6px;
+    }
+    .contact-action-btn {
+      width: 28px;
+      height: 28px;
+    }
+    .todo-list-modern {
+      gap: 8px;
+    }
+    .todo-item {
+      padding: 8px 12px;
+    }
+    .todo-title {
+      font-size: 13px;
+    }
+    .todo-time {
+      font-size: 10px;
     }
 
     /* 重要联系人卡片 */
@@ -33,16 +102,16 @@
     .carousel-track {
       display: flex;
       gap: 12px;
-      transition: transform var(--transition-base);
+      width: 100%;
     }
-
+    
     .contact-card {
       background-color: #f9fafb;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 20px;
-      width: calc(50% - 6px); /* 每屏显示2张 */
-      flex-shrink: 0;
+      padding: 16px 8px;
+      flex: 1;
+      min-width: 0;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -124,36 +193,134 @@
       width: 14px;
     }
 
-    /* 今日事项代办样式 */
-    .todo-list-table th, .todo-list-table td {
-      padding: 12px 14px;
+    /* 今日事项 Todo 列表样式 */
+    .todo-list-modern {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
     }
 
-    .todo-check-btn {
-      width: 20px;
-      height: 20px;
-      border-radius: var(--radius-full);
-      border: 2px solid var(--border-color);
+    .todo-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      color: transparent;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      background-color: #f9fafb;
+      border: 1px solid var(--border-color);
       transition: all var(--transition-fast);
       cursor: pointer;
     }
 
-    .todo-row.completed .todo-check-btn {
-      background-color: var(--color-success);
-      border-color: var(--color-success);
-      color: #fff;
+    .todo-item:hover {
+      background-color: #fff;
+      box-shadow: var(--shadow-sm);
+      border-color: var(--color-primary-border);
     }
 
-    .todo-row.completed td {
+    .todo-item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .todo-checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .todo-checkbox .unchecked-icon {
+      color: #9ca3af;
+      width: 20px;
+      height: 20px;
+    }
+
+    .todo-checkbox .checked-icon {
+      display: none;
+      width: 20px;
+      height: 20px;
+      color: var(--color-success);
+    }
+
+    .todo-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .todo-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .todo-time {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .todo-item-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .todo-status {
+      font-size: 11px;
+      font-weight: 600;
+      width: 45px;
+      text-align: right;
+    }
+
+    .todo-status.pending {
+      color: var(--color-primary);
+    }
+
+    .todo-status.completed-text {
+      color: var(--color-success);
+      display: none;
+    }
+
+    /* 选中完成状态 */
+    .todo-item.completed {
+      background-color: #f9fafb;
       opacity: 0.6;
     }
 
-    .todo-row.completed .todo-text {
+    .todo-item.completed .todo-title {
       text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .todo-item.completed .unchecked-icon {
+      display: none;
+    }
+
+    .todo-item.completed .checked-icon {
+      display: block;
+    }
+
+    .todo-item.completed .pending {
+      display: none;
+    }
+
+    .todo-item.completed .completed-text {
+      display: inline;
     }
 
     /* 折叠边栏补充样式 */
@@ -628,8 +795,8 @@
               <span class="stat-label">联系人总数</span>
               <span class="stat-value">128</span>
               <span class="stat-change up">
-                <i data-lucide="trending-up" style="width:12px;height:12px;"></i>
-                较上月 +18
+                较上周 +8
+                <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
           </div>
@@ -642,8 +809,8 @@
               <span class="stat-label">今日事项</span>
               <span class="stat-value">5</span>
               <span class="stat-change up">
-                <i data-lucide="trending-up" style="width:12px;height:12px;"></i>
                 较昨日 +2
+                <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
           </div>
@@ -655,9 +822,9 @@
             <div class="stat-info">
               <span class="stat-label">逾期事项</span>
               <span class="stat-value">2</span>
-              <span class="stat-change down" style="color: var(--color-success);">
-                <i data-lucide="trending-down" style="width:12px;height:12px;"></i>
+              <span class="stat-change up" style="color: var(--color-success);">
                 较昨日 -1
+                <i data-lucide="arrow-down-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
           </div>
@@ -670,173 +837,224 @@
               <span class="stat-label">待完成</span>
               <span class="stat-value">18</span>
               <span class="stat-change up">
-                <i data-lucide="trending-up" style="width:12px;height:12px;"></i>
                 较昨日 +3
+                <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
               </span>
             </div>
           </div>
         </section>
 
-        <!-- 中下部双列布局 -->
-        <div class="dashboard-grid">
-          <!-- 左列 -->
-          <div class="dashboard-column">
-            <!-- 左侧：重要联系人 -->
-            <div class="card" style="display: flex; flex-direction: column;">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <i data-lucide="users"></i>
-                  重要联系人
-                </h3>
-                <a href="./contacts.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
-              </div>
-              
-              <div class="carousel-container">
-                <div class="carousel-track" id="carouselTrack">
-                  <!-- 卡片 1 -->
-                  <div class="contact-card">
-                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" alt="张一鸣" class="card-avatar">
-                    <div class="card-name">张一鸣</div>
-                    <div class="card-company">清华大学 · 本科生</div>
-                    <span class="badge tag-class" style="margin-bottom: 12px;">同学</span>
-                    <div class="card-actions">
-                      <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
-                    </div>
+        <!-- 中部两栏内容 -->
+        <section class="dashboard-layout">
+          <!-- 左侧：重要联系人 -->
+          <div class="card" style="display: flex; flex-direction: column;">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i data-lucide="users"></i>
+                重要联系人
+              </h3>
+              <a href="./contacts.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
+            </div>
+            
+            <div class="carousel-container">
+              <div class="carousel-track" id="carouselTrack">
+                <!-- 卡片 1 -->
+                <div class="contact-card">
+                  <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" alt="张一鸣" class="card-avatar">
+                  <span class="badge tag-class" style="margin-bottom: 8px;">同学</span>
+                  <div class="card-name">张一鸣</div>
+                  <div class="card-company">清华大学</div>
+                  <div class="card-actions">
+                    <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
+                    <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
                   </div>
-                  <!-- 卡片 2 -->
-                  <div class="contact-card">
-                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" alt="李老师" class="card-avatar">
-                    <div class="card-name">李老师</div>
-                    <div class="card-company">清华大学 · 计算机系教授</div>
-                    <span class="badge tag-important" style="margin-bottom: 12px;">老师</span>
-                    <div class="card-actions">
-                      <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
-                    </div>
+                </div>
+                <!-- 卡片 2 -->
+                <div class="contact-card">
+                  <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" alt="李老师" class="card-avatar">
+                  <span class="badge tag-important" style="margin-bottom: 8px; background-color:#f0fdf4; color:#15803d; border: 1px solid #bbf7d0;">老师</span>
+                  <div class="card-name">李老师</div>
+                  <div class="card-company">清华大学计算机系</div>
+                  <div class="card-actions">
+                    <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
+                    <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
                   </div>
-                  <!-- 卡片 3 -->
-                  <div class="contact-card">
-                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80" alt="王浩" class="card-avatar">
-                    <div class="card-name">王浩</div>
-                    <div class="card-company">字节跳动 · 实习生</div>
-                    <span class="badge tag-friend" style="margin-bottom: 12px; background-color:#e0f2fe; color:#0369a1;">实习</span>
-                    <div class="card-actions">
-                      <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
-                    </div>
+                </div>
+                <!-- 卡片 3 -->
+                <div class="contact-card">
+                  <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80" alt="王洁" class="card-avatar">
+                  <span class="badge tag-friend" style="margin-bottom: 8px; background-color:#fff7ed; color:#c2410c; border: 1px solid #fed7aa;">实习</span>
+                  <div class="card-name">王洁</div>
+                  <div class="card-company">字节跳动</div>
+                  <div class="card-actions">
+                    <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
+                    <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
                   </div>
-                  <!-- 卡片 4 -->
-                  <div class="contact-card">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="刘思琪" class="card-avatar">
-                    <div class="card-name">刘思琪</div>
-                    <div class="card-company">北京大学 · 研究生</div>
-                    <span class="badge tag-class" style="margin-bottom: 12px;">同学</span>
-                    <div class="card-actions">
-                      <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
-                      <a href="#" class="contact-action-btn"><i data-lucide="mail" style="width:14px;height:14px;"></i></a>
-                    </div>
+                </div>
+                <!-- 卡片 4 -->
+                <div class="contact-card">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="刘思琪" class="card-avatar">
+                  <span class="badge tag-class" style="margin-bottom: 8px;">同学</span>
+                  <div class="card-name">刘思琪</div>
+                  <div class="card-company">北京大学</div>
+                  <div class="card-actions">
+                    <a href="#" class="contact-action-btn"><i data-lucide="message-square" style="width:14px;height:14px;"></i></a>
+                    <a href="#" class="contact-action-btn"><i data-lucide="phone" style="width:14px;height:14px;"></i></a>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- 分页指示器 -->
-              <div class="carousel-indicators">
-                <span class="indicator-dot active" onclick="slideCarousel(0)"></span>
-                <span class="indicator-dot" onclick="slideCarousel(1)"></span>
+          <!-- 右侧：今日事项 -->
+          <div class="card" style="display: flex; flex-direction: column;">
+            <div class="card-header">
+              <h3 class="card-title">
+                <i data-lucide="list-todo"></i>
+                今日事项
+              </h3>
+              <a href="./todos.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
+            </div>
+            <div class="todo-list-modern">
+              <!-- Item 1 -->
+              <div class="todo-item" id="todo1" onclick="toggleTodo('todo1')">
+                <div class="todo-item-left">
+                  <div class="todo-checkbox">
+                    <i data-lucide="circle" class="unchecked-icon"></i>
+                    <i data-lucide="check-circle-2" class="checked-icon"></i>
+                  </div>
+                  <div class="todo-details">
+                    <span class="todo-title">与张一鸣沟通项目进展</span>
+                    <span class="todo-time">
+                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                      10:00
+                    </span>
+                  </div>
+                </div>
+                <div class="todo-item-right">
+                  <span class="badge badge-priority-emergency">高</span>
+                  <span class="todo-status pending">待完成</span>
+                  <span class="todo-status completed-text">已完成</span>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="todo-item" id="todo2" onclick="toggleTodo('todo2')">
+                <div class="todo-item-left">
+                  <div class="todo-checkbox">
+                    <i data-lucide="circle" class="unchecked-icon"></i>
+                    <i data-lucide="check-circle-2" class="checked-icon"></i>
+                  </div>
+                  <div class="todo-details">
+                    <span class="todo-title">给李老师发送论文初稿</span>
+                    <span class="todo-time">
+                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                      14:30
+                    </span>
+                  </div>
+                </div>
+                <div class="todo-item-right">
+                  <span class="badge badge-priority-important">中</span>
+                  <span class="todo-status pending">待完成</span>
+                  <span class="todo-status completed-text">已完成</span>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="todo-item" id="todo3" onclick="toggleTodo('todo3')">
+                <div class="todo-item-left">
+                  <div class="todo-checkbox">
+                    <i data-lucide="circle" class="unchecked-icon"></i>
+                    <i data-lucide="check-circle-2" class="checked-icon"></i>
+                  </div>
+                  <div class="todo-details">
+                    <span class="todo-title">实习周报提交</span>
+                    <span class="todo-time">
+                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                      16:00
+                    </span>
+                  </div>
+                </div>
+                <div class="todo-item-right">
+                  <span class="badge badge-priority-important">中</span>
+                  <span class="todo-status pending">待完成</span>
+                  <span class="todo-status completed-text">已完成</span>
+                </div>
+              </div>
+
+              <!-- Item 4 (已完成) -->
+              <div class="todo-item completed" id="todo4" onclick="toggleTodo('todo4')">
+                <div class="todo-item-left">
+                  <div class="todo-checkbox">
+                    <i data-lucide="circle" class="unchecked-icon"></i>
+                    <i data-lucide="check-circle-2" class="checked-icon"></i>
+                  </div>
+                  <div class="todo-details">
+                    <span class="todo-title">回访刘思琪</span>
+                    <span class="todo-time">
+                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                      09:30
+                    </span>
+                  </div>
+                </div>
+                <div class="todo-item-right">
+                  <span class="badge badge-priority-normal" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">低</span>
+                  <span class="todo-status pending">待完成</span>
+                  <span class="todo-status completed-text">已完成</span>
+                </div>
+              </div>
+
+              <!-- Item 5 -->
+              <div class="todo-item" id="todo5" onclick="toggleTodo('todo5')">
+                <div class="todo-item-left">
+                  <div class="todo-checkbox">
+                    <i data-lucide="circle" class="unchecked-icon"></i>
+                    <i data-lucide="check-circle-2" class="checked-icon"></i>
+                  </div>
+                  <div class="todo-details">
+                    <span class="todo-title">约见王洁讨论实习转正</span>
+                    <span class="todo-time">
+                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                      17:30
+                    </span>
+                  </div>
+                </div>
+                <div class="todo-item-right">
+                  <span class="badge badge-priority-emergency">高</span>
+                  <span class="todo-status pending">待完成</span>
+                  <span class="todo-status completed-text">已完成</span>
+                </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            <!-- 性别比例环形图 -->
-            <div class="card">
-              <div class="card-header" style="margin-bottom: 10px;">
-                <h3 class="card-title">联系人性别比例</h3>
+        <!-- 底部图表区 -->
+        <section class="charts-layout">
+          <!-- 性别比例环形图 -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom: 10px;">
+              <h3 class="card-title">联系人性别比例</h3>
+              <div style="display: flex; align-items: center; gap: 8px;">
                 <i data-lucide="info" style="color:var(--text-muted);width:14px;height:14px;cursor:pointer;" title="说明"></i>
+                <a href="./contacts.html" style="font-size:12px;color:var(--color-primary);font-weight:600;text-decoration:none;">查看详情</a>
               </div>
-              <div id="genderChart" style="width: 100%; height: 220px;"></div>
             </div>
+            <div id="genderChart" style="width: 100%; height: 160px;"></div>
           </div>
 
-          <!-- 右列 -->
-          <div class="dashboard-column">
-            <!-- 右侧：今日事项 -->
-            <div class="card" style="display: flex; flex-direction: column;">
-              <div class="card-header">
-                <h3 class="card-title">
-                  <i data-lucide="list-todo"></i>
-                  今日事项
-                </h3>
-                <a href="./todos.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
-              </div>
-              <div class="table-container" style="flex: 1;">
-                <table class="custom-table todo-list-table">
-                  <thead>
-                    <tr>
-                      <th>时间</th>
-                      <th>事项</th>
-                      <th>联系人</th>
-                      <th>优先级</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="todo-row" id="todo1" onclick="toggleTodo('todo1')" style="cursor:pointer;">
-                      <td>09:00</td>
-                      <td><span class="todo-text">联系张三确认实习材料</span></td>
-                      <td>张三</td>
-                      <td><span class="badge badge-priority-emergency">高</span></td>
-                    </tr>
-                    <tr class="todo-row" id="todo2" onclick="toggleTodo('todo2')" style="cursor:pointer;">
-                      <td>11:00</td>
-                      <td><span class="todo-text">与李老师讨论毕业设计</span></td>
-                      <td>李老师</td>
-                      <td><span class="badge badge-priority-important">中</span></td>
-                    </tr>
-                    <tr class="todo-row" id="todo3" onclick="toggleTodo('todo3')" style="cursor:pointer;">
-                      <td>14:00</td>
-                      <td><span class="todo-text">提交项目周报给王五</span></td>
-                      <td>王五</td>
-                      <td><span class="badge badge-priority-important">中</span></td>
-                    </tr>
-                    <tr class="todo-row" id="todo4" onclick="toggleTodo('todo4')" style="cursor:pointer;">
-                      <td>16:00</td>
-                      <td><span class="todo-text">准备用户访谈问题</span></td>
-                      <td>赵六</td>
-                      <td><span class="badge badge-priority-normal" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">低</span></td>
-                    </tr>
-                    <tr class="todo-row" id="todo5" onclick="toggleTodo('todo5')" style="cursor:pointer;">
-                      <td>19:00</td>
-                      <td><span class="todo-text">健身打卡</span></td>
-                      <td>自己</td>
-                      <td><span class="badge badge-priority-normal" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">低</span></td>
-                    </tr>
-                    <tr class="todo-row" id="todo6" onclick="toggleTodo('todo6')" style="cursor:pointer;">
-                      <td>21:00</td>
-                      <td><span class="todo-text">阅读《人类简史》</span></td>
-                      <td>自己</td>
-                      <td><span class="badge badge-priority-normal" style="background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;">低</span></td>
-                    </tr>
-                  </tbody>
-                </table>
+          <!-- 未来 7 天趋势 -->
+          <div class="card">
+            <div class="card-header" style="margin-bottom: 10px;">
+              <h3 class="card-title">未来 7 天事项趋势</h3>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="info" style="color:var(--text-muted);width:14px;height:14px;cursor:pointer;" title="说明"></i>
+                <a href="./todos.html" style="font-size:12px;color:var(--color-primary);font-weight:600;text-decoration:none;">查看详情</a>
               </div>
             </div>
-
-            <!-- 未来 7 天趋势 -->
-            <div class="card">
-              <div class="card-header" style="margin-bottom: 10px;">
-                <h3 class="card-title">未来 7 天事项趋势</h3>
-                <select class="select-control" style="padding: 4px 24px 4px 8px; font-size:11px;">
-                  <option>按天</option>
-                  <option>按周</option>
-                </select>
-              </div>
-              <div id="trendChart" style="width: 100%; height: 220px;"></div>
-            </div>
+            <div id="trendChart" style="width: 100%; height: 160px;"></div>
           </div>
-        </div>
+        </section>
       </div>
     </main>
   </div>
@@ -1224,7 +1442,7 @@
       
       // 动态生成未来 7 天日期
       const xData = [];
-      const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const days = ['日', '一', '二', '三', '四', '五', '六'];
       for (let i = 0; i < 7; i++) {
         const d = new Date();
         d.setDate(d.getDate() + i);
