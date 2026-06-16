@@ -768,7 +768,7 @@
         <div class="topbar-right">
           <div class="search-box">
             <i data-lucide="search"></i>
-            <input type="text" placeholder="搜索联系人、事项或备注...">
+            <input type="text" placeholder="搜索联系人、标签、事项...">
             <span class="shortcut-tag">⌘K</span>
           </div>
 
@@ -777,9 +777,18 @@
             <span class="notification-badge">3</span>
           </a>
 
-          <a href="./settings.html">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="avatar-round" style="border: 2px solid var(--color-primary-border);">
-          </a>
+          <div class="user-dropdown" id="userDropdown">
+            <div class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="avatar-round" style="border: 2px solid var(--color-primary-border);">
+              <i data-lucide="chevron-down" class="dropdown-arrow"></i>
+            </div>
+            <div class="dropdown-menu" id="userDropdownMenu">
+              <a href="./login.html" class="dropdown-item text-danger">
+                <i data-lucide="log-out"></i>
+                <span>退出登录</span>
+              </a>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -1155,6 +1164,24 @@
   <script>
     // 初始化 Lucide 图标
     lucide.createIcons();
+
+    // 头像下拉菜单控制器
+    function toggleUserDropdown(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('userDropdownMenu');
+      if (menu) {
+        menu.classList.toggle('show');
+      }
+    }
+
+    // 点击外部区域自动关闭下拉菜单
+    document.addEventListener('click', function(event) {
+      const menu = document.getElementById('userDropdownMenu');
+      const dropdown = document.getElementById('userDropdown');
+      if (menu && dropdown && !dropdown.contains(event.target)) {
+        menu.classList.remove('show');
+      }
+    });
 
     // 根据真实时间设置顶栏日期
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };

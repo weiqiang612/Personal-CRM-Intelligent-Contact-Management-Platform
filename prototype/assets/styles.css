@@ -430,22 +430,27 @@ button {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 20px;
 }
 
 .search-box {
   position: relative;
-  width: 280px;
+  width: 380px;
+  margin-right: 24px;
 }
 
 .search-box input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
+  padding: 11px 14px 11px 40px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   background-color: #ffffff;
   font-size: 13px;
   transition: all var(--transition-fast);
+}
+
+.search-box input::placeholder {
+  color: #9ca3af;
+  opacity: 0.55;
 }
 
 .search-box input:focus {
@@ -457,7 +462,7 @@ button {
 .search-box i,
 .search-box svg {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
@@ -468,7 +473,7 @@ button {
 
 .search-box .shortcut-tag {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   font-size: 10px;
@@ -481,29 +486,27 @@ button {
 }
 
 .notification-bell {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-muted);
-  background-color: #ffffff;
-  border: 1px solid var(--border-color);
+  background-color: transparent;
+  border: none;
   position: relative;
   transition: all var(--transition-fast);
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 14px;
 }
 
 .notification-bell:hover {
-  background-color: var(--color-primary-light);
   color: var(--color-primary);
-  border-color: var(--color-primary-border);
 }
 
 .notification-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: -4px;
+  right: -4px;
   width: 16px;
   height: 16px;
   border-radius: var(--radius-full);
@@ -513,8 +516,100 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--bg-card);
+  border: 2px solid var(--bg-app);
   font-weight: 700;
+}
+
+/* 头像下拉菜单样式 */
+.user-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.user-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.user-dropdown-trigger:hover .avatar-round {
+  border-color: var(--color-primary) !important;
+}
+
+.user-dropdown-trigger:hover .dropdown-arrow {
+  color: var(--text-main);
+}
+
+.dropdown-arrow {
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
+  transition: all var(--transition-fast);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 150px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  display: none;
+  flex-direction: column;
+  padding: 6px;
+  z-index: 200;
+  animation: dropdownFadeIn 150ms ease;
+}
+
+.dropdown-menu.show {
+  display: flex;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-neutral-bg);
+}
+
+.dropdown-item.text-danger {
+  color: var(--color-danger);
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.dropdown-item i,
+.dropdown-item svg {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 主体内容布局 */
