@@ -26,7 +26,7 @@
     /* ── 整体两栏布局 ── */
     .page {
       display: grid;
-      grid-template-columns: 3fr 2fr;
+      grid-template-columns: 1.15fr 1fr;
       width: 100vw;
       height: 100vh;
       background:
@@ -40,8 +40,8 @@
     .preview {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 28px 2.5vw 20px 3.5vw;
+      gap: 20px;
+      padding: 24px 7vw 20px 6vw;
       overflow: hidden;
       position: relative;
     }
@@ -122,7 +122,7 @@
     .top-cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
       flex: 1;
       min-height: 0;
     }
@@ -135,7 +135,7 @@
       backdrop-filter: blur(12px);
       display: flex;
       flex-direction: column;
-      padding: 13px 14px 10px;
+      padding:  12px 14px 8px;;
       min-height: 0;
       overflow: hidden;
     }
@@ -172,7 +172,7 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      padding: 6px 0;
+      padding: 4px 0;
       border-bottom: 1px solid rgba(226,232,240,.8);
       gap: 8px;
     }
@@ -286,18 +286,18 @@
 
     /* AI 助手面板 */
     .ai-panel {
-      padding: 14px 16px;
+      padding: 10px 14px;
       flex-shrink: 0;
     }
 
     .ai-head {
       display: flex; align-items: center; gap: 6px;
       font-size: 13px; font-weight: 700; color: #334155;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     .ai-head svg { width: 14px; height: 14px; color: #6366f1; }
 
-    .ai-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .ai-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 
     .ai-avatar {
       width: 30px; height: 30px;
@@ -349,7 +349,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 32px 40px;
+      padding: 48px 52px;
       background: #ffffff;
       border-left: 1px solid rgba(219,228,241,0.6);
     }
