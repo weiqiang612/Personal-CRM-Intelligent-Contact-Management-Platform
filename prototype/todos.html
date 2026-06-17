@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>事项提醒 - Personal CRM</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <!-- Lucide 图标 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
+  <style>
+    /* 选项卡栏 */
+    .todo-tabs-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .todo-tab {
+      background-color: #fff;
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .todo-tab:hover {
+      border-color: var(--color-primary-border);
+      color: var(--color-primary);
+    }
+
+    .todo-tab.active {
+      background-color: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+    }
+
+    .todo-tab-count {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-neutral-bg);
+      color: var(--text-muted);
+    }
+
+    .todo-tab.active .todo-tab-count {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .todo-tab-count.red-badge {
+      background-color: #fee2e2;
+      color: #dc2626;
+    }
+
+    .todo-tab.active .todo-tab-count.red-badge {
+      background-color: #ef4444;
+      color: #fff;
+    }
+
+    /* 模拟禁用操作 */
+    .btn.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .action-cell {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+    }
+
+    .action-cell .btn {
+      justify-content: center;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .action-cell .btn-sm {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .action-cell .btn:last-child {
+      min-width: 88px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-menu-wrapper">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i data-lucide="users-round"></i>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">Personal CRM</span>
+            <span class="brand-desc">智能联系人管理系统</span>
+          </div>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i data-lucide="layout-dashboard"></i>
+              <span>工作台</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./contacts.html">
+              <i data-lucide="users"></i>
+              <span>联系人</span>
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./todos.html">
+              <i data-lucide="calendar-check"></i>
+              <span>事项提醒</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./blacklist.html">
+              <i data-lucide="shield-alert"></i>
+              <span>黑名单</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./agent.html">
+              <i data-lucide="sparkles"></i>
+              <span>智能助手</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./settings.html">
+              <i data-lucide="settings"></i>
+              <span>设置</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="upgrade-card">
+          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
+          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
+        </div>
+        
+        <a href="./settings.html" class="user-profile-bar">
+          <div class="user-avatar-container">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
+            <span class="user-online-dot"></span>
+          </div>
+          <div class="user-meta">
+            <span class="user-name">Ethan</span>
+            <span class="user-email">ethan@example.com</span>
+          </div>
+        </a>
+        
+        <button class="collapsed-toggle" id="collapsedToggle" onclick="toggleSidebar()">
+          <i data-lucide="chevron-left" id="toggleIcon"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主体区域 -->
+    <main class="main-wrapper">
+      <!-- 顶栏 -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-title-group">
+            <h2 class="page-title">事项提醒</h2>
+          </div>
+          <span class="page-subtitle">管理联系人相关待办、今日事项与逾期事项</span>
+        </div>
+      </header>
+
+      <!-- 主体内容 -->
+      <div class="content-body">
+        
+        <!-- 状态快捷选项卡 -->
+        <section class="todo-tabs-bar">
+          <span class="todo-tab active" onclick="switchFilter(this)">
+            全部
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            今日事项 <span class="todo-tab-count">5</span>
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            逾期事项 <span class="todo-tab-count red-badge">3</span>
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            未来7天 <span class="todo-tab-count">8</span>
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            待完成 <span class="todo-tab-count" style="color:var(--color-primary);background-color:var(--color-primary-light);">12</span>
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            已完成 <span class="todo-tab-count" style="color:var(--color-success);background-color:var(--color-success-bg);">28</span>
+          </span>
+          <span class="todo-tab" onclick="switchFilter(this)">
+            已取消 <span class="todo-tab-count">6</span>
+          </span>
+        </section>
+
+        <!-- 工具栏 -->
+        <section class="card filter-bar" style="padding: 16px 24px;">
+          <div class="filter-left">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" placeholder="搜索事项内容" style="background-color: transparent;">
+            </div>
+            
+            <select class="select-control">
+              <option value="">选择联系人</option>
+              <option value="张雨薇">张雨薇</option>
+              <option value="王浩">王浩</option>
+              <option value="李娜">李娜</option>
+            </select>
+
+            <select class="select-control">
+              <option value="">选择优先级</option>
+              <option value="emergency">紧急</option>
+              <option value="important">重要</option>
+              <option value="normal">普通</option>
+            </select>
+
+            <select class="select-control">
+              <option value="">选择日期范围</option>
+              <option value="today">今天</option>
+              <option value="week">本周</option>
+              <option value="month">本月</option>
+            </select>
+            
+            <select class="select-control">
+              <option value="time-desc">创建时间降序</option>
+              <option value="time-asc">创建时间升序</option>
+              <option value="deadline">到期时间排序</option>
+            </select>
+          </div>
+
+          <div class="filter-right">
+            <a href="./todo-form.html" class="btn btn-primary">
+              <i data-lucide="plus"></i>
+              新增事项
+            </a>
+          </div>
+        </section>
+
+        <!-- 事项数据表格 -->
+        <section class="card" style="padding: 0;">
+          <div class="table-container">
+            <table class="custom-table" id="todoTable">
+              <thead>
+                <tr>
+                  <th style="padding-left: 24px; width: 40px;"><input type="checkbox" style="cursor:pointer;"></th>
+                  <th>事项内容</th>
+                  <th>联系人</th>
+                  <th>事项时间</th>
+                  <th>优先级</th>
+                  <th>状态</th>
+                  <th>是否逾期</th>
+                  <th>创建时间</th>
+                  <th style="padding-right: 24px; width: 236px;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- 行 1：待完成/重要 -->
+                <tr id="todoRow1">
+                  <td style="padding-left: 24px;"><input type="checkbox" style="cursor:pointer;"></td>
+                  <td><strong>联系张雨薇确认实习材料</strong></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60" alt="张雨薇" class="avatar-round" style="width:24px;height:24px;">
+                      <span>张雨薇</span>
+                    </a>
+                  </td>
+                  <td>2025-05-22 10:00</td>
+                  <td><span class="badge badge-priority-important">重要</span></td>
+                  <td><span class="badge badge-todo-pending">待完成</span></td>
+                  <td>-</td>
+                  <td>2025-05-20 09:15</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm" onclick="finishTodoRow('todoRow1')">完成</button>
+                      <button class="btn btn-secondary btn-sm" onclick="cancelTodoRow('todoRow1')">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 行 2：逾期/待完成/紧急 -->
+                <tr id="todoRow2">
+                  <td style="padding-left: 24px;"><input type="checkbox" style="cursor:pointer;"></td>
+                  <td><strong>跟进王浩的产品需求</strong></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60" alt="王浩" class="avatar-round" style="width:24px;height:24px;">
+                      <span>王浩</span>
+                    </a>
+                  </td>
+                  <td>2025-05-21 14:30</td>
+                  <td><span class="badge badge-priority-emergency">紧急</span></td>
+                  <td><span class="badge badge-todo-pending">待完成</span></td>
+                  <td><span class="badge badge-todo-overdue">已逾期</span></td>
+                  <td>2025-05-18 16:40</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm" onclick="finishTodoRow('todoRow2')">完成</button>
+                      <button class="btn btn-secondary btn-sm" onclick="cancelTodoRow('todoRow2')">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 行 3：已完成/普通 -->
+                <tr id="todoRow3" style="opacity: 0.75;">
+                  <td style="padding-left: 24px;"><input type="checkbox" disabled checked></td>
+                  <td><span style="text-decoration: line-through;">发送会议纪要给李娜</span></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60" alt="李娜" class="avatar-round" style="width:24px;height:24px;">
+                      <span>李娜</span>
+                    </a>
+                  </td>
+                  <td>2025-05-20 16:00</td>
+                  <td><span class="badge badge-priority-normal">普通</span></td>
+                  <td><span class="badge badge-todo-completed">已完成</span></td>
+                  <td>-</td>
+                  <td>2025-05-20 15:45</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm disabled">完成</button>
+                      <button class="btn btn-secondary btn-sm disabled">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 行 4：待完成/重要 -->
+                <tr id="todoRow4">
+                  <td style="padding-left: 24px;"><input type="checkbox" style="cursor:pointer;"></td>
+                  <td><strong>约见陈晨讨论合作方案</strong></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60" alt="陈晨" class="avatar-round" style="width:24px;height:24px;">
+                      <span>陈晨</span>
+                    </a>
+                  </td>
+                  <td>2025-05-23 11:00</td>
+                  <td><span class="badge badge-priority-important">重要</span></td>
+                  <td><span class="badge badge-todo-pending">待完成</span></td>
+                  <td>-</td>
+                  <td>2025-05-19 11:20</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm" onclick="finishTodoRow('todoRow4')">完成</button>
+                      <button class="btn btn-secondary btn-sm" onclick="cancelTodoRow('todoRow4')">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 行 5：已完成 -->
+                <tr id="todoRow5" style="opacity: 0.75;">
+                  <td style="padding-left: 24px;"><input type="checkbox" disabled checked></td>
+                  <td><span style="text-decoration: line-through;">回访刘思远了解使用反馈</span></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60" alt="刘思远" class="avatar-round" style="width:24px;height:24px;">
+                      <span>刘思远</span>
+                    </a>
+                  </td>
+                  <td>2025-05-19 09:30</td>
+                  <td><span class="badge badge-priority-normal">普通</span></td>
+                  <td><span class="badge badge-todo-completed">已完成</span></td>
+                  <td>-</td>
+                  <td>2025-05-18 10:05</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm disabled">完成</button>
+                      <button class="btn btn-secondary btn-sm disabled">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- 行 6：已取消 -->
+                <tr id="todoRow6" style="opacity: 0.75;">
+                  <td style="padding-left: 24px;"><input type="checkbox" disabled></td>
+                  <td><span style="text-decoration: line-through; color: var(--text-muted);">更新客户资料：赵磊</span></td>
+                  <td>
+                    <a href="./contact-detail.html" class="avatar-group">
+                      <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="赵磊" class="avatar-round" style="width:24px;height:24px;">
+                      <span>赵磊</span>
+                    </a>
+                  </td>
+                  <td>2025-05-18 17:00</td>
+                  <td><span class="badge badge-priority-normal">普通</span></td>
+                  <td><span class="badge badge-todo-cancelled">已取消</span></td>
+                  <td>-</td>
+                  <td>2025-05-17 13:30</td>
+                  <td style="padding-right: 24px;">
+                    <div class="action-cell">
+                      <button class="btn btn-primary btn-sm disabled">完成</button>
+                      <button class="btn btn-secondary btn-sm disabled">取消</button>
+                      <a href="./contact-detail.html" class="btn btn-secondary btn-sm">查看联系人</a>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分页器 -->
+          <div class="pagination" style="padding: 16px 24px;">
+            <span class="pagination-info" id="todoTotal">共 40 条</span>
+            <div class="pagination-pages">
+              <button class="page-btn"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></button>
+              
+              <select class="select-control" style="padding: 4px 24px 4px 8px; font-size:12px; height: 32px; border-radius: var(--radius-sm);">
+                <option>10 条/页</option>
+                <option>20 条/页</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SIDEBAR_STATE_KEY = 'personal-crm-sidebar-collapsed';
+
+    function syncSidebarState() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const isCollapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+      sidebar.classList.toggle('collapsed', isCollapsed);
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+    }
+
+    syncSidebarState();
+    lucide.createIcons();
+
+    // 侧边栏折叠切换
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isCollapsed));
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+      lucide.createIcons();
+    }
+
+    // 快捷状态筛选模拟高亮
+    function switchFilter(el) {
+      const tabs = document.querySelectorAll('.todo-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // 模拟待办点击“完成”
+    function finishTodoRow(rowId) {
+      const row = document.getElementById(rowId);
+      row.style.transition = 'all 0.5s ease';
+      row.style.opacity = '0.75';
+      
+      // 更新状态标签与按钮
+      setTimeout(() => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        checkbox.checked = true;
+        checkbox.disabled = true;
+        
+        const textSpan = row.querySelector('td:nth-child(2)');
+        textSpan.style.textDecoration = 'line-through';
+        if (textSpan.querySelector('strong')) {
+          textSpan.innerHTML = `<span style="text-decoration: line-through;">${textSpan.querySelector('strong').innerText}</span>`;
+        }
+
+        const badge = row.querySelector('.badge-todo-pending');
+        if (badge) {
+          badge.className = 'badge badge-todo-completed';
+          badge.innerText = '已完成';
+        }
+
+        const overdueBadge = row.querySelector('.badge-todo-overdue');
+        if (overdueBadge) {
+          overdueBadge.remove();
+          row.querySelector('td:nth-child(7)').innerText = '-';
+        }
+
+        const buttons = row.querySelectorAll('.btn');
+        buttons[0].className = 'btn btn-primary btn-sm disabled';
+        buttons[1].className = 'btn btn-secondary btn-sm disabled';
+
+        // 静态调低待完成数量（减少今日事项和待完成统计）
+        const counts = document.querySelectorAll('.todo-tab-count');
+        counts[0].innerText = Math.max(0, parseInt(counts[0].innerText) - 1); // 今日事项减少
+        counts[3].innerText = Math.max(0, parseInt(counts[3].innerText) - 1); // 待完成减少
+        counts[4].innerText = parseInt(counts[4].innerText) + 1; // 已完成增加
+      }, 500);
+    }
+
+    // 模拟待办点击“取消”
+    function cancelTodoRow(rowId) {
+      const row = document.getElementById(rowId);
+      row.style.transition = 'all 0.5s ease';
+      row.style.opacity = '0.75';
+      
+      setTimeout(() => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        checkbox.checked = false;
+        checkbox.disabled = true;
+        
+        const textSpan = row.querySelector('td:nth-child(2)');
+        textSpan.style.textDecoration = 'line-through';
+        if (textSpan.querySelector('strong')) {
+          textSpan.innerHTML = `<span style="text-decoration: line-through; color: var(--text-muted);">${row.querySelector('strong').innerText}</span>`;
+        }
+
+        const badge = row.querySelector('.badge-todo-pending');
+        if (badge) {
+          badge.className = 'badge badge-todo-cancelled';
+          badge.innerText = '已取消';
+        }
+
+        const overdueBadge = row.querySelector('.badge-todo-overdue');
+        if (overdueBadge) {
+          overdueBadge.remove();
+          row.querySelector('td:nth-child(7)').innerText = '-';
+        }
+
+        const buttons = row.querySelectorAll('.btn');
+        buttons[0].className = 'btn btn-primary btn-sm disabled';
+        buttons[1].className = 'btn btn-secondary btn-sm disabled';
+
+        const counts = document.querySelectorAll('.todo-tab-count');
+        counts[0].innerText = Math.max(0, parseInt(counts[0].innerText) - 1); // 今日事项
+        counts[3].innerText = Math.max(0, parseInt(counts[3].innerText) - 1); // 待完成
+        counts[5].innerText = parseInt(counts[5].innerText) + 1; // 已取消增加
+      }, 500);
+    }
+  </script>
+</body>
+</html>

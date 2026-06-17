@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新增事项 - Personal CRM</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <!-- Lucide 图标 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
+  <style>
+    /* 两栏布局 */
+    .todo-form-layout {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 24px;
+    }
+
+    /* 优先级并排单选框 */
+    .priority-select-group {
+      display: flex;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background-color: #f9fafb;
+    }
+
+    .priority-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-neutral-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+    }
+
+    .priority-btn:not(:last-child) {
+      border-right: 1px solid var(--border-color);
+    }
+
+    .priority-btn.active {
+      background-color: #fff;
+      color: var(--color-primary);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .priority-btn.active.emergency {
+      color: var(--color-danger);
+    }
+
+    .priority-btn.active.important {
+      color: var(--color-warning);
+    }
+
+    /* 选中联系人浮层 */
+    .selected-contact-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--border-color);
+      background-color: #f9fafb;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      margin-top: 10px;
+    }
+
+    /* 事项预览面板 */
+    .preview-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      background-color: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      height: fit-content;
+    }
+
+    .preview-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 16px;
+      border-top: 1px dashed var(--border-color);
+      padding-top: 16px;
+    }
+
+    .preview-label-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .preview-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .preview-value {
+      font-size: 13px;
+      color: var(--text-main);
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    /* 提示条 */
+    .info-alert-strip {
+      background-color: var(--color-primary-light);
+      border: 1px solid var(--color-primary-border);
+      color: var(--color-primary);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-menu-wrapper">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i data-lucide="users-round"></i>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">Personal CRM</span>
+            <span class="brand-desc">智能联系人管理系统</span>
+          </div>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i data-lucide="layout-dashboard"></i>
+              <span>工作台</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./contacts.html">
+              <i data-lucide="users"></i>
+              <span>联系人</span>
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./todos.html">
+              <i data-lucide="calendar-check"></i>
+              <span>事项提醒</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./blacklist.html">
+              <i data-lucide="shield-alert"></i>
+              <span>黑名单</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./agent.html">
+              <i data-lucide="sparkles"></i>
+              <span>智能助手</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./settings.html">
+              <i data-lucide="settings"></i>
+              <span>设置</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="upgrade-card">
+          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
+          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
+        </div>
+        
+        <a href="./settings.html" class="user-profile-bar">
+          <div class="user-avatar-container">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
+            <span class="user-online-dot"></span>
+          </div>
+          <div class="user-meta">
+            <span class="user-name">Ethan</span>
+            <span class="user-email">ethan@example.com</span>
+          </div>
+        </a>
+        
+        <button class="collapsed-toggle" id="collapsedToggle" onclick="toggleSidebar()">
+          <i data-lucide="chevron-left" id="toggleIcon"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主体区域 -->
+    <main class="main-wrapper">
+      <!-- 顶栏 -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-title-group">
+            <a href="./todos.html" class="back-link">
+              <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            </a>
+            <h2 class="page-title">新增事项</h2>
+          </div>
+          <span class="page-subtitle">为联系人添加提醒事项</span>
+        </div>
+      </header>
+
+      <!-- 主体内容 -->
+      <div class="content-body">
+        
+        <div class="todo-form-layout">
+          <!-- 左侧表单 card -->
+          <div class="card">
+            <form id="todoForm" onsubmit="handleTodoSubmit(event)">
+              
+              <!-- 选择联系人 -->
+              <div class="form-group" style="margin-bottom: 24px; position:relative;">
+                <label class="form-group-label">选择联系人 <span class="required-star">*</span></label>
+                <select id="contactSelect" class="select-control" style="width:100%;" onchange="onContactSelectChange()">
+                  <option value="">搜索或选择联系人 (姓名、电话、邮箱)</option>
+                  <option value="1">张雨薇 (138 0013 8000)</option>
+                  <option value="2">王浩 (139 1234 5678)</option>
+                  <option value="3">李老师 (139 5555 2211)</option>
+                </select>
+                
+                <!-- 选中联系人后的详情展现片 -->
+                <div class="selected-contact-chip" id="contactChip" style="display: none;">
+                  <div class="avatar-group">
+                    <img src="" id="chipAvatar" alt="Avatar" class="avatar-round">
+                    <div>
+                      <span class="avatar-name" id="chipName">张雨薇</span><br>
+                      <span style="font-size:11px;color:var(--text-muted);" id="chipPhone">138 0013 8000</span>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-icon btn-sm" onclick="clearSelectedContact()" style="border-radius: var(--radius-full);">
+                    <i data-lucide="x" style="width:12px;height:12px;"></i>
+                  </button>
+                </div>
+                <span class="input-error-msg" id="contactError" style="display: none;">请先选择一个联系人</span>
+              </div>
+
+              <!-- 事项时间 -->
+              <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-group-label">事项时间 <span class="required-star">*</span></label>
+                <input type="datetime-local" id="todoTime" class="input-control" style="width: 100%;" oninput="updatePreviewTime()">
+                <span class="input-error-msg" id="timeError" style="display: none;">请设置一个未来的时间点</span>
+              </div>
+
+              <!-- 事项内容 -->
+              <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-group-label">事项内容 <span class="required-star">*</span></label>
+                <textarea id="todoContent" class="input-control" style="width: 100%; height: 120px; resize:none;" placeholder="请输入需要提醒的事项内容，例如：沟通产品合作协议细节" oninput="updatePreviewContent()"></textarea>
+                <div style="display: flex; justify-content: space-between; align-items:center; margin-top:4px;">
+                  <span class="input-error-msg" id="contentError" style="display: none; margin-top:0;">请输入事项内容</span>
+                  <span style="font-size:11px;color:var(--text-muted);margin-left:auto;" id="wordCounter">0 / 500</span>
+                </div>
+              </div>
+
+              <!-- 优先级 -->
+              <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-group-label">优先级</label>
+                <div class="priority-select-group">
+                  <button type="button" class="priority-btn active" id="prioNormal" onclick="setPriority('普通', 'prioNormal')">
+                    <i data-lucide="info" style="width:14px;height:14px;"></i> 普通
+                  </button>
+                  <button type="button" class="priority-btn" id="prioImportant" onclick="setPriority('重要', 'prioImportant')">
+                    <i data-lucide="flag" style="width:14px;height:14px;"></i> 重要
+                  </button>
+                  <button type="button" class="priority-btn" id="prioEmergency" onclick="setPriority('紧急', 'prioEmergency')">
+                    <i data-lucide="zap" style="width:14px;height:14px;"></i> 紧急
+                  </button>
+                </div>
+              </div>
+
+              <!-- 提示条 -->
+              <div class="info-alert-strip">
+                <i data-lucide="info" style="width:16px;height:16px;"></i>
+                新增事项默认状态为待完成
+              </div>
+
+              <!-- 表单操作 -->
+              <div class="form-actions-bar">
+                <a href="./todos.html" class="btn btn-secondary">取消</a>
+                <button type="submit" class="btn btn-primary">保存事项</button>
+              </div>
+
+            </form>
+          </div>
+
+          <!-- 右侧预览 card -->
+          <div class="preview-card">
+            <h3 class="card-title" style="margin-bottom: 16px;">
+              <i data-lucide="eye"></i>
+              事项预览
+            </h3>
+            
+            <!-- 预览联系人 -->
+            <div id="previewContactBox" style="display: none;">
+              <div class="avatar-group">
+                <img src="" id="previewAvatar" alt="Avatar" class="avatar-round" style="width:40px;height:40px;">
+                <div>
+                  <span class="avatar-name" id="previewName" style="font-size:14px;">张雨薇</span><br>
+                  <span style="font-size:12px;color:var(--text-muted);" id="previewPhone">138 0013 8000</span>
+                </div>
+              </div>
+            </div>
+            
+            <div id="previewNoContact" style="font-size:13px;color:var(--text-muted);display: flex; align-items:center; gap:6px;">
+              <i data-lucide="user-minus"></i>
+              未选择联系人
+            </div>
+
+            <!-- 事项时间 -->
+            <div class="preview-item">
+              <i data-lucide="calendar" style="width:16px;height:16px;color:var(--text-muted);margin-top:2px;"></i>
+              <div class="preview-label-group">
+                <span class="preview-label">事项时间</span>
+                <span class="preview-value" id="previewTimeVal" style="color:var(--text-muted);">未设定时间</span>
+              </div>
+            </div>
+
+            <!-- 事项内容 -->
+            <div class="preview-item">
+              <i data-lucide="file-text" style="width:16px;height:16px;color:var(--text-muted);margin-top:2px;"></i>
+              <div class="preview-label-group">
+                <span class="preview-label">事项内容</span>
+                <span class="preview-value" id="previewContentVal" style="color:var(--text-muted);">暂无内容</span>
+              </div>
+            </div>
+
+            <!-- 优先级 -->
+            <div class="preview-item">
+              <i data-lucide="flag" style="width:16px;height:16px;color:var(--text-muted);margin-top:2px;"></i>
+              <div class="preview-label-group">
+                <span class="preview-label">优先级</span>
+                <span class="preview-value">
+                  <span class="badge badge-priority-normal" id="previewPriorityBadge">普通</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- 默认状态 -->
+            <div class="preview-item">
+              <i data-lucide="clock" style="width:16px;height:16px;color:var(--text-muted);margin-top:2px;"></i>
+              <div class="preview-label-group">
+                <span class="preview-label">状态</span>
+                <span class="preview-value">
+                  <span class="badge badge-todo-pending">待完成</span>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SIDEBAR_STATE_KEY = 'personal-crm-sidebar-collapsed';
+
+    function syncSidebarState() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const isCollapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+      sidebar.classList.toggle('collapsed', isCollapsed);
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+    }
+
+    syncSidebarState();
+    lucide.createIcons();
+
+    // 侧边栏折叠切换
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isCollapsed));
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+      lucide.createIcons();
+    }
+
+    // 联系人选择更改
+    const contactData = {
+      "1": { name: "张雨薇", phone: "138 0013 8000", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60" },
+      "2": { name: "王浩", phone: "139 1234 5678", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=60" },
+      "3": { name: "李老师", phone: "139 5555 2211", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=60" }
+    };
+
+    function onContactSelectChange() {
+      const val = document.getElementById('contactSelect').value;
+      const chip = document.getElementById('contactChip');
+      const errorSpan = document.getElementById('contactError');
+      
+      if (val) {
+        errorSpan.style.display = 'none';
+        
+        // 渲染 Chip
+        document.getElementById('chipAvatar').src = contactData[val].avatar;
+        document.getElementById('chipName').innerText = contactData[val].name;
+        document.getElementById('chipPhone').innerText = contactData[val].phone;
+        
+        // 渲染 Preview
+        document.getElementById('previewAvatar').src = contactData[val].avatar;
+        document.getElementById('previewName').innerText = contactData[val].name;
+        document.getElementById('previewPhone').innerText = contactData[val].phone;
+        
+        chip.style.display = 'flex';
+        document.getElementById('previewContactBox').style.display = 'block';
+        document.getElementById('previewNoContact').style.display = 'none';
+      } else {
+        clearSelectedContact();
+      }
+    }
+
+    function clearSelectedContact() {
+      document.getElementById('contactSelect').value = "";
+      document.getElementById('contactChip').style.display = 'none';
+      document.getElementById('previewContactBox').style.display = 'none';
+      document.getElementById('previewNoContact').style.display = 'flex';
+    }
+
+    // 时间预览更新
+    function updatePreviewTime() {
+      const timeVal = document.getElementById('todoTime').value;
+      const previewText = document.getElementById('previewTimeVal');
+      const errorSpan = document.getElementById('timeError');
+      
+      if (timeVal) {
+        errorSpan.style.display = 'none';
+        // 格式化输出 (2025-05-24T15:30 -> 2025-05-24 15:30)
+        previewText.innerText = timeVal.replace('T', ' ');
+        previewText.style.color = 'var(--text-main)';
+      } else {
+        previewText.innerText = "未设定时间";
+        previewText.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // 内容预览更新与字数统计
+    function updatePreviewContent() {
+      const content = document.getElementById('todoContent').value;
+      const previewText = document.getElementById('previewContentVal');
+      const errorSpan = document.getElementById('contentError');
+      
+      document.getElementById('wordCounter').innerText = `${content.length} / 500`;
+
+      if (content.trim()) {
+        errorSpan.style.display = 'none';
+        previewText.innerText = content;
+        previewText.style.color = 'var(--text-main)';
+      } else {
+        previewText.innerText = "暂无内容";
+        previewText.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // 优先级选择
+    let activePriority = "普通";
+    function setPriority(level, btnId) {
+      activePriority = level;
+      
+      // 取消高亮
+      const btns = document.querySelectorAll('.priority-btn');
+      btns.forEach(btn => btn.classList.remove('active'));
+      
+      // 高亮当前
+      const activeBtn = document.getElementById(btnId);
+      activeBtn.classList.add('active');
+
+      // 调整按钮特有激活色
+      if (btnId === 'prioEmergency') activeBtn.classList.add('emergency');
+      if (btnId === 'prioImportant') activeBtn.classList.add('important');
+
+      // 更新预览 Badge
+      const badge = document.getElementById('previewPriorityBadge');
+      badge.innerText = level;
+      
+      if (level === '普通') badge.className = 'badge badge-priority-normal';
+      if (level === '重要') badge.className = 'badge badge-priority-important';
+      if (level === '紧急') badge.className = 'badge badge-priority-emergency';
+    }
+
+    // 表单提交与校验模拟
+    function handleTodoSubmit(event) {
+      event.preventDefault();
+      
+      const contactVal = document.getElementById('contactSelect').value;
+      const timeVal = document.getElementById('todoTime').value;
+      const content = document.getElementById('todoContent').value.trim();
+
+      let hasError = false;
+
+      if (!contactVal) {
+        document.getElementById('contactError').style.display = 'block';
+        hasError = true;
+      }
+      
+      if (!timeVal) {
+        document.getElementById('timeError').style.display = 'block';
+        hasError = true;
+      }
+
+      if (!content) {
+        document.getElementById('contentError').style.display = 'block';
+        hasError = true;
+      }
+
+      if (!hasError) {
+        // 保存成功，跳转到列表页
+        window.location.href = './todos.html';
+      }
+    }
+
+    // 如果从联系人详情进来并带了 contactId 参数，自动预填
+    window.addEventListener('DOMContentLoaded', () => {
+      // 简单参数解析
+      if (window.location.search || window.location.hash) {
+        document.getElementById('contactSelect').value = "1";
+        onContactSelectChange();
+        
+        // 预设优先级
+        setPriority('重要', 'prioImportant');
+        
+        // 预设默认时间为明天此时
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setMinutes(0);
+        const formatStr = d.toISOString().slice(0, 16);
+        document.getElementById('todoTime').value = formatStr;
+        updatePreviewTime();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - Personal CRM 智能联系人管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #2f5bff;
+      --primary-dark: #2347e0;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      font-family: var(--font);
+      background: #f0f4ff;
+      overflow: hidden;
+    }
+
+    /* ── 整体两栏布局 ── */
+    .page {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      width: 100vw;
+      height: 100vh;
+      background:
+        radial-gradient(ellipse 60% 70% at 20% 50%, rgba(255,255,255,0.85) 0%, transparent 100%),
+        linear-gradient(135deg, #eef3ff 0%, #f0f4ff 50%, #edf1fb 100%);
+    }
+
+    /* ═══════════════════════════════════
+       左侧预览区
+    ═══════════════════════════════════ */
+    .preview {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 28px 2.5vw 20px 3.5vw;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 装饰圆环 */
+    .preview::before {
+      content: '';
+      position: absolute;
+      width: 520px; height: 520px;
+      border-radius: 50%;
+      border: 1px solid rgba(147, 197, 253, 0.2);
+      top: -180px; left: 36%;
+      pointer-events: none;
+    }
+    .preview::after {
+      content: '';
+      position: absolute;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      border: 1px solid rgba(191, 219, 254, 0.25);
+      bottom: -80px; left: -80px;
+      pointer-events: none;
+    }
+
+    /* 顶部品牌 */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #4f7cff 0%, #2f5bff 100%);
+      box-shadow: 0 8px 20px -8px rgba(47,91,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .brand-icon svg { width: 18px; height: 18px; }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    /* 主标题区 */
+    .hero {
+      margin-top: 0;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 3.2vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #0c1538;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .hero-sub {
+      font-size: clamp(0.75rem, 0.9vw, 0.88rem);
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* 卡片网格 */
+    .cards-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .top-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel {
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(219,228,241,0.88);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px -8px rgba(30,50,100,.1);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      padding: 13px 14px 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+    }
+    .panel-title svg { width: 14px; height: 14px; color: var(--primary); }
+
+    .panel-link {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    /* 联系人列表 */
+    .contact-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(226,232,240,.8);
+      gap: 8px;
+    }
+    .contact-item:last-of-type { border-bottom: none; }
+
+    .contact-left { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 0 4px 10px -4px rgba(15,23,42,.3);
+      background: #e2e8f0;
+    }
+    .avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .av-a { background: linear-gradient(135deg,#93c5fd,#2563eb); }
+    .av-b { background: linear-gradient(135deg,#6ee7b7,#059669); }
+    .av-c { background: linear-gradient(135deg,#f9a8d4,#db2777); }
+    .av-d { background: linear-gradient(135deg,#fcd34d,#f97316); }
+
+    .contact-info { min-width: 0; }
+
+    .contact-name-row {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 12.5px; font-weight: 700; color: #1f2937;
+      white-space: nowrap;
+    }
+
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-size: 10.5px; font-weight: 700;
+      white-space: nowrap;
+    }
+    .tag-green { background: #dcfce7; color: #15803d; }
+    .tag-blue  { background: #dbeafe; color: #1d4ed8; }
+
+    .contact-org {
+      font-size: 11px; color: #94a3b8; font-weight: 500;
+      margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .contact-topic {
+      font-size: 11px; font-weight: 700; color: var(--primary);
+      margin-top: 1px;
+    }
+
+    .contact-time {
+      font-size: 11.5px; font-weight: 600; color: #94a3b8;
+      flex-shrink: 0; white-space: nowrap; padding-top: 2px;
+    }
+
+    /* 待办列表 */
+    .todo-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 0; }
+
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(226,232,240,.8);
+      gap: 8px;
+    }
+    .todo-item:last-of-type { border-bottom: none; }
+
+    .todo-left { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+
+    .todo-check {
+      width: 15px; height: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      background: #fff;
+    }
+
+    .todo-text {
+      font-size: 12.5px; font-weight: 600; color: #334155;
+      line-height: 1.45;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .todo-date {
+      font-size: 11.5px; font-weight: 600; color: #94a3b8;
+      flex-shrink: 0; white-space: nowrap; padding-top: 1px;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .todo-date.hot { color: #ef4444; }
+    .todo-date svg { width: 11px; height: 11px; }
+
+    /* 面板底部按钮 */
+    .panel-footer-btn {
+      width: 100%;
+      height: 30px;
+      margin-top: auto;
+      padding-top: 8px;
+      border: 1px solid rgba(226,232,240,.9);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--primary);
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .panel-footer-btn svg { width: 12px; height: 12px; }
+
+    /* AI 助手面板 */
+    .ai-panel {
+      padding: 14px 16px;
+      flex-shrink: 0;
+    }
+
+    .ai-head {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 700; color: #334155;
+      margin-bottom: 10px;
+    }
+    .ai-head svg { width: 14px; height: 14px; color: #6366f1; }
+
+    .ai-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+
+    .ai-avatar {
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      background: linear-gradient(180deg,#3b5bff,#111827);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; flex-shrink: 0;
+    }
+    .ai-avatar svg { width: 15px; height: 15px; }
+
+    .ai-bubble {
+      flex: 1;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(226,232,240,.85);
+      background: #f8fbff;
+      font-size: 12px; font-weight: 600; color: #475569;
+    }
+
+    .ai-actions { display: flex; gap: 8px; }
+
+    .ai-action {
+      flex: 1;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(226,232,240,.9);
+      background: #fff;
+      color: #475569;
+      font-size: 11.5px; font-weight: 600;
+      display: flex; align-items: center; gap: 5px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .ai-action svg { width: 13px; height: 13px; }
+    .ai-action:nth-child(1) svg { color: #3b82f6; }
+    .ai-action:nth-child(2) svg { color: #10b981; }
+    .ai-action:nth-child(3) svg { color: #f59e0b; }
+
+    /* 页脚 */
+    .preview-footer {
+      font-size: 11px; color: #94a3b8; font-weight: 500;
+      margin-top: 10px; flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════
+       右侧登录区
+    ═══════════════════════════════════ */
+    .auth-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 40px;
+      background: #ffffff;
+      border-left: 1px solid rgba(219,228,241,0.6);
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 360px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+      padding: 0;
+    }
+
+    /* 头部图标 */
+    .auth-icon-wrap {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(180deg,#edf2ff,#dde8ff);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 12px 24px -14px rgba(47,91,255,.5);
+    }
+    .auth-icon-wrap svg { width: 30px; height: 30px; color: var(--primary); }
+
+    .auth-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f172a;
+      text-align: center;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-sub {
+      font-size: 13.5px;
+      color: #7c8aa5;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* 错误提示 */
+    .error-alert {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #ffd0d4;
+      background: #fff5f5;
+      color: #ef4444;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+    .error-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* 表单 */
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-wrap input {
+      width: 100%;
+      height: 44px;
+      padding: 0 40px;
+      border-radius: 10px;
+      border: 1px solid #d8e1ed;
+      background: #fff;
+      font-family: var(--font);
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #0f172a;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .input-wrap input::placeholder { color: #a1acc0; }
+    .input-wrap input:focus {
+      border-color: rgba(47,91,255,.6);
+      box-shadow: 0 0 0 4px rgba(47,91,255,.08);
+    }
+
+    .field-icon, .toggle-pw {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      width: 16px; height: 16px;
+      color: #9aa6bb;
+    }
+    .field-icon { left: 13px; pointer-events: none; }
+    .toggle-pw  { right: 13px; cursor: pointer; }
+
+    /* 选项行 */
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 0 20px;
+      font-size: 13px;
+    }
+
+    .remember-label {
+      display: flex; align-items: center; gap: 6px;
+      font-weight: 600; color: #475569; cursor: pointer;
+    }
+    .remember-label input[type=checkbox] { accent-color: var(--primary); width: 14px; height: 14px; }
+
+    .forgot-link { color: var(--primary); font-weight: 700; text-decoration: none; font-size: 13px; }
+
+    /* 登录按钮 */
+    .btn-login {
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(90deg, #2f5bff 0%, #3060f0 100%);
+      color: #fff;
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 24px -12px rgba(47,91,255,.8);
+      transition: background .15s, transform .1s;
+      margin-bottom: 12px;
+    }
+    .btn-login:hover { background: linear-gradient(90deg, var(--primary-dark), #1e40d0); }
+    .btn-login:active { transform: scale(.99); }
+
+    /* 注册行 */
+    .register-row {
+      text-align: center;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 20px;
+    }
+    .register-row a { color: var(--primary); font-weight: 700; text-decoration: none; }
+
+    /* 分割线 */
+    .social-divider {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 12px; font-weight: 600; color: #a1acc0;
+      margin-bottom: 16px;
+    }
+    .social-divider::before, .social-divider::after {
+      content: ''; flex: 1; height: 1px;
+      background: rgba(226,232,240,.95);
+    }
+
+    /* 社交登录 */
+    .social-row { display: flex; justify-content: center; }
+
+    .social-btn {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(219,228,241,.95);
+      background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      color: #07c160;
+      box-shadow: 0 4px 12px -6px rgba(15,23,42,.2);
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .social-btn:hover { border-color: #a7f3d0; box-shadow: 0 4px 16px -6px rgba(7,193,96,.3); }
+    .social-btn svg { width: 20px; height: 20px; }
+
+    /* 响应式 */
+    @media (max-width: 900px) {
+      html, body { overflow-y: auto; }
+      .page { grid-template-columns: 1fr; height: auto; }
+      .preview { display: none; }
+      .auth-col { min-height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ 左侧预览 ══ -->
+  <section class="preview">
+    <!-- 品牌 -->
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <span class="brand-name">Personal CRM</span>
+    </div>
+
+    <!-- 主标题 -->
+    <div class="hero">
+      <h1 class="hero-title">Personal CRM</h1>
+      <p class="hero-sub">管理联系人、待办事项与智能提醒的个人关系管理平台</p>
+    </div>
+
+    <!-- 卡片区 -->
+    <div class="cards-area">
+      <div class="top-cards">
+        <!-- 联系人 -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>联系人</span>
+            </div>
+            <a href="#" class="panel-link">查看全部</a>
+          </div>
+          <div class="contact-list">
+            <div class="contact-item">
+              <div class="contact-left">
+                <div class="avatar">
+                  <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80" alt="张雨薇">
+                </div>
+                <div class="contact-info">
+                  <div class="contact-name-row">张雨薇 <span class="tag tag-green">同事</span></div>
+                  <div class="contact-org">腾讯科技 · 产品经理</div>
+                  <div class="contact-topic">产品合作</div>
+                </div>
+              </div>
+              <div class="contact-time">今天</div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-left">
+                <div class="avatar">
+                  <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" alt="李明轩">
+                </div>
+                <div class="contact-info">
+                  <div class="contact-name-row">李明轩 <span class="tag tag-blue">朋友</span></div>
+                  <div class="contact-org">独立开发者</div>
+                  <div class="contact-topic">技术交流</div>
+                </div>
+              </div>
+              <div class="contact-time">昨天</div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-left">
+                <div class="avatar">
+                  <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&auto=format&fit=crop&q=80" alt="王思颖">
+                </div>
+                <div class="contact-info">
+                  <div class="contact-name-row">王思颖 <span class="tag tag-green">同学</span></div>
+                  <div class="contact-org">清华大学 · 市场营销</div>
+                  <div class="contact-topic">校友</div>
+                </div>
+              </div>
+              <div class="contact-time">2天前</div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-left">
+                <div class="avatar">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="陈泽宇">
+                </div>
+                <div class="contact-info">
+                  <div class="contact-name-row">陈泽宇 <span class="tag tag-blue">客户</span></div>
+                  <div class="contact-org">某公司 · 运营总监</div>
+                  <div class="contact-topic">商务合作</div>
+                </div>
+              </div>
+              <div class="contact-time">3天前</div>
+            </div>
+          </div>
+          <button class="panel-footer-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            添加联系人
+          </button>
+        </div>
+
+        <!-- 待办事项 -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              <span>待办事项</span>
+            </div>
+            <a href="#" class="panel-link">查看全部</a>
+          </div>
+          <div class="todo-list">
+            <div class="todo-item">
+              <div class="todo-left">
+                <div class="todo-check"></div>
+                <div class="todo-text">跟进张雨薇的产品需求</div>
+              </div>
+              <div class="todo-date hot">今天
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"/></svg>
+              </div>
+            </div>
+            <div class="todo-item">
+              <div class="todo-left">
+                <div class="todo-check"></div>
+                <div class="todo-text">准备与李明轩的技术分享</div>
+              </div>
+              <div class="todo-date">明天</div>
+            </div>
+            <div class="todo-item">
+              <div class="todo-left">
+                <div class="todo-check"></div>
+                <div class="todo-text">发送合作方案给陈泽宇</div>
+              </div>
+              <div class="todo-date">6月2日</div>
+            </div>
+            <div class="todo-item">
+              <div class="todo-left">
+                <div class="todo-check"></div>
+                <div class="todo-text">校友聚会活动报名</div>
+              </div>
+              <div class="todo-date">6月5日</div>
+            </div>
+          </div>
+          <button class="panel-footer-btn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            新建待办
+          </button>
+        </div>
+      </div>
+
+      <!-- AI 助手 -->
+      <div class="panel ai-panel">
+        <div class="ai-head">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M20 3v4m2-2h-4"/></svg>
+          <span>AI 智能助手</span>
+        </div>
+        <div class="ai-row">
+          <div class="ai-avatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+          </div>
+          <div class="ai-bubble">下午好！我是您的智能助手小P，有什么可以帮您的吗？</div>
+        </div>
+        <div class="ai-actions">
+          <button class="ai-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            总结最近联系
+          </button>
+          <button class="ai-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            推荐跟进联系人
+          </button>
+          <button class="ai-action">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><path d="M12 18a6 6 0 0 0 0-12"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/></svg>
+            待办事项建议
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-footer">© 2024 Personal CRM. 让每一段关系更有价值。</div>
+  </section>
+
+  <!-- ══ 右侧登录 ══ -->
+  <section class="auth-col">
+    <div class="auth-card">
+      <div class="auth-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <h2 class="auth-title">欢迎回来</h2>
+      <p class="auth-sub">登录您的 Personal CRM 账户</p>
+
+      <div id="errorAlert" class="error-alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span id="errorText">账号或密码错误</span>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="username">账号</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="username" placeholder="请输入账号" autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">密码</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
+            <svg class="toggle-pw" id="togglePwIcon" onclick="togglePw()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberMe" checked>
+            记住我
+          </label>
+          <a href="#" class="forgot-link">忘记密码?</a>
+        </div>
+
+        <button type="submit" class="btn-login">登录</button>
+        <p class="register-row">还没有账号？ <a href="#">立即注册</a></p>
+      </form>
+
+      <div class="social-divider">或使用其他方式登录</div>
+      <div class="social-row">
+        <button class="social-btn" title="微信登录" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.161 1.67-1.381 1.136-2.114 2.958-1.682 4.745.021.085.048.169.071.253.593 2.388 2.944 4.226 5.752 4.226a8.55 8.55 0 0 0 2.404-.343.58.58 0 0 1 .604.082l1.57.916a.279.279 0 0 0 .141.046.249.249 0 0 0 .246-.25c0-.058-.023-.117-.042-.175l-.33-1.254a.5.5 0 0 1 .181-.563C22.255 17.088 24 15.459 24 13.508c0-2.818-3.061-4.758-7.062-4.65zm-2.532 2.339c.548 0 .991.452.991 1.01 0 .558-.443 1.01-.991 1.01-.547 0-.991-.452-.991-1.01 0-.558.444-1.01.991-1.01zm4.943 0c.547 0 .991.452.991 1.01 0 .558-.444 1.01-.991 1.01-.548 0-.991-.452-.991-1.01 0-.558.443-1.01.991-1.01z"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function togglePw() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('togglePwIcon');
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    icon.innerHTML = isHidden
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const alert = document.getElementById('errorAlert');
+    const text  = document.getElementById('errorText');
+
+    if (!username || !password) {
+      text.textContent = '请输入账号和密码';
+      alert.style.display = 'flex';
+      return;
+    }
+    if (username === 'admin' && password !== 'admin') {
+      text.textContent = '账号或密码错误';
+      alert.style.display = 'flex';
+      return;
+    }
+    alert.style.display = 'none';
+    window.location.href = './dashboard.html';
+  }
+</script>
+</body>
+</html>

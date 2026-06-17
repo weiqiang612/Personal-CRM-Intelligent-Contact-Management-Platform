@@ -36,3 +36,7 @@ erDiagram
 - 当前表清单与 `docs/Personal CRM 智能联系人管理平台数据库设计.md` 和 `schema.sql` 保持一致。
 - 课程验收基线为 5 张表：`sys_user`、`user_avatar`、`contact`、`contact_avatar`、`contact_todo`。
 - 项目扩展表为：`tag`、`contact_tag`、`agent_operation_log`。
+
+## 5. 原始方案索引 (Source Reference)
+- 本文为结构化数据库摘要。
+- 若需要查看字段级设计说明、状态定义、索引设计和指导书基线对齐说明，请回看：`docs/Personal CRM 智能联系人管理平台数据库设计.md`。

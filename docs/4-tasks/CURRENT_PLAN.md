@@ -5,9 +5,15 @@
 ## Active feature
 `docs/4-tasks/features/TASK-001-mvp-foundation/`
 - spec.md ✅ Ready
-- tasks.md → Not started
+- tasks.md → In Progress
+
+## Previous implementation task
+`docs/4-tasks/features/TASK-000-static-html-prototype/`
+- spec.md ✅ Ready
+- tasks.md ✅ Completed
 
 ## Stages
+- Stage 0: 基于最新参考图确认静态 HTML 原型，冻结页面结构与视觉骨架 ✅
 - Stage 1: 完成开发前准备，冻结需求、数据库和接口基线
 - Stage 2: 搭建后端基础设施，完成认证、统一响应、异常处理、MyBatis-Plus 和运行配置
 - Stage 3: 替换前端脚手架页面，建立 CRM 基础布局、路由、状态管理与 API 层
@@ -15,12 +21,18 @@
 - Stage 5: 实现 Agent 查询与写操作确认链路
 - Stage 6: 自测、接口联调、补测试文档与验收材料
 
+### TASK-000: Static HTML Prototype Baseline
+- [x] Implementation (12 tasks) Completed
+- 里程碑 1：T1-T4，固定任务包、文档引用和 `TASK-000 -> TASK-001` 前置关系
+- 里程碑 2：T5-T9，完成共享样式和 8 个静态 HTML 原型页面
+- 里程碑 3：T10-T12，完成结构校验、AC 回写和计划状态回写
+
 ### TASK-001: MVP Foundation Delivery
 - [ ] Implementation (18 tasks)
 - 里程碑 1：T1-T4，完成后端基础设施与鉴权边界
 - 里程碑 2：T5-T9，完成认证与联系人最小可用链路
 - 里程碑 3：T10-T12，完成事项、看板、上传后端能力
-- 里程碑 4：T13-T15，完成前端骨架替换与主链路联调
+- 里程碑 4：T13-T15，基于已确认 HTML 原型完成前端骨架替换与主链路联调
 - 里程碑 5：T16-T18，完成测试、自测验收和计划状态回写
 
 ## Backlog roadmap
@@ -50,6 +62,7 @@
   - 范围：README 和 docs 收口、版本标签、最终成果检查、可展示内容整理
 
 ## Completed
+- 2026-06-15: completed TASK-000 static HTML prototype baseline (10 high-fidelity pages)
 - 2026-06-15: initialized backend Spring Boot project
 - 2026-06-15: initialized frontend Vue 3 project
 - 2026-06-15: generated Harness-style collaboration scaffold
@@ -57,7 +70,8 @@
 - 2026-06-15: added SRS draft, backend dev config, seed script, and root README
 
 ## Notes for next session
+- 先完成 `TASK-000` 的静态 HTML 原型确认，再进入 `TASK-001` 的 Vue 页面骨架实现
 - 先实现后端基础骨架，不要直接跳到 Agent
 - `application-dev.yaml` 已定义数据库、上传目录、JWT 和 CORS 的开发默认值
 - `data.sql` 目前只保留占位和推荐样例，待认证实现后再补真实 bcrypt 测试账号
-- 前端仍是脚手架默认页面，下一步需要替换为 CRM 布局和业务路由
+- 前端仍是脚手架默认页面；静态原型确认后再迁移为 CRM 布局和业务路由

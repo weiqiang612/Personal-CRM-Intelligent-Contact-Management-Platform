@@ -28,3 +28,7 @@ flowchart TD
 - 健康检查：`/actuator/health`
 - 前端开发端口：Vite 默认 `5173`
 - 推荐联调方式：前端开发代理转发 `/api` 到后端，后端负责 JWT 鉴权和统一错误响应。
+
+## 5. 原始方案索引 (Source Reference)
+- 本文为结构化架构摘要。
+- 若需要查看更完整的技术选型理由、部署建议和 Agent 模块边界，请回看：`docs/Personal CRM 智能联系人管理平台架构选型.md`。

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 - Personal CRM</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <!-- Lucide 图标 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
+  <style>
+    /* 设置页特有布局 */
+    .settings-layout {
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .settings-row:last-child {
+      border-bottom: none;
+    }
+
+    .settings-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .settings-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .settings-profile-summary {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .settings-avatar-wrap {
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      background: linear-gradient(135deg, #eef4ff 0%, #dbeafe 100%);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.12);
+    }
+
+    .settings-avatar {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+
+    .settings-profile-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+      .settings-profile-summary {
+        align-items: flex-start;
+        gap: 16px;
+      }
+
+      .settings-avatar-wrap {
+        width: 72px;
+        height: 72px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-menu-wrapper">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i data-lucide="users-round"></i>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">Personal CRM</span>
+            <span class="brand-desc">智能联系人管理系统</span>
+          </div>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i data-lucide="layout-dashboard"></i>
+              <span>工作台</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./contacts.html">
+              <i data-lucide="users"></i>
+              <span>联系人</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./todos.html">
+              <i data-lucide="calendar-check"></i>
+              <span>事项提醒</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./blacklist.html">
+              <i data-lucide="shield-alert"></i>
+              <span>黑名单</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./agent.html">
+              <i data-lucide="sparkles"></i>
+              <span>智能助手</span>
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./settings.html">
+              <i data-lucide="settings"></i>
+              <span>设置</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="upgrade-card">
+          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
+          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
+        </div>
+        
+        <a href="./settings.html" class="user-profile-bar">
+          <div class="user-avatar-container">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
+            <span class="user-online-dot"></span>
+          </div>
+          <div class="user-meta">
+            <span class="user-name">Ethan</span>
+            <span class="user-email">ethan@example.com</span>
+          </div>
+        </a>
+        
+        <button class="collapsed-toggle" id="collapsedToggle" onclick="toggleSidebar()">
+          <i data-lucide="chevron-left" id="toggleIcon"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主体区域 -->
+    <main class="main-wrapper">
+      <!-- 顶栏 -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-title-group">
+            <h2 class="page-title">系统设置</h2>
+          </div>
+          <span class="page-subtitle">修改个人资料、更换头像及系统退出</span>
+        </div>
+      </header>
+
+      <!-- 主体内容 -->
+      <div class="content-body">
+        
+        <div class="settings-layout">
+          <!-- 个人资料卡片 -->
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 20px;">
+              <i data-lucide="user"></i>
+              个人资料
+            </h3>
+            
+            <div class="settings-profile-summary">
+              <div class="settings-avatar-wrap">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=60" alt="Avatar" id="userAvatarImg" class="settings-avatar">
+                <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="updateUserAvatar(event)">
+              </div>
+              <div class="settings-profile-meta">
+                <h4 style="font-size:16px; font-weight:700;">Ethan</h4>
+                <span style="font-size:12px; color:var(--text-muted);">系统管理员 · 尊享 Pro 专业版</span>
+                <button class="btn btn-secondary btn-sm" style="color:var(--color-primary);border-color:var(--color-primary-border);" onclick="triggerAvatarUpload()">
+                  <i data-lucide="camera" style="width:12px;height:12px;"></i>
+                  更换头像
+                </button>
+              </div>
+            </div>
+
+            <!-- 具体字段 -->
+            <div class="info-list" style="margin-top: 20px;">
+              <div class="settings-row">
+                <div class="settings-info">
+                  <span class="settings-title">电子邮箱</span>
+                  <span class="settings-desc">ethan@example.com</span>
+                </div>
+                <button class="btn btn-secondary btn-sm">修改邮箱</button>
+              </div>
+
+              <div class="settings-row">
+                <div class="settings-info">
+                  <span class="settings-title">手机号码</span>
+                  <span class="settings-desc">138 0013 8000</span>
+                </div>
+                <button class="btn btn-secondary btn-sm">修改手机</button>
+              </div>
+
+              <div class="settings-row">
+                <div class="settings-info">
+                  <span class="settings-title">密码管理</span>
+                  <span class="settings-desc">为了您的账号安全，请定期更换复杂密码</span>
+                </div>
+                <button class="btn btn-secondary btn-sm">修改密码</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 系统账号收尾卡片 -->
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 20px; color: var(--color-danger-text);">
+              <i data-lucide="shield-alert" style="color: var(--color-danger);"></i>
+              敏感操作区
+            </h3>
+
+            <div class="settings-row">
+              <div class="settings-info">
+                <span class="settings-title">安全退出登录</span>
+                <span class="settings-desc">安全清除本地缓存并重定向回到登录页面</span>
+              </div>
+              <button class="btn btn-primary btn-sm" style="background-color: var(--color-danger);" onclick="logout()">退出登录</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SIDEBAR_STATE_KEY = 'personal-crm-sidebar-collapsed';
+
+    function syncSidebarState() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const isCollapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+      sidebar.classList.toggle('collapsed', isCollapsed);
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+    }
+
+    syncSidebarState();
+    lucide.createIcons();
+
+    // 侧边栏折叠切换
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isCollapsed));
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+      lucide.createIcons();
+    }
+
+    function triggerAvatarUpload() {
+      document.getElementById('avatarFileInput').click();
+    }
+
+    function updateUserAvatar(event) {
+      const reader = new FileReader();
+      reader.onload = function() {
+        // 更新所有头像实例
+        const img = document.getElementById('userAvatarImg');
+        img.src = reader.result;
+        
+        // 同时更新侧边栏头像
+        const sidebarAvatars = document.querySelectorAll('.user-avatar, .avatar-round');
+        sidebarAvatars.forEach(av => av.src = reader.result);
+      }
+      reader.readAsDataURL(event.target.files[0]);
+    }
+
+    function logout() {
+      // 模拟清除，退回到登录页
+      window.location.href = './login.html';
+    }
+  </script>
+</body>
+</html>

@@ -22,9 +22,9 @@
 - [ ] T10 — 实现事项实体映射、Mapper 和 Service，完成列表、新增、完成、取消，并落实状态流转校验 · covers: AC-003, AC-004
 - [ ] T11 — 实现事项 Controller 与看板统计 Service/Controller，先返回联系人数、黑名单数、待办数、今日事项数、逾期事项数 · covers: AC-003
 - [ ] T12 — 实现本地文件上传服务、上传配置读取和上传 Controller，完成用户头像与联系人头像上传入口 · covers: AC-003
-- [ ] T13 — 替换前端 `create-vue` 默认页面，建立基础布局、登录页占位、首页占位和模块导航骨架 · covers: AC-005
-- [ ] T14 — 建立前端 `api`、`stores`、`router` 基础层，接入 token 存储、Axios 请求封装和基础鉴权跳转 · covers: AC-005
-- [ ] T15 — 为认证、联系人、事项、看板、上传补充最小联调页面或占位页，保证主链路可手工验收 · covers: AC-002, AC-003, AC-005
+- [ ] T13 — 基于已确认的静态 HTML 原型替换前端 `create-vue` 默认页面，建立基础布局、登录页、工作台和模块导航骨架 · covers: AC-005
+- [ ] T14 — 基于原型页面结构建立前端 `api`、`stores`、`router` 基础层，接入 token 存储、Axios 请求封装和基础鉴权跳转 · covers: AC-005
+- [ ] T15 — 参照已确认原型为认证、联系人、事项、看板、上传补充最小联调页面，保证主链路可手工验收 · covers: AC-002, AC-003, AC-005
 - [ ] T16 — 运行 `mvn -f personal_crm_backend/pom.xml test`，修复失败项并记录当前未覆盖风险 · covers: AC-001, AC-002, AC-003, AC-004
 - [ ] T17 — 按 `spec.md` 逐项验收 AC，把通过项的 `passes` 更新为 `true` · covers: AC-001, AC-002, AC-003, AC-004, AC-005
 - [ ] T18 — 更新 `docs/4-tasks/CURRENT_PLAN.md`，将本任务状态改为完成，并同步阶段进度 · covers: doc-maintenance

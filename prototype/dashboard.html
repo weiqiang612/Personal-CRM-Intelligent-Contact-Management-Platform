@@ -11,265 +11,446 @@
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
     /* 页面特有微调 */
-    .dashboard-layout {
-      display: grid;
-      grid-template-columns: 1.6fr 1.2fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    
-    .charts-layout {
-      display: grid;
-      grid-template-columns: 1fr 1.8fr;
-      gap: 16px;
+    body {
+      background:
+        radial-gradient(circle at top center, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.82) 34%, rgba(244, 246, 249, 0.95) 76%),
+        linear-gradient(180deg, #f7f9fc 0%, #f2f5f9 100%);
     }
 
-    /* 紧凑响应式设计 - 避免 Y 轴滚动条以一屏完整展示 */
     .topbar {
-      padding: 16px 20px 8px 20px;
+      padding: 20px 36px 4px;
+      align-items: flex-start;
     }
+
+    .topbar-left {
+      gap: 2px;
+    }
+
+    .page-title {
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      color: #111827;
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 0;
+    }
+
+    .topbar-right {
+      gap: 18px;
+      padding-top: 2px;
+    }
+
+    .search-box {
+      width: 398px;
+      margin-right: 0;
+    }
+
+    .search-box input {
+      height: 44px;
+      padding: 10px 52px 10px 42px;
+      border-radius: 14px;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      box-shadow: 0 12px 28px -22px rgba(15, 23, 42, 0.45);
+      background: rgba(255, 255, 255, 0.94);
+      font-size: 12px;
+    }
+
+    .search-box .shortcut-tag {
+      padding: 3px 7px;
+      border-radius: 8px;
+      background-color: #f3f4f6;
+      color: #94a3b8;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .notification-bell {
+      width: 34px;
+      height: 34px;
+      margin-right: 0;
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .notification-bell:hover {
+      background-color: rgba(255, 255, 255, 0.78);
+    }
+
+    .notification-badge {
+      top: 0;
+      right: 0;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+    }
+
+    .user-dropdown-trigger {
+      gap: 10px;
+    }
+
+    .avatar-round {
+      width: 44px;
+      height: 44px;
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.7);
+    }
+
+    .dropdown-arrow {
+      width: 16px;
+      height: 16px;
+    }
+
     .content-body {
-      padding: 16px 20px;
-      gap: 16px;
+      padding: 8px 32px 18px;
+      gap: 12px;
     }
+
     .stats-grid {
-      gap: 16px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
     }
+
+    .card {
+      padding: 16px 16px 14px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 18px;
+      box-shadow: 0 14px 34px -28px rgba(15, 23, 42, 0.42), 0 2px 8px rgba(15, 23, 42, 0.03);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+    }
+
     .card.stat-card {
-      padding: 24px 20px;
+      min-height: 104px;
+      padding: 16px 16px;
       display: flex;
       align-items: center;
-      gap: 20px;
-      border-radius: 16px;
+      gap: 14px;
     }
+
     .stat-icon {
-      width: 64px;
-      height: 64px;
+      width: 52px;
+      height: 52px;
       border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
+
     .stat-icon i,
     .stat-icon svg {
-      width: 28px;
-      height: 28px;
+      width: 22px;
+      height: 22px;
+      stroke-width: 1.9;
     }
+
+    .stat-icon.primary {
+      background: linear-gradient(145deg, #eef4ff 0%, #e1ebff 100%);
+    }
+
+    .stat-icon.success {
+      background: linear-gradient(145deg, #eafbf0 0%, #d6f5df 100%);
+    }
+
+    .stat-icon.danger {
+      background: linear-gradient(145deg, #fff1eb 0%, #ffe4da 100%);
+      color: #f97316;
+    }
+
+    .stat-icon.warning {
+      background: linear-gradient(145deg, #f5ecff 0%, #ede1ff 100%);
+      color: #7c3aed;
+    }
+
     .stat-info {
       display: flex;
       flex-direction: column;
       gap: 2px;
     }
+
     .stat-label {
-      font-size: 13px;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-    .stat-value {
-      font-size: 32px;
-      font-weight: 700;
-      color: #111827;
-      line-height: 1;
-      margin: 2px 0;
-    }
-    .stat-change {
-      font-size: 11px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      margin-top: 2px;
-    }
-    .stat-change .change-value {
+      font-size: 12px;
+      color: #4b5563;
       font-weight: 600;
     }
+
+    .stat-value {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: #111827;
+      margin: 0;
+    }
+
+    .stat-change {
+      font-size: 10px;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 0;
+    }
+
+    .stat-change .change-value {
+      font-size: 11px;
+      font-weight: 700;
+    }
+
     .stat-change.up .change-value,
     .stat-change.up i {
       color: var(--color-success);
     }
+
     .stat-change.down .change-value,
     .stat-change.down i {
       color: var(--color-danger);
     }
+
     .stat-change.down.success-color .change-value,
     .stat-change.down.success-color i {
       color: var(--color-success) !important;
     }
-    .card {
-      padding: 12px 16px;
+
+    .stat-change.down.success-color {
+      color: var(--color-success) !important;
     }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(360px, 1fr);
+      gap: 12px;
+    }
+
+    .charts-layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) minmax(0, 1.75fr);
+      gap: 12px;
+    }
+
+    .panel-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 222px;
+    }
+
+    .chart-card {
+      min-height: 226px;
+    }
+
     .card-header {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      gap: 12px;
     }
-    .carousel-indicators {
-      margin-top: 8px;
-    }
-    .contact-card {
-      padding: 12px 6px;
-    }
-    .contact-card .card-avatar {
-      width: 52px;
-      height: 52px;
-      margin-bottom: 8px;
-    }
-    .contact-card .card-name {
-      font-size: 13.5px;
-    }
-    .contact-card .card-company {
-      font-size: 11px;
-      margin-bottom: 8px;
-    }
-    .contact-card .card-actions {
-      gap: 6px;
-    }
-    .contact-action-btn {
-      width: 28px;
-      height: 28px;
-    }
-    .todo-list-modern {
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
       gap: 8px;
     }
-    .todo-item {
-      padding: 8px 12px;
+
+    .card-title i {
+      color: #334155;
     }
-    .todo-title {
-      font-size: 13px;
+
+    .contacts-panel,
+    .todos-panel {
+      padding: 14px 14px 12px;
+      border-radius: 18px;
     }
-    .todo-time {
-      font-size: 10px;
+
+    .contacts-panel {
+      min-height: 204px;
+      padding-bottom: 6px;
+    }
+
+    .contacts-panel .card-title i,
+    .todos-panel .card-title i {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2;
+    }
+
+    .card-actions-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .action-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .action-link:hover {
+      color: var(--color-primary-hover);
+    }
+
+    .view-all-link {
+      display: inline-flex;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .view-all-link:hover {
+      color: var(--color-primary-hover);
     }
 
     /* 重要联系人卡片 */
     .carousel-container {
       position: relative;
       overflow: hidden;
-      margin-top: 10px;
+      margin-top: 4px;
     }
 
     .carousel-track {
-      display: flex;
-      gap: 12px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
       width: 100%;
+      transform: none !important;
     }
-    
+
     .contact-card {
-      background-color: #f9fafb;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      padding: 16px 8px;
-      flex: 1;
       min-width: 0;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: all var(--transition-fast);
+      padding: 12px 6px 6px;
+      border-radius: 16px;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.9) 100%);
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
     }
 
     .contact-card:hover {
-      background-color: #fff;
-      box-shadow: var(--shadow-md);
       transform: translateY(-2px);
+      border-color: rgba(191, 219, 254, 1);
+      box-shadow: 0 12px 28px -22px rgba(37, 99, 235, 0.4);
     }
 
     .contact-card .card-avatar {
-      width: 72px;
-      height: 72px;
+      width: 48px;
+      height: 48px;
       border-radius: var(--radius-full);
       object-fit: cover;
-      margin-bottom: 12px;
-      border: 3px solid #fff;
-      box-shadow: var(--shadow-sm);
+      margin-bottom: 8px;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.7);
+    }
+
+    .contact-card .badge {
+      margin-bottom: 6px;
+      padding: 3px 7px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
     }
 
     .contact-card .card-name {
-      font-size: 15px;
+      font-size: 11px;
       font-weight: 700;
-      margin-bottom: 4px;
+      color: #111827;
+      margin-bottom: 2px;
     }
 
     .contact-card .card-company {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-bottom: 12px;
+      min-height: 18px;
+      font-size: 9px;
+      color: #6b7280;
+      line-height: 1.1;
+      margin-bottom: 8px;
     }
 
     .contact-card .card-actions {
       display: flex;
-      gap: 8px;
-      margin-top: auto;
+      gap: 10px;
+      width: calc(100% + 12px);
+      margin: auto -6px -6px;
+      padding: 6px 0 0;
+      border-top: 1px solid rgba(226, 232, 240, 0.8);
+      justify-content: center;
     }
 
     .contact-action-btn {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       border-radius: var(--radius-full);
-      border: 1px solid var(--border-color);
+      border: 1px solid rgba(203, 213, 225, 0.9);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-muted);
+      color: #64748b;
       background-color: #fff;
       transition: all var(--transition-fast);
     }
 
     .contact-action-btn:hover {
       color: var(--color-primary);
-      border-color: var(--color-primary-border);
-      background-color: var(--color-primary-light);
+      border-color: rgba(191, 219, 254, 1);
+      background-color: rgba(239, 246, 255, 0.9);
     }
 
     .carousel-indicators {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      margin-top: 16px;
+      gap: 7px;
+      margin-top: 8px;
     }
 
     .indicator-dot {
-      width: 6px;
-      height: 6px;
+      width: 7px;
+      height: 7px;
       border-radius: var(--radius-full);
-      background-color: #d1d5db;
+      background-color: #d7dce5;
       cursor: pointer;
       transition: all var(--transition-fast);
     }
 
     .indicator-dot.active {
+      width: 16px;
       background-color: var(--color-primary);
-      width: 14px;
     }
 
     /* 今日事项 Todo 列表样式 */
     .todo-list-modern {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin-top: 10px;
+      gap: 6px;
+      margin-top: 0;
     }
 
     .todo-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      border-radius: var(--radius-md);
-      background-color: #f9fafb;
-      border: 1px solid var(--border-color);
-      transition: all var(--transition-fast);
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
       cursor: pointer;
     }
 
     .todo-item:hover {
-      background-color: #fff;
-      box-shadow: var(--shadow-sm);
-      border-color: var(--color-primary-border);
+      transform: translateY(-1px);
+      border-color: rgba(191, 219, 254, 1);
+      box-shadow: 0 10px 24px -22px rgba(37, 99, 235, 0.45);
     }
 
     .todo-item-left {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 12px;
       min-width: 0;
     }
@@ -281,58 +462,71 @@
       width: 20px;
       height: 20px;
       flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .todo-checkbox .unchecked-icon,
+    .todo-checkbox .checked-icon {
+      width: 18px;
+      height: 18px;
     }
 
     .todo-checkbox .unchecked-icon {
-      color: #9ca3af;
-      width: 20px;
-      height: 20px;
+      color: #b0b8c5;
     }
 
     .todo-checkbox .checked-icon {
       display: none;
-      width: 20px;
-      height: 20px;
       color: var(--color-success);
     }
 
     .todo-details {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       min-width: 0;
     }
 
     .todo-title {
-      font-size: 13.5px;
+      font-size: 12px;
       font-weight: 600;
-      color: var(--text-main);
-      transition: all var(--transition-fast);
+      color: #1f2937;
+      line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: all var(--transition-fast);
     }
 
     .todo-time {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      color: var(--text-muted);
+      gap: 3px;
+      font-size: 9px;
+      color: #6b7280;
     }
 
     .todo-item-right {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 8px;
       flex-shrink: 0;
     }
 
+    .todo-item-right .badge {
+      min-width: 28px;
+      justify-content: center;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
     .todo-status {
-      font-size: 11px;
-      font-weight: 600;
-      width: 45px;
+      min-width: 42px;
       text-align: right;
+      font-size: 10px;
+      font-weight: 700;
     }
 
     .todo-status.pending {
@@ -344,15 +538,14 @@
       display: none;
     }
 
-    /* 选中完成状态 */
     .todo-item.completed {
-      background-color: #f9fafb;
-      opacity: 0.6;
+      opacity: 0.7;
+      background: rgba(248, 250, 252, 0.92);
     }
 
     .todo-item.completed .todo-title {
+      color: #94a3b8;
       text-decoration: line-through;
-      color: var(--text-muted);
     }
 
     .todo-item.completed .unchecked-icon {
@@ -371,6 +564,38 @@
       display: inline;
     }
 
+    #genderChart {
+      height: 176px !important;
+    }
+
+    #trendChart {
+      height: 176px !important;
+    }
+
+    .floating-agent-btn {
+      width: 58px;
+      height: 58px;
+      bottom: 26px;
+      right: 26px;
+      background: linear-gradient(135deg, #3f73ff 0%, #2f5ef7 100%);
+      box-shadow: 0 16px 32px -18px rgba(37, 99, 235, 0.65);
+    }
+
+    .floating-agent-btn:hover {
+      transform: translateY(-2px) scale(1.01);
+    }
+
+    @media (max-width: 1360px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .dashboard-layout,
+      .charts-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     /* 折叠边栏补充样式 */
     .sidebar-menu-wrapper {
       display: flex;
@@ -379,11 +604,15 @@
     }
 
     /* ================= Agent 抽屉样式 ================= */
+    :root {
+      --agent-drawer-width: 360px;
+    }
+
     .agent-drawer {
       position: fixed;
       top: 0;
       right: 0;
-      width: 360px;
+      width: var(--agent-drawer-width);
       height: 100vh;
       background-color: var(--bg-card);
       border-left: 1px solid var(--border-color);
@@ -404,7 +633,48 @@
     }
 
     .main-wrapper.drawer-open {
-      margin-right: 360px;
+      margin-right: var(--agent-drawer-width);
+    }
+
+    .agent-drawer.resizing,
+    .main-wrapper.drawer-resizing {
+      transition: none;
+    }
+
+    body.drawer-resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    .agent-drawer-resizer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 12px;
+      height: 100%;
+      transform: translateX(-50%);
+      cursor: col-resize;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .agent-drawer-resizer::before {
+      content: "";
+      width: 4px;
+      height: 72px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.2);
+      transition: background-color var(--transition-fast), opacity var(--transition-fast);
+      opacity: 0;
+    }
+
+    .agent-drawer:hover .agent-drawer-resizer::before,
+    .agent-drawer.resizing .agent-drawer-resizer::before,
+    .agent-drawer-resizer:hover::before {
+      opacity: 1;
+      background: rgba(59, 130, 246, 0.45);
     }
     
     /* 抽屉打开时隐藏悬浮按钮 */
@@ -731,7 +1001,7 @@
       <div class="sidebar-menu-wrapper">
         <div class="sidebar-brand">
           <div class="brand-icon">
-            <i data-lucide="bot"></i>
+            <i data-lucide="users-round"></i>
           </div>
           <div class="brand-info">
             <span class="brand-name">Personal CRM</span>
@@ -764,8 +1034,8 @@
               <span>黑名单</span>
             </a>
           </li>
-          <li class="menu-item" id="sidebarAgentMenu">
-            <a href="javascript:void(0);" onclick="toggleAgentDrawer()">
+          <li class="menu-item">
+            <a href="./agent.html">
               <i data-lucide="sparkles"></i>
               <span>智能助手</span>
             </a>
@@ -787,7 +1057,7 @@
         
         <a href="./settings.html" class="user-profile-bar">
           <div class="user-avatar-container">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
             <span class="user-online-dot"></span>
           </div>
           <div class="user-meta">
@@ -827,7 +1097,7 @@
 
           <div class="user-dropdown" id="userDropdown">
             <div class="user-dropdown-trigger" onclick="toggleUserDropdown(event)">
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="avatar-round" style="border: 2px solid var(--color-primary-border);">
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="avatar-round" style="border: 2px solid var(--color-primary-border);">
               <i data-lucide="chevron-down" class="dropdown-arrow"></i>
             </div>
             <div class="dropdown-menu" id="userDropdownMenu">
@@ -864,7 +1134,7 @@
             </div>
             <div class="stat-info">
               <span class="stat-label">今日事项</span>
-              <span class="stat-value">5</span>
+              <span class="stat-value">4</span>
               <span class="stat-change up">
                 较昨日 <span class="change-value">+2</span>
                 <i data-lucide="arrow-up-right" style="width:12px;height:12px;"></i>
@@ -904,13 +1174,13 @@
         <!-- 中部两栏内容 -->
         <section class="dashboard-layout">
           <!-- 左侧：重要联系人 -->
-          <div class="card" style="display: flex; flex-direction: column;">
+          <div class="card panel-card contacts-panel">
             <div class="card-header">
               <h3 class="card-title">
                 <i data-lucide="users"></i>
                 重要联系人
               </h3>
-              <a href="./contacts.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
+              <a href="./contacts.html" class="view-all-link">查看全部</a>
             </div>
             
             <div class="carousel-container">
@@ -918,7 +1188,7 @@
                 <!-- 卡片 1 -->
                 <div class="contact-card">
                   <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80" alt="张一鸣" class="card-avatar">
-                  <span class="badge tag-class" style="margin-bottom: 8px;">同学</span>
+                  <span class="badge tag-class">同学</span>
                   <div class="card-name">张一鸣</div>
                   <div class="card-company">清华大学</div>
                   <div class="card-actions">
@@ -929,7 +1199,7 @@
                 <!-- 卡片 2 -->
                 <div class="contact-card">
                   <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&auto=format&fit=crop&q=80" alt="李老师" class="card-avatar">
-                  <span class="badge tag-important" style="margin-bottom: 8px; background-color:#f0fdf4; color:#15803d; border: 1px solid #bbf7d0;">老师</span>
+                  <span class="badge tag-important" style="background-color:#f0fdf4; color:#15803d; border: 1px solid #bbf7d0;">老师</span>
                   <div class="card-name">李老师</div>
                   <div class="card-company">清华大学计算机系</div>
                   <div class="card-actions">
@@ -940,7 +1210,7 @@
                 <!-- 卡片 3 -->
                 <div class="contact-card">
                   <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80" alt="王洁" class="card-avatar">
-                  <span class="badge tag-friend" style="margin-bottom: 8px; background-color:#fff7ed; color:#c2410c; border: 1px solid #fed7aa;">实习</span>
+                  <span class="badge tag-friend" style="background-color:#fff7ed; color:#c2410c; border: 1px solid #fed7aa;">实习</span>
                   <div class="card-name">王洁</div>
                   <div class="card-company">字节跳动</div>
                   <div class="card-actions">
@@ -951,7 +1221,7 @@
                 <!-- 卡片 4 -->
                 <div class="contact-card">
                   <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" alt="刘思琪" class="card-avatar">
-                  <span class="badge tag-class" style="margin-bottom: 8px;">同学</span>
+                  <span class="badge tag-class">同学</span>
                   <div class="card-name">刘思琪</div>
                   <div class="card-company">北京大学</div>
                   <div class="card-actions">
@@ -966,18 +1236,17 @@
               <span class="indicator-dot" onclick="slideCarousel(1)"></span>
               <span class="indicator-dot" onclick="slideCarousel(2)"></span>
               <span class="indicator-dot" onclick="slideCarousel(3)"></span>
-              <span class="indicator-dot" onclick="slideCarousel(4)"></span>
             </div>
           </div>
 
           <!-- 右侧：今日事项 -->
-          <div class="card" style="display: flex; flex-direction: column;">
+          <div class="card panel-card todos-panel">
             <div class="card-header">
               <h3 class="card-title">
                 <i data-lucide="list-todo"></i>
                 今日事项
               </h3>
-              <a href="./todos.html" class="btn btn-secondary btn-sm" style="font-weight: 600; font-size:12px;">查看全部</a>
+              <a href="./todos.html" class="view-all-link">查看全部</a>
             </div>
             <div class="todo-list-modern">
               <!-- Item 1 -->
@@ -1046,8 +1315,8 @@
                 </div>
               </div>
 
-              <!-- Item 4 (已完成) -->
-              <div class="todo-item completed" id="todo4" onclick="toggleTodo('todo4')">
+              <!-- Item 4 -->
+              <div class="todo-item" id="todo4" onclick="toggleTodo('todo4')">
                 <div class="todo-item-left">
                   <div class="todo-checkbox">
                     <i data-lucide="circle" class="unchecked-icon"></i>
@@ -1067,28 +1336,6 @@
                   <span class="todo-status completed-text">已完成</span>
                 </div>
               </div>
-
-              <!-- Item 5 -->
-              <div class="todo-item" id="todo5" onclick="toggleTodo('todo5')">
-                <div class="todo-item-left">
-                  <div class="todo-checkbox">
-                    <i data-lucide="circle" class="unchecked-icon"></i>
-                    <i data-lucide="check-circle-2" class="checked-icon"></i>
-                  </div>
-                  <div class="todo-details">
-                    <span class="todo-title">约见王洁讨论实习转正</span>
-                    <span class="todo-time">
-                      <i data-lucide="clock" style="width:12px;height:12px;"></i>
-                      17:30
-                    </span>
-                  </div>
-                </div>
-                <div class="todo-item-right">
-                  <span class="badge badge-priority-emergency">高</span>
-                  <span class="todo-status pending">待完成</span>
-                  <span class="todo-status completed-text">已完成</span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -1096,27 +1343,27 @@
         <!-- 底部图表区 -->
         <section class="charts-layout">
           <!-- 性别比例环形图 -->
-          <div class="card">
-            <div class="card-header" style="margin-bottom: 10px;">
+          <div class="card chart-card">
+            <div class="card-header">
               <h3 class="card-title">联系人性别比例</h3>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="info" style="color:var(--text-muted);width:14px;height:14px;cursor:pointer;" title="说明"></i>
-                <a href="./contacts.html" style="font-size:12px;color:var(--color-primary);font-weight:600;text-decoration:none;">查看详情</a>
+              <div class="card-actions-inline">
+                <i data-lucide="info" style="width:14px;height:14px;cursor:pointer;" title="说明"></i>
+                <a href="./contacts.html" class="action-link">查看详情</a>
               </div>
             </div>
-            <div id="genderChart" style="width: 100%; height: 160px;"></div>
+            <div id="genderChart" style="width: 100%;"></div>
           </div>
 
           <!-- 未来 7 天趋势 -->
-          <div class="card">
-            <div class="card-header" style="margin-bottom: 10px;">
+          <div class="card chart-card">
+            <div class="card-header">
               <h3 class="card-title">未来 7 天事项趋势</h3>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="info" style="color:var(--text-muted);width:14px;height:14px;cursor:pointer;" title="说明"></i>
-                <a href="./todos.html" style="font-size:12px;color:var(--color-primary);font-weight:600;text-decoration:none;">查看详情</a>
+              <div class="card-actions-inline">
+                <i data-lucide="info" style="width:14px;height:14px;cursor:pointer;" title="说明"></i>
+                <a href="./todos.html" class="action-link">查看详情</a>
               </div>
             </div>
-            <div id="trendChart" style="width: 100%; height: 160px;"></div>
+            <div id="trendChart" style="width: 100%;"></div>
           </div>
         </section>
       </div>
@@ -1130,6 +1377,14 @@
 
   <!-- Agent 抽屉 -->
   <div class="agent-drawer" id="agentDrawer">
+    <div
+      class="agent-drawer-resizer"
+      id="agentDrawerResizer"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="拖拽调整智能助手侧栏宽度"
+      title="拖拽调整宽度"
+    ></div>
     <div class="chat-header">
       <div class="chat-header-left">
         <div class="chat-header-icon">
@@ -1143,17 +1398,13 @@
       </div>
     </div>
 
-    <!-- 对话内容滚存区 -->
     <div class="chat-messages-container" id="drawerChatContainer">
-      <!-- 机器欢迎语 -->
       <div class="message-bubble-wrapper assistant">
         <div class="bubble-content">
           👋 你好，我是你的智能联系人助手。你可以告诉我你想创建的事项，我会帮你识别并创建。
         </div>
       </div>
 
-      <!-- 静态演示的初始聊天流 -->
-      <!-- 用户 -->
       <div class="message-bubble-wrapper user">
         <div class="bubble-content">
           <div class="bubble-text">下周三上午9点联系张三，确认实习材料的事情</div>
@@ -1164,7 +1415,6 @@
         </div>
       </div>
 
-      <!-- 机器回复识别结果 -->
       <div class="message-bubble-wrapper assistant">
         <div class="bubble-content">
           好的，已为您识别到以下信息：
@@ -1200,7 +1450,6 @@
       </div>
     </div>
 
-    <!-- 输入栏 -->
     <div class="chat-input-area">
       <div class="chat-input-card">
         <textarea id="drawerChatInput" placeholder="告诉我你想做什么..." onkeydown="handleDrawerInputKeydown(event)"></textarea>
@@ -1212,12 +1461,21 @@
         </div>
       </div>
     </div>
-    <!-- 底部小字说明 -->
     <div class="chat-footer-note">内容由 AI 生成，请仔细核对</div>
   </div>
 
   <script>
-    // 初始化 Lucide 图标
+    const SIDEBAR_STATE_KEY = 'personal-crm-sidebar-collapsed';
+
+    function syncSidebarState() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const isCollapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+      sidebar.classList.toggle('collapsed', isCollapsed);
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+    }
+
+    syncSidebarState();
     lucide.createIcons();
 
     // 头像下拉菜单控制器
@@ -1242,19 +1500,64 @@
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
     document.getElementById('currentDate').innerText = new Date().toLocaleDateString('zh-CN', dateOptions);
 
-    // ================== Agent 抽屉控制器 ==================
+    const agentDrawer = document.getElementById('agentDrawer');
+    const agentDrawerResizer = document.getElementById('agentDrawerResizer');
+    const mainWrapper = document.querySelector('.main-wrapper');
+    const floatingAgentBtn = document.getElementById('floatingAgentBtn');
+    const rootStyle = document.documentElement;
+    const MIN_AGENT_DRAWER_WIDTH = 320;
+    const DEFAULT_AGENT_DRAWER_WIDTH = 360;
+    const MAX_AGENT_DRAWER_WIDTH = 620;
+    let isDrawerResizing = false;
+
+    function getAgentDrawerMaxWidth() {
+      return Math.min(MAX_AGENT_DRAWER_WIDTH, Math.max(380, window.innerWidth - 320));
+    }
+
+    function setAgentDrawerWidth(nextWidth) {
+      const clampedWidth = Math.min(getAgentDrawerMaxWidth(), Math.max(MIN_AGENT_DRAWER_WIDTH, nextWidth));
+      rootStyle.style.setProperty('--agent-drawer-width', `${clampedWidth}px`);
+      if (genderChart) genderChart.resize();
+      if (trendChart) trendChart.resize();
+    }
+
+    function startAgentDrawerResize(event) {
+      event.preventDefault();
+      isDrawerResizing = true;
+      document.body.classList.add('drawer-resizing');
+      agentDrawer.classList.add('resizing');
+      mainWrapper.classList.add('drawer-resizing');
+    }
+
+    function handleAgentDrawerResize(event) {
+      if (!isDrawerResizing) {
+        return;
+      }
+
+      const nextWidth = window.innerWidth - event.clientX;
+      setAgentDrawerWidth(nextWidth);
+    }
+
+    function stopAgentDrawerResize() {
+      if (!isDrawerResizing) {
+        return;
+      }
+
+      isDrawerResizing = false;
+      document.body.classList.remove('drawer-resizing');
+      agentDrawer.classList.remove('resizing');
+      mainWrapper.classList.remove('drawer-resizing');
+    }
+
+    agentDrawerResizer.addEventListener('mousedown', startAgentDrawerResize);
+    document.addEventListener('mousemove', handleAgentDrawerResize);
+    document.addEventListener('mouseup', stopAgentDrawerResize);
+
     function toggleAgentDrawer() {
-      const drawer = document.getElementById('agentDrawer');
-      const wrapper = document.querySelector('.main-wrapper');
-      const floatBtn = document.getElementById('floatingAgentBtn');
-      const menu = document.getElementById('sidebarAgentMenu');
+      agentDrawer.classList.toggle('open');
+      mainWrapper.classList.toggle('drawer-open');
+      floatingAgentBtn.classList.toggle('hidden');
 
-      drawer.classList.toggle('open');
-      wrapper.classList.toggle('drawer-open');
-      floatBtn.classList.toggle('hidden');
-      menu.classList.toggle('active');
-
-      // 打开/关闭抽屉时，我们需要调整 ECharts 的大小，并且重排
       setTimeout(() => {
         if (genderChart) genderChart.resize();
         if (trendChart) trendChart.resize();
@@ -1278,7 +1581,6 @@
       const now = new Date();
       const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
 
-      // 追加用户气泡 - 无头像，含时间和双勾已读
       const userMsg = document.createElement('div');
       userMsg.className = "message-bubble-wrapper user";
       userMsg.innerHTML = `
@@ -1294,7 +1596,6 @@
       lucide.createIcons();
       container.scrollTop = container.scrollHeight;
 
-      // 模拟回复
       setTimeout(() => {
         const aiMsg = document.createElement('div');
         aiMsg.className = "message-bubble-wrapper assistant";
@@ -1398,8 +1699,7 @@
 
     document.addEventListener("keydown", function(e) {
       if (e.key === 'Escape') {
-        const drawer = document.getElementById('agentDrawer');
-        if (drawer && drawer.classList.contains('open')) {
+        if (agentDrawer && agentDrawer.classList.contains('open')) {
           toggleAgentDrawer();
         }
       }
@@ -1410,12 +1710,9 @@
       const sidebar = document.getElementById('sidebar');
       const toggleIcon = document.getElementById('toggleIcon');
       sidebar.classList.toggle('collapsed');
-      
-      if (sidebar.classList.contains('collapsed')) {
-        toggleIcon.setAttribute('data-lucide', 'chevron-right');
-      } else {
-        toggleIcon.setAttribute('data-lucide', 'chevron-left');
-      }
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isCollapsed));
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
       lucide.createIcons();
 
       // 折叠时调整图表大小
@@ -1434,13 +1731,10 @@
     // 轮播图控制
     let activeSlide = 0;
     function slideCarousel(index) {
-      const track = document.getElementById('carouselTrack');
       const dots = document.querySelectorAll('.indicator-dot');
-      
+
       activeSlide = index;
-      const offset = -index * 100;
-      track.style.transform = `translateX(${offset}%)`;
-      
+
       dots.forEach((dot, i) => {
         if (i === index) dot.classList.add('active');
         else dot.classList.remove('active');
@@ -1462,12 +1756,14 @@
         },
         legend: {
           orient: 'vertical',
-          right: '5%',
+          right: '4%',
           top: 'center',
           icon: 'circle',
-          itemWidth: 8,
+          itemWidth: 10,
+          itemHeight: 10,
+          itemGap: 18,
           textStyle: {
-            fontSize: 11,
+            fontSize: 12,
             color: '#6b7280'
           },
           formatter: function(name) {
@@ -1481,8 +1777,8 @@
           {
             name: '性别分布',
             type: 'pie',
-            radius: ['60%', '80%'],
-            center: ['35%', '50%'],
+            radius: ['62%', '84%'],
+            center: ['31%', '52%'],
             avoidLabelOverlap: false,
             label: {
               show: true,
@@ -1490,13 +1786,13 @@
               formatter: '{total|128}\n{sub|总人数}',
               rich: {
                 total: {
-                  fontSize: 22,
+                  fontSize: 24,
                   fontWeight: 'bold',
-                  lineHeight: 30,
+                  lineHeight: 34,
                   color: '#1f2937'
                 },
                 sub: {
-                  fontSize: 11,
+                  fontSize: 12,
                   color: '#9ca3af'
                 }
               }
@@ -1535,10 +1831,10 @@
 
       const trendOption = {
         grid: {
-          top: '10%',
-          left: '3%',
-          right: '5%',
-          bottom: '15%',
+          top: '16%',
+          left: '4%',
+          right: '3%',
+          bottom: '12%',
           containLabel: true
         },
         xAxis: {
@@ -1553,20 +1849,29 @@
           },
           axisLabel: {
             color: '#9ca3af',
-            fontSize: 10
+            fontSize: 11
           }
         },
         yAxis: {
           type: 'value',
+          min: 0,
+          max: 20,
+          interval: 5,
           splitLine: {
             lineStyle: {
               type: 'dashed',
-              color: '#f3f4f6'
+              color: '#e8edf5'
             }
+          },
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
           },
           axisLabel: {
             color: '#9ca3af',
-            fontSize: 10
+            fontSize: 11
           }
         },
         tooltip: {
@@ -1578,16 +1883,16 @@
             type: 'line',
             smooth: true,
             symbol: 'circle',
-            symbolSize: 6,
+            symbolSize: 8,
             itemStyle: {
               color: '#2563eb'
             },
             lineStyle: {
-              width: 3
+              width: 3.5
             },
             areaStyle: {
               color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: 'rgba(37, 99, 235, 0.2)' },
+                { offset: 0, color: 'rgba(37, 99, 235, 0.16)' },
                 { offset: 1, color: 'rgba(37, 99, 235, 0.0)' }
               ])
             },
@@ -1596,7 +1901,7 @@
               position: 'top',
               color: '#1f2937',
               fontWeight: 'bold',
-              fontSize: 10
+              fontSize: 12
             }
           }
         ]
@@ -1606,6 +1911,7 @@
 
     // 窗口尺寸自适应
     window.addEventListener('resize', function() {
+      setAgentDrawerWidth(parseInt(getComputedStyle(rootStyle).getPropertyValue('--agent-drawer-width'), 10) || DEFAULT_AGENT_DRAWER_WIDTH);
       genderChart.resize();
       trendChart.resize();
     });

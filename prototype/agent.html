@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能助手 - Personal CRM</title>
+  <link rel="stylesheet" href="./assets/styles.css">
+  <!-- Lucide 图标 -->
+  <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
+  <style>
+    /* 智能助手两栏布局 */
+    .agent-layout {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      height: calc(100vh - 120px);
+    }
+
+    /* 左侧指令说明面板 */
+    .instruction-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .instruction-group-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .instruction-chip {
+      background-color: #f9fafb;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all var(--transition-fast);
+      margin-bottom: 8px;
+    }
+
+    .instruction-chip:hover {
+      background-color: var(--color-primary-light);
+      border-color: var(--color-primary-border);
+      color: var(--color-primary);
+    }
+
+    /* 右侧对话面板 */
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background-color: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #f9fafb;
+    }
+
+    .chat-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chat-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-success);
+    }
+
+    .chat-header-actions {
+      display: flex;
+      gap: 12px;
+      color: var(--text-muted);
+    }
+
+    .chat-header-actions i {
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+
+    .chat-header-actions i:hover {
+      color: var(--text-main);
+    }
+
+    /* 对话内容滚存区 */
+    .chat-messages-container {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background-color: var(--bg-body);
+    }
+
+    /* 气泡 - 去除头像 */
+    .message-bubble-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+    }
+
+    .message-bubble-wrapper.user {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .message-bubble-wrapper.assistant {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .bubble-content {
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      border-radius: 16px;
+      position: relative;
+    }
+
+    .message-bubble-wrapper.assistant .bubble-content {
+      background-color: #f0f2fe; /* 机器回复淡紫蓝气泡 */
+      color: #334155;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-bubble-wrapper.user .bubble-content {
+      background-color: #eff6ff; /* 用户回复浅蓝气泡 */
+      color: #1e293b;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* 用户气泡右下角时间与双勾已读标记 */
+    .bubble-meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+      font-size: 10px;
+      color: #8b9bb4;
+      margin-top: 6px;
+      margin-bottom: -4px;
+      margin-right: -2px;
+    }
+
+    .bubble-meta .read-icon {
+      width: 12px;
+      height: 12px;
+      color: #3b82f6; /* 蓝色双勾 */
+      display: inline-block;
+    }
+
+    /* 结构化确认卡片 */
+    .structured-card {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background-color: #fff;
+      padding: 16px;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      width: 320px;
+    }
+
+    .structured-card-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .structured-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+      width: 100%;
+    }
+
+    .structured-row:last-of-type {
+      border-bottom: none;
+    }
+
+    .structured-row i {
+      color: #3b82f6; /* 蓝色图标 */
+      margin-right: 8px;
+      margin-top: 1px;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .structured-label {
+      width: 60px;
+      color: #64748b;
+      font-size: 12.5px;
+      font-weight: 500;
+      flex-shrink: 0;
+    }
+
+    .structured-value {
+      flex: 1;
+      color: #1e293b;
+      font-size: 12.5px;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .structured-card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .structured-card-actions button {
+      flex: 1;
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .structured-card-actions .btn-confirm {
+      background-color: #3b82f6;
+      color: #fff;
+      border: none;
+    }
+
+    .structured-card-actions .btn-confirm:hover {
+      background-color: #2563eb;
+    }
+
+    .structured-card-actions .btn-modify {
+      background-color: #fff;
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+    }
+
+    .structured-card-actions .btn-modify:hover {
+      background-color: #eff6ff;
+    }
+
+    .structured-card-actions .btn-cancel {
+      background-color: #fff;
+      border: 1px solid #cbd5e1;
+      color: #64748b;
+    }
+
+    .structured-card-actions .btn-cancel:hover {
+      background-color: #f8fafc;
+    }
+
+    /* 输入栏 */
+    .chat-input-area {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .chat-input-card {
+      background-color: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color var(--transition-fast);
+    }
+
+    .chat-input-card:focus-within {
+      border-color: #3b82f6;
+    }
+
+    .chat-input-card textarea {
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      font-size: 13px;
+      color: var(--text-main);
+      background: transparent;
+      font-family: inherit;
+      min-height: 54px;
+    }
+
+    .chat-input-card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .chat-input-card-bottom i.clip-icon {
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+
+    .chat-input-card-bottom i.clip-icon:hover {
+      color: #334155;
+    }
+
+    .chat-send-btn-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #8b9dfa;
+      color: #fff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color var(--transition-fast);
+    }
+
+    .chat-send-btn-circle:hover {
+      background-color: #7286f8;
+    }
+
+    .chat-send-btn-circle i {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* 底部提示小字 */
+    .chat-footer-note {
+      font-size: 10.5px;
+      color: #94a3b8;
+      text-align: center;
+      padding-bottom: 12px;
+      background-color: #fff;
+      margin-top: -4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- 侧边栏 -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-menu-wrapper">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i data-lucide="users-round"></i>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">Personal CRM</span>
+            <span class="brand-desc">智能联系人管理系统</span>
+          </div>
+        </div>
+
+        <ul class="sidebar-menu">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i data-lucide="layout-dashboard"></i>
+              <span>工作台</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./contacts.html">
+              <i data-lucide="users"></i>
+              <span>联系人</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./todos.html">
+              <i data-lucide="calendar-check"></i>
+              <span>事项提醒</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./blacklist.html">
+              <i data-lucide="shield-alert"></i>
+              <span>黑名单</span>
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./agent.html">
+              <i data-lucide="sparkles"></i>
+              <span>智能助手</span>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./settings.html">
+              <i data-lucide="settings"></i>
+              <span>设置</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="upgrade-card">
+          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
+          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
+        </div>
+        
+        <a href="./settings.html" class="user-profile-bar">
+          <div class="user-avatar-container">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Avatar" class="user-avatar">
+            <span class="user-online-dot"></span>
+          </div>
+          <div class="user-meta">
+            <span class="user-name">Ethan</span>
+            <span class="user-email">ethan@example.com</span>
+          </div>
+        </a>
+        
+        <button class="collapsed-toggle" id="collapsedToggle" onclick="toggleSidebar()">
+          <i data-lucide="chevron-left" id="toggleIcon"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- 主体区域 -->
+    <main class="main-wrapper">
+      <!-- 顶栏 -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="page-title-group">
+            <h2 class="page-title">智能助手</h2>
+          </div>
+          <span class="page-subtitle">自然语言查询、批量操作与任务预设确认</span>
+        </div>
+      </header>
+
+      <!-- 主体内容 -->
+      <div class="content-body" style="padding-bottom: 24px;">
+        
+        <div class="agent-layout">
+          <!-- 左栏：快捷指令 -->
+          <div class="card instruction-card">
+            <div>
+              <h4 class="instruction-group-title">快捷智能指令</h4>
+              
+              <div class="instruction-chip" onclick="clickInstruction('下周三上午9点联系张雨薇确认合作事宜')">
+                <span>下周三上午9点联系张雨薇确认合作事宜</span>
+                <i data-lucide="send" style="width:14px;height:14px;color:var(--text-muted);"></i>
+              </div>
+
+              <div class="instruction-chip" onclick="clickInstruction('帮我查一下上周联系过的同学列表')">
+                <span>帮我查一下上周联系过的同学列表</span>
+                <i data-lucide="send" style="width:14px;height:14px;color:var(--text-muted);"></i>
+              </div>
+
+              <div class="instruction-chip" onclick="clickInstruction('提醒我给李老师发送最新的实习周报')">
+                <span>提醒我给李老师发送最新的实习周报</span>
+                <i data-lucide="send" style="width:14px;height:14px;color:var(--text-muted);"></i>
+              </div>
+            </div>
+
+            <div style="margin-top: 10px;">
+              <h4 class="instruction-group-title">关于 Contact Agent</h4>
+              <p style="font-size:12px;color:var(--text-muted);line-height:1.6;">
+                Contact Agent 是您的智能 CRM 助理。您可以通过打字直接对联系人和代办事项进行管理。<br><br>
+                对于创建代办、加入黑名单等写操作，系统在识别后会生成一张<strong>确认卡片</strong>。点击“确认执行”后，动作才会最终落实到数据库，确保安全防误触。
+              </p>
+            </div>
+          </div>
+
+          <!-- 右栏：对话窗 -->
+          <div class="chat-panel">
+            <div class="chat-header">
+              <div class="chat-header-left">
+                <div class="chat-header-icon">
+                  <i data-lucide="sparkles"></i>
+                </div>
+                <strong style="font-size: 14px;">Contact Agent</strong>
+              </div>
+              <div class="chat-header-actions">
+                <i data-lucide="rotate-ccw" onclick="resetChat()" title="清空对话"></i>
+                <i data-lucide="more-horizontal"></i>
+              </div>
+            </div>
+
+            <!-- 消息容器 -->
+            <div class="chat-messages-container" id="chatContainer">
+              <!-- 机器欢迎语 -->
+              <div class="message-bubble-wrapper assistant">
+                <div class="bubble-content">
+                  👋 你好，我是你的智能联系人助手。你可以告诉我你想创建的事项，我会帮你识别并创建。
+                </div>
+              </div>
+
+              <!-- 静态演示：高还原度的对话记录 -->
+              <!-- 用户话 -->
+              <div class="message-bubble-wrapper user">
+                <div class="bubble-content">
+                  <div class="bubble-text">下周三上午9点联系张雨薇确认实习材料的事情。</div>
+                  <div class="bubble-meta">
+                    <span class="bubble-time">15:42</span>
+                    <i data-lucide="check-check" class="read-icon"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 机器识别回复 -->
+              <div class="message-bubble-wrapper assistant" id="agentResponse">
+                <div class="bubble-content">
+                  好的，已为您识别到以下信息：
+                  
+                  <!-- 结构化卡片 -->
+                  <div class="structured-card">
+                    <div class="structured-card-title">识别结果</div>
+                    
+                    <div class="structured-row">
+                      <i data-lucide="user"></i>
+                      <span class="structured-label">联系人：</span>
+                      <span class="structured-value">张雨薇</span>
+                    </div>
+
+                    <div class="structured-row">
+                      <i data-lucide="calendar"></i>
+                      <span class="structured-label">时间：</span>
+                      <span class="structured-value">下周三 09:00<br><span style="font-size:10px;color:var(--text-muted);font-weight:normal;">(5月28日 周三)</span></span>
+                    </div>
+
+                    <div class="structured-row">
+                      <i data-lucide="file-text"></i>
+                      <span class="structured-label">内容：</span>
+                      <span class="structured-value">联系张三确认实习材料</span>
+                    </div>
+
+                    <div class="structured-card-actions">
+                      <button class="btn-confirm" onclick="confirmExecution(this)">确认创建</button>
+                      <button class="btn-modify" onclick="modifyExecution(this)">修改</button>
+                      <button class="btn-cancel" onclick="cancelExecution(this)">取消</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 输入栏 -->
+            <div class="chat-input-area">
+              <div class="chat-input-card">
+                <textarea id="chatInput" placeholder="告诉我你想做什么..." onkeydown="handleInputKeydown(event)"></textarea>
+                <div class="chat-input-card-bottom">
+                  <i data-lucide="paperclip" class="clip-icon"></i>
+                  <button class="chat-send-btn-circle" onclick="sendUserMessage()">
+                    <i data-lucide="send"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <!-- 底部小字说明 -->
+            <div class="chat-footer-note">内容由 AI 生成，请仔细核对</div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SIDEBAR_STATE_KEY = 'personal-crm-sidebar-collapsed';
+
+    function syncSidebarState() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const isCollapsed = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true';
+      sidebar.classList.toggle('collapsed', isCollapsed);
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+    }
+
+    syncSidebarState();
+    lucide.createIcons();
+
+    // 侧边栏折叠
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleIcon = document.getElementById('toggleIcon');
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      localStorage.setItem(SIDEBAR_STATE_KEY, String(isCollapsed));
+      toggleIcon.setAttribute('data-lucide', isCollapsed ? 'chevron-right' : 'chevron-left');
+      lucide.createIcons();
+    }
+
+    // 快捷指令点击
+    function clickInstruction(text) {
+      document.getElementById('chatInput').value = text;
+      sendUserMessage();
+    }
+
+    // 发送用户消息
+    function sendUserMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      input.value = "";
+
+      const container = document.getElementById('chatContainer');
+      const now = new Date();
+      const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+      // 1. 追加用户气泡 - 无头像，含时间和双勾已读
+      const userMsg = document.createElement('div');
+      userMsg.className = "message-bubble-wrapper user";
+      userMsg.innerHTML = `
+        <div class="bubble-content">
+          <div class="bubble-text">${text}</div>
+          <div class="bubble-meta">
+            <span class="bubble-time">${timeStr}</span>
+            <i data-lucide="check-check" class="read-icon"></i>
+          </div>
+        </div>
+      `;
+      container.appendChild(userMsg);
+      lucide.createIcons();
+      scrollToBottom();
+
+      // 2. 模拟 AI 思考并回复
+      setTimeout(() => {
+        const aiMsg = document.createElement('div');
+        aiMsg.className = "message-bubble-wrapper assistant";
+        
+        // 简单应答分配
+        let replyContent = "";
+        if (text.includes('张雨薇')) {
+          replyContent = `
+            好的，已为您识别到以下信息：
+            <div class="structured-card">
+              <div class="structured-card-title">识别结果</div>
+              
+              <div class="structured-row">
+                <i data-lucide="user"></i>
+                <span class="structured-label">联系人：</span>
+                <span class="structured-value">张雨薇</span>
+              </div>
+              
+              <div class="structured-row">
+                <i data-lucide="calendar"></i>
+                <span class="structured-label">时间：</span>
+                <span class="structured-value">2026-06-17 09:00</span>
+              </div>
+              
+              <div class="structured-row">
+                <i data-lucide="file-text"></i>
+                <span class="structured-label">内容：</span>
+                <span class="structured-value">联系张雨薇确认合作事宜</span>
+              </div>
+
+              <div class="structured-card-actions">
+                <button class="btn-confirm" onclick="confirmExecution(this)">确认创建</button>
+                <button class="btn-modify" onclick="modifyExecution(this)">修改</button>
+                <button class="btn-cancel" onclick="cancelExecution(this)">取消</button>
+              </div>
+            </div>
+          `;
+        } else if (text.includes('查找') || text.includes('查一下')) {
+          replyContent = `
+            正在为您检索数据库...<br><br>
+            查找到符合条件的联系人共 <strong>2</strong> 人：<br>
+            1. <strong>张雨薇</strong> (手机: 13800138000) - 同学 / 朋友<br>
+            2. <strong>李明轩</strong> (手机: 13912345678) - 同学
+          `;
+        } else {
+          replyContent = `
+            收到指令！但我目前是静态演示助手。你可以试着点击左侧的<strong>快捷智能指令</strong>，来体验高保真的写操作确认交互！
+          `;
+        }
+
+        aiMsg.innerHTML = `
+          <div class="bubble-content">${replyContent}</div>
+        `;
+
+        container.appendChild(aiMsg);
+        lucide.createIcons();
+        scrollToBottom();
+      }, 1000);
+    }
+
+    function handleInputKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendUserMessage();
+      }
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('chatContainer');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 重置对话
+    function resetChat() {
+      const container = document.getElementById('chatContainer');
+      container.innerHTML = `
+        <div class="message-bubble-wrapper assistant">
+          <div class="bubble-content">
+            👋 对话已重置。你好，我是你的智能联系人助手。你可以告诉我你想创建的事项，我会帮你识别并创建。
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // 卡片确认执行交互
+    function confirmExecution(btn) {
+      const card = btn.closest('.structured-card');
+      card.innerHTML = `
+        <div style="color: var(--color-success); font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="check-circle" style="width:16px;height:16px;"></i>
+          执行成功！
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          事项“联系张三确认实习材料的事情”已成功创建并绑定到张雨薇。<br>
+          操作流水号: <strong>OP-2026061599182</strong>
+        </p>
+      `;
+      lucide.createIcons();
+    }
+
+    function cancelExecution(btn) {
+      const card = btn.closest('.structured-card');
+      card.innerHTML = `
+        <div style="color: var(--text-muted); font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="x-circle" style="width:16px;height:16px;"></i>
+          操作已取消
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function modifyExecution(btn) {
+      const card = btn.closest('.structured-card');
+      card.innerHTML = `
+        <div style="color: var(--color-primary); font-weight:600; font-size:13px; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="edit-3" style="width:16px;height:16px;"></i>
+          正在编辑事项...
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+          请在下方输入栏中直接对识别出的信息进行修正或补充。
+        </p>
+      `;
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
