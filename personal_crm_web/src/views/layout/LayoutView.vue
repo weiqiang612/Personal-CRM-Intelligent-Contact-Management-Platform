@@ -2,44 +2,43 @@
   <div class="app-container">
     <!-- 侧边栏 -->
     <aside class="sidebar" :class="{ collapsed: isCollapsed }">
-      <div class="sidebar-brand">
-        <div class="brand-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
+      <div class="sidebar-menu-wrapper">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 21a8 8 0 0 0-16 0" />
+              <circle cx="10" cy="8" r="5" />
+              <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" />
+            </svg>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">Personal CRM</span>
+            <span class="brand-desc">智能联系人管理系统</span>
+          </div>
         </div>
-        <div class="brand-info">
-          <span class="brand-name">Personal CRM</span>
-          <span class="brand-desc">智能联系人管理平台</span>
-        </div>
+
+        <ul class="sidebar-menu">
+          <li
+            v-for="item in menuItems"
+            :key="item.path"
+            class="menu-item"
+            :class="{ active: isLinkActive(item.path) }"
+          >
+            <router-link :to="item.path">
+              <svg class="menu-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="item.iconSvg"></svg>
+              <span>{{ item.title }}</span>
+            </router-link>
+          </li>
+        </ul>
       </div>
-
-      <ul class="sidebar-menu">
-        <li
-          v-for="item in menuItems"
-          :key="item.path"
-          class="menu-item"
-          :class="{ active: isLinkActive(item.path) }"
-        >
-          <router-link :to="item.path">
-            <svg class="menu-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="item.iconSvg"></svg>
-            <span>{{ item.title }}</span>
-          </router-link>
-        </li>
-      </ul>
-
-      <!-- 折叠按钮 -->
-      <button class="collapsed-toggle" type="button" @click="toggleSidebar">
-        <svg v-if="isCollapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="9 18 15 12 9 6"/></svg>
-        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
 
       <div class="sidebar-footer">
         <div class="upgrade-card">
-          <div class="upgrade-card-title">升级至专业版</div>
-          <div class="upgrade-card-desc">解锁 AI 高级分析与批量人脉管理功能。</div>
+          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
+          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
         </div>
-        <div class="user-profile-bar">
+
+        <router-link to="/settings" class="user-profile-bar">
           <div class="user-avatar-container">
             <img class="user-avatar" :src="avatarSrc || defaultAvatar" alt="Avatar">
             <span class="user-online-dot"></span>
@@ -48,7 +47,12 @@
             <span class="user-name">{{ user?.username || 'Ethan' }}</span>
             <span class="user-email">{{ user?.username || 'ethan' }}@example.com</span>
           </div>
-        </div>
+        </router-link>
+
+        <button class="collapsed-toggle" type="button" @click="toggleSidebar" :aria-label="isCollapsed ? '展开侧边栏' : '折叠侧边栏'">
+          <svg v-if="isCollapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon"><polyline points="9 18 15 12 9 6"/></svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
       </div>
     </aside>
 
@@ -58,15 +62,29 @@
       <header class="topbar">
         <div class="topbar-left">
           <div class="page-title-group">
-            <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px;"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack" :aria-label="backLabel">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             </a>
             <h1 class="page-title">{{ pageTitle }}</h1>
           </div>
           <p class="page-subtitle">{{ pageSubtitle }}</p>
         </div>
 
-        <div class="topbar-right">
+        <div v-if="!showBackButton" class="topbar-right">
+          <div v-if="pageActions.length > 0" class="topbar-actions">
+            <router-link
+              v-for="action in pageActions"
+              :key="action.path"
+              :to="action.path"
+              class="btn"
+              :class="action.variant"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="topbar-action-icon" v-html="action.iconSvg"></svg>
+              {{ action.label }}
+            </router-link>
+          </div>
+
+          <template v-else>
           <!-- 搜索框 -->
           <div class="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -98,6 +116,7 @@
               </a>
             </div>
           </div>
+          </template>
         </div>
       </header>
 
@@ -130,7 +149,7 @@ const { user } = storeToRefs(authStore)
 const isCollapsed = ref<boolean>(false)
 const showDropdown = ref<boolean>(false)
 
-const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
+const defaultAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80'
 
 // 侧边栏折叠切换
 const toggleSidebar = () => {
@@ -147,32 +166,32 @@ const menuItems = [
   {
     path: '/dashboard',
     title: '工作台',
-    iconSvg: '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'
+    iconSvg: '<rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect>'
   },
   {
     path: '/contacts',
     title: '联系人',
-    iconSvg: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+    iconSvg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><path d="M16 3.128a4 4 0 0 1 0 7.744"></path><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><circle cx="9" cy="7" r="4"></circle>'
   },
   {
     path: '/todos',
     title: '事项提醒',
-    iconSvg: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
+    iconSvg: '<path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path>'
   },
   {
     path: '/blacklist',
     title: '黑名单',
-    iconSvg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'
+    iconSvg: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path>'
   },
   {
     path: '/agent',
     title: '智能助手',
-    iconSvg: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M20 3v4m2-2h-4"/>'
+    iconSvg: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle>'
   },
   {
     path: '/settings',
     title: '设置',
-    iconSvg: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'
+    iconSvg: '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path><circle cx="12" cy="12" r="3"></circle>'
   }
 ]
 
@@ -189,13 +208,27 @@ const showBackButton = computed(() => {
   return !['/dashboard', '/contacts', '/todos', '/blacklist', '/agent', '/settings'].includes(route.path)
 })
 
+const backLabel = computed(() => {
+  if (route.path.startsWith('/contacts/')) {
+    return '返回联系人列表'
+  }
+  if (route.path.startsWith('/todos/')) {
+    return '返回事项提醒列表'
+  }
+  return '返回上一页'
+})
+
 const goBack = () => {
   router.back()
 }
 
 // 动态大标题
 const pageTitle = computed(() => {
-  return (route.meta.title as string) || '工作台'
+  const routeTitle = (route.meta.title as string) || '工作台'
+  if (route.path === '/contacts') {
+    return '联系人管理'
+  }
+  return routeTitle
 })
 
 // 动态副说明文字
@@ -204,7 +237,9 @@ const pageSubtitle = computed(() => {
     case '/dashboard':
       return '智能数据看板与事项压力提示'
     case '/contacts':
-      return '全面检索、关系筛选与分组操作'
+      return '维护联系人资料、标签与提醒事项'
+    case '/contacts/new':
+      return '一屏录入联系人基础资料、头像预览与关系标签'
     case '/todos':
       return '待办跟踪、状态流转与逾期提醒中心'
     case '/blacklist':
@@ -214,8 +249,29 @@ const pageSubtitle = computed(() => {
     case '/settings':
       return '配置个人信息、头像档案及账号安全'
     default:
+      if (route.name === 'contact-detail') {
+        return '查看联系人详细资料与历史往来'
+      }
+      if (route.name === 'contact-edit') {
+        return '更新联系人基础资料、头像预览与关系标签'
+      }
       return '管理您的 Personal CRM 账户'
   }
+})
+
+const pageActions = computed(() => {
+  if (route.path === '/contacts') {
+    return [
+      {
+        path: '/contacts/new',
+        label: '新增联系人',
+        variant: 'btn-primary',
+        iconSvg: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/>'
+      }
+    ]
+  }
+
+  return []
 })
 
 // 计算头像
@@ -254,10 +310,47 @@ const tipFeature = () => {
   width: 100vw;
 }
 
+.sidebar-menu-wrapper {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .menu-svg-icon {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
+}
+
+.toggle-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.back-icon,
+.topbar-action-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-actions .btn {
+  min-height: 40px;
+}
+
+.topbar-action-icon {
+  margin-right: 4px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* 顶部过渡动画 */
