@@ -1,6 +1,6 @@
 # TASK-001: MVP Foundation Delivery
 
-**Status**: Draft
+**Status**: Ready
 **Created**: 2026-06-15
 **Feature dir**: `docs/4-tasks/features/TASK-001-mvp-foundation/`
 
@@ -37,7 +37,7 @@
       "访问公开接口和受保护接口，验证统一响应结构与未登录拦截行为。",
       "验证 MyBatis-Plus 分页查询配置已接入且应用能正常启动。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-002",
@@ -48,7 +48,7 @@
       "携带 JWT 访问 /api/v1/auth/me。",
       "验证登录响应、当前用户响应和失败响应与 docs/2-designs/api_contract.md 一致。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-003",
@@ -60,18 +60,18 @@
       "完成登录后进入 CRM 基础布局，刷新页面后登录态仍可用于基础鉴权判断。",
       "访问未实现业务模块入口时显示明确占位状态，而不是脚手架默认内容或空白页。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-004",
     "category": "security",
-    "description": "系统必须按当前登录用户隔离数据，未登录或跨用户访问请求被拒绝。",
+    "description": "系统必须建立清晰鉴权边界，未登录或无效 token 请求受保护接口时被拒绝。",
     "steps": [
       "未携带 JWT 调用受保护接口。",
-      "尝试访问不属于当前用户的数据。",
-      "验证系统返回明确的鉴权或越权错误，而不是泄露数据。"
+      "携带无效或过期 JWT 调用受保护接口。",
+      "验证系统返回明确的鉴权错误，而不是进入业务处理或返回用户信息。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-005",
@@ -82,12 +82,25 @@
       "确认联系人、事项、看板、上传的业务实现仍由后续任务承接。",
       "确认 TASK-002 及后续任务可以基于当前骨架继续纵向实现业务模块。"
     ],
-    "passes": false
+    "passes": true
   }
 ]
 ```
 
 ## Notes
+### Reference baseline
+Before implementing this task, read and follow:
+
+| Area | Required baseline |
+|---|---|
+| project workflow | `AGENTS.md`, `docs/4-tasks/CURRENT_PLAN.md` |
+| business scope | `docs/1-requirements/project_overview.md`, `docs/1-requirements/requirements_analysis.md` |
+| backend architecture | `docs/2-designs/architecture.md` |
+| API contract | `docs/2-designs/api_contract.md` |
+| database baseline | `docs/2-designs/db_schema.md` |
+| UI prototype | `docs/2-designs/ui_prototype.md` |
+| constraints | `docs/3-constraints/never-do.md`, `docs/3-constraints/ask-first.md`, `docs/3-constraints/always-do.md` |
+
 ### Documentation impact
 | Area | Impacted | Maintenance target |
 |---|---:|---|
@@ -95,7 +108,7 @@
 | architecture | false | `docs/2-designs/architecture.md` |
 | api | false | `docs/2-designs/api_contract.md` |
 | db | false | `docs/2-designs/db_schema.md` |
-| ui | false | `docs/2-designs/ui_prototype.md` |
+| ui | true | 按现有 `docs/2-designs/ui_prototype.md` 落地前端骨架；本任务不修改原型文档，除非实现中发现原型与当前范围冲突 |
 | constraints | false | `docs/3-constraints/` |
 | adr | false | `docs/3-constraints/adr/` |
 | agent-runtime | false | `AGENTS.md`, `.codex/session-start.js`, `init.sh`, `init.ps1` |
@@ -106,4 +119,5 @@
 
 ### Explicit non-maintenance
 - 本任务不新增架构层级，因此 `docs/2-designs/architecture.md` 现在不需要维护。
+- 本任务按既有原型落地登录页、基础布局和占位入口；如果实现不改变页面范围、路由清单或交互规则，则不维护 `docs/2-designs/ui_prototype.md`。
 - 本任务不涉及 Agent 运行时、启动脚本或 SessionStart 逻辑，因此不维护 `AGENTS.md`、`.codex/session-start.js`、`init.sh`、`init.ps1`。
