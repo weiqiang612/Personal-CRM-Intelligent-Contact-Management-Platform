@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>登录 - Personal CRM 智能联系人管理</title>
+  <title>注册 - Personal CRM 智能联系人管理</title>
   <script src="https://cdn.jsdelivr.net/npm/lucide/dist/umd/lucide.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -35,8 +35,8 @@
     }
 
     /* ═══════════════════════════════════
-       左侧预览区
-    ═══════════════════════════════════ */
+       左侧预览区（复刻自 login.html）
+     ═══════════════════════════════════ */
     .preview {
       display: flex;
       flex-direction: column;
@@ -191,10 +191,6 @@
       object-fit: cover;
       display: block;
     }
-    .av-a { background: linear-gradient(135deg,#93c5fd,#2563eb); }
-    .av-b { background: linear-gradient(135deg,#6ee7b7,#059669); }
-    .av-c { background: linear-gradient(135deg,#f9a8d4,#db2777); }
-    .av-d { background: linear-gradient(135deg,#fcd34d,#f97316); }
 
     .contact-info { min-width: 0; }
 
@@ -340,32 +336,35 @@
     }
 
     /* ═══════════════════════════════════
-       右侧登录区
-    ═══════════════════════════════════ */
+       右侧注册区
+     ═══════════════════════════════════ */
     .auth-col {
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 30px 52px;
+      padding: 24px 52px;
       background: #f8fafc;
       border-left: 1px solid rgba(219,228,241,0.6);
+      overflow-y: auto;
+      height: 100%;
     }
 
     .auth-card {
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       background: rgba(255, 255, 255, 0.96);
       border: 1px solid rgba(219, 228, 241, 0.88);
       border-radius: 16px;
       box-shadow: 0 12px 32px -12px rgba(30, 50, 100, 0.15);
       backdrop-filter: blur(12px);
-      padding: 40px 32px 32px 32px;
+      padding: 30px 32px;
+      margin: auto 0;
     }
 
     /* 头部图标 */
     .auth-icon-wrap {
       width: 64px; height: 64px;
-      border-radius: 18px;
+      border-radius: 50%;
       background: linear-gradient(180deg,#edf2ff,#dde8ff);
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 16px;
@@ -374,7 +373,7 @@
     .auth-icon-wrap svg { width: 30px; height: 30px; color: var(--primary); }
 
     .auth-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 800;
       color: #0f172a;
       text-align: center;
@@ -383,11 +382,11 @@
     }
 
     .auth-sub {
-      font-size: 13.5px;
+      font-size: 13px;
       color: #7c8aa5;
       font-weight: 500;
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     /* 错误提示 */
@@ -402,32 +401,32 @@
       color: #ef4444;
       font-size: 13px;
       font-weight: 600;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
     .error-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
 
     /* 表单 */
-    .form-group { margin-bottom: 16px; }
+    .form-group { margin-bottom: 12px; }
 
     .form-label {
       display: block;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       color: #334155;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .input-wrap { position: relative; }
 
     .input-wrap input {
       width: 100%;
-      height: 44px;
-      padding: 0 40px;
-      border-radius: 10px;
+      height: 40px;
+      padding: 0 38px;
+      border-radius: 8px;
       border: 1px solid #d8e1ed;
       background: #fff;
       font-family: var(--font);
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 500;
       color: #0f172a;
       transition: border-color .15s, box-shadow .15s;
@@ -442,86 +441,71 @@
     .field-icon, .toggle-pw {
       position: absolute;
       top: 50%; transform: translateY(-50%);
-      width: 16px; height: 16px;
+      width: 15px; height: 15px;
       color: #9aa6bb;
     }
-    .field-icon { left: 13px; pointer-events: none; }
-    .toggle-pw  { right: 13px; cursor: pointer; }
+    .field-icon { left: 12px; pointer-events: none; }
+    .toggle-pw  { right: 12px; cursor: pointer; }
 
-    /* 选项行 */
-    .form-options {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 4px 0 20px;
-      font-size: 13px;
-    }
-
-    .remember-label {
-      display: flex; align-items: center; gap: 6px;
-      font-weight: 600; color: #475569; cursor: pointer;
-    }
-    .remember-label input[type=checkbox] { accent-color: var(--primary); width: 14px; height: 14px; }
-
-    .forgot-link { color: var(--primary); font-weight: 700; text-decoration: none; font-size: 13px; }
-
-    /* 登录按钮 */
-    .btn-login {
+    /* 注册按钮 */
+    .btn-register {
       width: 100%;
-      height: 44px;
-      border-radius: 10px;
+      height: 40px;
+      border-radius: 8px;
       border: none;
       background: linear-gradient(90deg, #2f5bff 0%, #3060f0 100%);
       color: #fff;
       font-family: var(--font);
-      font-size: 15px;
+      font-size: 14.5px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 12px 24px -12px rgba(47,91,255,.8);
+      box-shadow: 0 10px 20px -10px rgba(47,91,255,.8);
       transition: background .15s, transform .1s;
+      margin-top: 8px;
       margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: center;
     }
-    .btn-login:hover { background: linear-gradient(90deg, var(--primary-dark), #1e40d0); }
-    .btn-login:active { transform: scale(.99); }
+    .btn-register:hover { background: linear-gradient(90deg, var(--primary-dark), #1e40d0); }
+    .btn-register:active { transform: scale(.99); }
 
-    /* 注册行 */
-    .register-row {
+    /* 去登录行 */
+    .login-row {
       text-align: center;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 600;
       color: #94a3b8;
       border: 1px solid rgba(219, 228, 241, 0.88);
-      border-radius: 10px;
+      border-radius: 8px;
       background: #fff;
-      height: 44px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       transition: border-color .15s, box-shadow .15s;
     }
-    .register-row:hover {
+    .login-row:hover {
       border-color: rgba(47, 91, 255, 0.3);
       box-shadow: 0 4px 12px -6px rgba(47, 91, 255, 0.1);
     }
-    .register-row a { color: var(--primary); font-weight: 700; text-decoration: none; margin-left: 4px; }
+    .login-row a { color: var(--primary); font-weight: 700; text-decoration: none; margin-left: 4px; }
 
     /* 分割线 */
     .social-divider {
       display: flex; align-items: center; gap: 10px;
-      font-size: 12px; font-weight: 600; color: #a1acc0;
-      margin-bottom: 16px;
+      font-size: 11.5px; font-weight: 600; color: #a1acc0;
+      margin-bottom: 12px;
     }
     .social-divider::before, .social-divider::after {
       content: ''; flex: 1; height: 1px;
       background: rgba(226,232,240,.95);
     }
 
-    /* 社交登录 */
+    /* 社交注册 */
     .social-row { display: flex; justify-content: center; }
 
     .social-btn {
-      width: 42px; height: 42px;
+      width: 38px; height: 38px;
       border-radius: 50%;
       border: 1px solid rgba(219,228,241,.95);
       background: #fff;
@@ -532,14 +516,71 @@
       transition: border-color .15s, box-shadow .15s;
     }
     .social-btn:hover { border-color: #a7f3d0; box-shadow: 0 4px 16px -6px rgba(7,193,96,.3); }
-    .social-btn svg { width: 20px; height: 20px; }
+    .social-btn svg { width: 18px; height: 18px; }
+
+    /* 成功提示弹窗 */
+    .success-modal {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 40px;
+      text-align: center;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      max-width: 320px;
+      width: 90%;
+      animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .success-icon-wrap {
+      width: 56px; height: 56px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      color: #22c55e;
+    }
+    .success-icon-wrap svg { width: 28px; height: 28px; }
+
+    .modal-content h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+    .modal-content p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
 
     /* 响应式 */
     @media (max-width: 900px) {
       html, body { overflow-y: auto; }
       .page { grid-template-columns: 1fr; height: auto; }
       .preview { display: none; }
-      .auth-col { min-height: 100vh; }
+      .auth-col { min-height: 100vh; padding: 20px 24px; }
+      .auth-card { padding: 24px 20px; }
     }
   </style>
 </head>
@@ -716,7 +757,7 @@
     <div class="preview-footer">© 2024 Personal CRM. 让每一段关系更有价值。</div>
   </section>
 
-  <!-- ══ 右侧登录 ══ -->
+  <!-- ══ 右侧注册 ══ -->
   <section class="auth-col">
     <div class="auth-card">
       <div class="auth-icon-wrap">
@@ -724,15 +765,23 @@
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       </div>
-      <h2 class="auth-title">欢迎回来</h2>
-      <p class="auth-sub">登录您的 Personal CRM 账户</p>
+      <h2 class="auth-title">创建账号</h2>
+      <p class="auth-sub">注册您的 Personal CRM 账户</p>
 
       <div id="errorAlert" class="error-alert">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        <span id="errorText">账号或密码错误</span>
+        <span id="errorText">请完整填写注册信息</span>
       </div>
 
-      <form id="loginForm" onsubmit="handleLogin(event)">
+      <form id="registerForm" onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label class="form-label" for="nickname">姓名</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input type="text" id="nickname" placeholder="请输入您的姓名" autocomplete="name">
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="username">账号</label>
           <div class="input-wrap">
@@ -742,29 +791,38 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="password">密码</label>
+          <label class="form-label" for="email">邮箱</label>
           <div class="input-wrap">
-            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
-            <svg class="toggle-pw" id="togglePwIcon" onclick="togglePw()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input type="email" id="email" placeholder="请输入邮箱" autocomplete="email">
           </div>
         </div>
 
-        <div class="form-options">
-          <label class="remember-label">
-            <input type="checkbox" id="rememberMe" checked>
-            记住我
-          </label>
-          <a href="#" class="forgot-link">忘记密码?</a>
+        <div class="form-group">
+          <label class="form-label" for="password">密码</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="password" placeholder="请设置密码" autocomplete="new-password">
+            <svg class="toggle-pw" id="togglePwIcon" onclick="togglePw('password', 'togglePwIcon')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
         </div>
 
-        <button type="submit" class="btn-login">登录</button>
-        <p class="register-row">还没有账号？ <a href="register.html">立即注册</a></p>
+        <div class="form-group">
+          <label class="form-label" for="confirmPassword">确认密码</label>
+          <div class="input-wrap">
+            <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="password" id="confirmPassword" placeholder="请再次输入密码" autocomplete="new-password">
+            <svg class="toggle-pw" id="toggleConfirmPwIcon" onclick="togglePw('confirmPassword', 'toggleConfirmPwIcon')" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-register">注册</button>
+        <p class="login-row">已有账号？ <a href="login.html">去登录</a></p>
       </form>
 
-      <div class="social-divider">或使用其他方式登录</div>
+      <div class="social-divider">或使用其他方式注册</div>
       <div class="social-row">
-        <button class="social-btn" title="微信登录" type="button">
+        <button class="social-btn" title="微信注册" type="button">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.161 1.67-1.381 1.136-2.114 2.958-1.682 4.745.021.085.048.169.071.253.593 2.388 2.944 4.226 5.752 4.226a8.55 8.55 0 0 0 2.404-.343.58.58 0 0 1 .604.082l1.57.916a.279.279 0 0 0 .141.046.249.249 0 0 0 .246-.25c0-.058-.023-.117-.042-.175l-.33-1.254a.5.5 0 0 1 .181-.563C22.255 17.088 24 15.459 24 13.508c0-2.818-3.061-4.758-7.062-4.65zm-2.532 2.339c.548 0 .991.452.991 1.01 0 .558-.443 1.01-.991 1.01-.547 0-.991-.452-.991-1.01 0-.558.444-1.01.991-1.01zm4.943 0c.547 0 .991.452.991 1.01 0 .558-.444 1.01-.991 1.01-.548 0-.991-.452-.991-1.01 0-.558.443-1.01.991-1.01z"/></svg>
         </button>
       </div>
@@ -773,10 +831,26 @@
 
 </div>
 
+<!-- 成功提示弹窗 -->
+<div id="successModal" class="success-modal">
+  <div class="modal-content">
+    <div class="success-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <h3>注册成功</h3>
+    <p>正在为您跳转到登录页面...</p>
+  </div>
+</div>
+
 <script>
-  function togglePw() {
-    const input = document.getElementById('password');
-    const icon = document.getElementById('togglePwIcon');
+  // 初始化 Lucide 图标
+  lucide.createIcons();
+
+  function togglePw(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
     const isHidden = input.type === 'password';
     input.type = isHidden ? 'text' : 'password';
     icon.innerHTML = isHidden
@@ -784,25 +858,47 @@
       : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
 
-  function handleLogin(e) {
+  function handleRegister(e) {
     e.preventDefault();
+    const nickname = document.getElementById('nickname').value.trim();
     const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
     const alert = document.getElementById('errorAlert');
     const text  = document.getElementById('errorText');
 
-    if (!username || !password) {
-      text.textContent = '请输入账号和密码';
+    if (!nickname || !username || !email || !password || !confirmPassword) {
+      text.textContent = '请完整填写注册信息';
       alert.style.display = 'flex';
       return;
     }
-    if (username === 'admin' && password !== 'admin') {
-      text.textContent = '账号或密码错误';
+
+    // 邮箱格式简单校验
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      text.textContent = '请输入有效的邮箱地址';
       alert.style.display = 'flex';
       return;
     }
+
+    if (password !== confirmPassword) {
+      text.textContent = '两次密码输入不一致';
+      alert.style.display = 'flex';
+      return;
+    }
+
     alert.style.display = 'none';
-    window.location.href = './dashboard.html';
+
+    // 显示注册成功弹窗
+    const successModal = document.getElementById('successModal');
+    successModal.style.display = 'flex';
+
+    // 2秒后自动跳转至登录页
+    setTimeout(() => {
+      window.location.href = 'login.html';
+    }, 2000);
   }
 </script>
 </body>
