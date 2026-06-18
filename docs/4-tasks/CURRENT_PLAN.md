@@ -3,12 +3,12 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-002-contact-module/`
+`docs/4-tasks/features/TASK-003-todo-module/`
 - spec.md ✅ Ready
 - tasks.md → Not started
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-001-mvp-foundation/`
+`docs/4-tasks/features/TASK-002-contact-module/`
 - spec.md ✅ Ready
 - tasks.md ✅ Completed
 
@@ -35,10 +35,16 @@
 - 里程碑 4：T11-T14，完成测试、自测验收和计划状态回写
 
 ### TASK-002: Contact Module
-- [ ] Implementation (18 tasks)
+- [x] Implementation (18 tasks) Completed
 - 里程碑 1：T1-T6，完成联系人后端契约复核、实体映射、Service/Controller 与后端验证
 - 里程碑 2：T7-T13，完成联系人前端 API、路由、列表、表单、详情和黑名单页面
 - 里程碑 3：T14-T18，完成前后端联调、测试、自测验收和计划状态回写
+
+### TASK-003: Todo Module
+- [ ] Implementation (19 tasks)
+- 里程碑 1：T1-T7，完成事项后端契约复核、实体映射、Service/Controller 与后端验证
+- 里程碑 2：T8-T14，完成事项前端 API、路由、列表、新增页面和后续任务提示
+- 里程碑 3：T15-T19，完成前后端联调、测试、自测验收和计划状态回写
 
 ## Backlog roadmap
 
@@ -73,9 +79,10 @@
 - 2026-06-15: generated Harness-style collaboration scaffold
 - 2026-06-15: aligned database design, schema.sql, and api contract
 - 2026-06-15: added SRS draft, backend dev config, seed script, and root README
+- 2026-06-18: completed TASK-002 Contact Module (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前进入 `TASK-002` 联系人模块；先复核联系人 API、DB 和 UI 原型，再实现后端联系人闭环。
-- 联系人模块必须基于当前 JWT 用户做数据隔离，禁止跨用户读取或修改联系人。
-- 前端联系人页面必须基于 `docs/2-designs/ui_prototype.md` 和 `prototype/contacts.html`、`prototype/contact-detail.html`、`prototype/contact-form.html`、`prototype/blacklist.html` 迁移实现。
-- 本任务不实现头像上传、事项、标签或 Agent；这些入口只保留后续任务提示或禁用态。
+- 当前进入 `TASK-003` 事项模块；先复核事项 API、DB 和 UI 原型，再完成后端事项 CRUD 与越权控制。
+- 事项模块必须基于当前 JWT 用户做数据隔离，禁止跨用户读取或修改事项。
+- 前端事项页面必须基于 `docs/2-designs/ui_prototype.md` 和 `prototype/todos.html` 迁移实现。
+- 本任务不实现 Agent 真实语义交互；看板统计和事项关联将在该模块打通。

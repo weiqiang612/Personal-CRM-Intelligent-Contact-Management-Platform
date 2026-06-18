@@ -38,7 +38,7 @@
       "携带 JWT 调用 /api/v1/contacts 相关接口。",
       "验证响应统一为 { code, message, data }，且字段、路径、请求体和 docs/2-designs/api_contract.md 保持一致。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-002",
@@ -49,7 +49,7 @@
       "分别使用 page、pageSize、keyword、status、sortBy、sortOrder 查询联系人列表。",
       "验证返回列表、分页元数据、筛选结果和排序结果符合请求条件。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-003",
@@ -60,7 +60,7 @@
       "尝试访问不存在或不属于当前用户的 contactId。",
       "验证系统返回明确的鉴权、无权访问或资源不存在错误，而不是返回联系人数据。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-004",
@@ -71,7 +71,7 @@
       "访问 /contacts、/contacts/new、/contacts/:contactId、/contacts/:contactId/edit 和 /blacklist。",
       "验证页面结构、主要信息区、操作入口、加载态、空态、错误态和黑名单提示符合 docs/2-designs/ui_prototype.md 的联系人相关要求。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-005",
@@ -83,7 +83,7 @@
       "从联系人详情或列表将联系人加入黑名单，再到黑名单页恢复联系人。",
       "验证每一步页面状态与后端数据一致，且成功和失败提示明确。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-006",
@@ -94,7 +94,7 @@
       "验证这些入口不会调用未实现业务链路，必要时显示后续任务提示。",
       "确认本任务交付内容仍聚焦联系人和黑名单闭环。"
     ],
-    "passes": false
+    "passes": true
   }
 ]
 ```

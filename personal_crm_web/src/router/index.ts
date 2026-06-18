@@ -24,8 +24,26 @@ const router = createRouter({
         {
           path: 'contacts',
           name: 'contacts',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
+          component: () => import('../views/contacts/ContactListView.vue'),
           meta: { title: '联系人', requiresAuth: true }
+        },
+        {
+          path: 'contacts/new',
+          name: 'contact-new',
+          component: () => import('../views/contacts/ContactFormView.vue'),
+          meta: { title: '新建联系人', requiresAuth: true }
+        },
+        {
+          path: 'contacts/:contactId',
+          name: 'contact-detail',
+          component: () => import('../views/contacts/ContactDetailView.vue'),
+          meta: { title: '联系人详情', requiresAuth: true }
+        },
+        {
+          path: 'contacts/:contactId/edit',
+          name: 'contact-edit',
+          component: () => import('../views/contacts/ContactFormView.vue'),
+          meta: { title: '编辑联系人', requiresAuth: true }
         },
         {
           path: 'todos',
@@ -36,7 +54,7 @@ const router = createRouter({
         {
           path: 'blacklist',
           name: 'blacklist',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
+          component: () => import('../views/contacts/BlacklistView.vue'),
           meta: { title: '黑名单', requiresAuth: true }
         },
         {
