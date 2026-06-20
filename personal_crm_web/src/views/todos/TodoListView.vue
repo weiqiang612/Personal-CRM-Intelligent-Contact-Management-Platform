@@ -812,4 +812,8 @@ onMounted(async () => {
   max-width: 320px;
   margin: 0 auto;
 }
+
+.filter-bar {
+  margin-bottom: 20px;
+}
 </style>
