@@ -44,7 +44,7 @@
                 t.cancelled_at
             </when>
             <otherwise>
-                t.todo_time
+                t.status ASC, t.todo_time
             </otherwise>
         </choose>
         <choose>
