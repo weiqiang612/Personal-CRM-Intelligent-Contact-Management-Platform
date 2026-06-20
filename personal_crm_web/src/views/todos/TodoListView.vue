@@ -386,7 +386,6 @@ const fetchTodos = async () => {
 
 // 加载选项卡计数
 const fetchTabCounts = async () => {
-  console.log('DEBUG: fetchTabCounts started. contactId =', filterParams.contactId)
   try {
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
@@ -414,9 +413,7 @@ const fetchTabCounts = async () => {
     tabCounts.pending = pendingRes.total
     tabCounts.completed = completedRes.total
     tabCounts.cancelled = cancelledRes.total
-    console.log('DEBUG: fetchTabCounts completed successfully. tabCounts =', JSON.stringify(tabCounts))
   } catch (error) {
-    console.error('DEBUG: fetchTabCounts error =', error)
     console.error('获取状态计数失败', error)
   }
 }
@@ -546,7 +543,6 @@ const handleSortChange = () => {
 
 // 重置筛选
 const resetFilters = () => {
-  console.log('DEBUG: resetFilters called')
   keywordInput.value = ''
   dateRangeSelect.value = ''
   sortOrderSelect.value = 'asc'

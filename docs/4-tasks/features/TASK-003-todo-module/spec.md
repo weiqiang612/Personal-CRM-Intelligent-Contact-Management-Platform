@@ -40,7 +40,7 @@
       "携带 JWT 调用 /api/v1/todos 相关接口。",
       "验证响应统一为 { code, message, data }，且字段、路径、请求体和 docs/2-designs/api_contract.md 保持一致。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-002",
@@ -51,7 +51,7 @@
       "分别使用 page、pageSize、contactId、status、startTime、endTime、sortOrder 查询事项列表。",
       "验证返回列表、分页元数据、筛选结果、排序结果和逾期标识符合请求条件。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-003",
@@ -63,7 +63,7 @@
       "尝试完成或取消不存在或不属于当前用户的 matterId。",
       "验证系统返回明确的鉴权、无权访问或资源不存在错误，而不是返回或修改事项数据。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-004",
@@ -75,7 +75,7 @@
       "创建另一条待完成事项并调用取消接口，再尝试完成。",
       "验证首次状态变更成功并写入 completedAt 或 cancelledAt，重复或冲突状态变更返回状态冲突错误。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-005",
@@ -86,7 +86,7 @@
       "访问 /todos 和 /todos/new。",
       "验证页面结构、状态快捷筛选、筛选工具栏、表格、分页、加载态、空态、错误态和新增事项预览区符合 docs/2-designs/ui_prototype.md 的事项相关要求。"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": "AC-006",
@@ -98,7 +98,7 @@
       "对待完成事项执行完成和取消操作，并验证页面状态与后端数据一致。",
       "从联系人详情页或带 contactId 的 URL 进入 /todos/new，验证联系人自动带入并可成功创建事项。"
     ],
-    "passes": false
+    "passes": true
   }
 ]
 ```
