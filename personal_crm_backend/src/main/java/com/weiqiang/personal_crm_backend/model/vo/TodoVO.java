@@ -71,5 +71,5 @@ public class TodoVO implements Serializable {
     /**
      * 是否逾期
      */
-    private Boolean isOverdue;
+    private Boolean overdue;
 }

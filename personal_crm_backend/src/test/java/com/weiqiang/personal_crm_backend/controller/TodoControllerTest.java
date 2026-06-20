@@ -187,7 +187,7 @@ public class TodoControllerTest {
                 .andExpect(jsonPath("$.data.content", is("New Todo Item")))
                 .andExpect(jsonPath("$.data.contactName", is("User1 Contact")))
                 .andExpect(jsonPath("$.data.matterId", notNullValue()))
-                .andExpect(jsonPath("$.data.isOverdue", is(false)));
+                .andExpect(jsonPath("$.data.overdue", is(false)));
     }
 
     @Test

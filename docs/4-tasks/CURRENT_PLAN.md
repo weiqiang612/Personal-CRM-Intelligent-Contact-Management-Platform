@@ -41,7 +41,7 @@
 - 里程碑 3：T14-T18，完成前后端联调、测试、自测验收和计划状态回写
 
 ### TASK-003: Todo Module
-- [ ] Implementation (19 tasks)
+- [x] Implementation (19 tasks) Completed
 - 里程碑 1：T1-T7，完成事项后端契约复核、实体映射、Service/Controller 与后端验证
 - 里程碑 2：T8-T14，完成事项前端 API、路由、列表、新增页面和后续任务提示
 - 里程碑 3：T15-T19，完成前后端联调、测试、自测验收和计划状态回写
@@ -80,9 +80,9 @@
 - 2026-06-15: aligned database design, schema.sql, and api contract
 - 2026-06-15: added SRS draft, backend dev config, seed script, and root README
 - 2026-06-18: completed TASK-002 Contact Module (frontend & backend integration and E2E verification)
+- 2026-06-20: completed TASK-003 Todo Module (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前进入 `TASK-003` 事项模块；先复核事项 API、DB 和 UI 原型，再完成后端事项 CRUD 与越权控制。
-- 事项模块必须基于当前 JWT 用户做数据隔离，禁止跨用户读取或修改事项。
-- 前端事项页面必须基于 `docs/2-designs/ui_prototype.md` 和 `prototype/todos.html` 迁移实现。
-- 本任务不实现 Agent 真实语义交互；看板统计和事项关联将在该模块打通。
+- 当前已成功交付 `TASK-003`，下阶段将开启 `TASK-004` 看板与上传模块。
+- 需开发看板后端聚合统计 API 并对齐 api_contract.md，前端使用 ECharts 绘制图表替换占位页。
+- 需完成头像上传与访问路径回显，并修复当前前端遗留的头像展示缺陷。

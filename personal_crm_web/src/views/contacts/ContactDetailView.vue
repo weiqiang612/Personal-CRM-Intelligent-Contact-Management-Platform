@@ -166,89 +166,46 @@
           <div class="tabs-header">
             <button class="tab-btn" :class="{ active: currentTab === 'pending' }" @click="currentTab = 'pending'">
               待完成
-              <span class="tab-badge">3</span>
+              <span class="tab-badge">{{ pendingTodos.length }}</span>
             </button>
             <button class="tab-btn" :class="{ active: currentTab === 'completed' }" @click="currentTab = 'completed'">
               已完成
-              <span class="tab-badge">2</span>
+              <span class="tab-badge">{{ completedTodos.length }}</span>
             </button>
             <button class="tab-btn" :class="{ active: currentTab === 'cancelled' }" @click="currentTab = 'cancelled'">
               已取消
-              <span class="tab-badge">1</span>
+              <span class="tab-badge">{{ cancelledTodos.length }}</span>
             </button>
           </div>
 
-          <!-- 选项卡内容区 (静态数据) -->
+          <!-- 选项卡内容区 (动态数据) -->
           <div class="tab-content" style="flex:1;">
             <!-- 待完成 -->
             <div v-if="currentTab === 'pending'" class="tab-pane active">
-              <div class="todo-item-card">
+              <div v-if="pendingTodos.length === 0" class="todo-empty-tip">
+                暂无待完成事项
+              </div>
+              <div v-else v-for="item in pendingTodos" :key="item.matterId" class="todo-item-card">
                 <div class="todo-item-left">
-                  <span class="todo-dot" style="background-color: var(--color-danger);"></span>
+                  <span class="todo-dot" :style="{ backgroundColor: getPriorityColor(item.priority) }"></span>
                   <div class="todo-info-group">
                     <div class="todo-title-row">
-                      <span class="todo-title">跟进产品合作需求</span>
-                      <span class="todo-priority-badge high">高优先级</span>
+                      <span class="todo-title">{{ item.content }}</span>
+                      <span class="todo-priority-badge" :class="getPriorityClass(item.priority)">{{ getPriorityText(item.priority) }}</span>
                     </div>
                     <span class="todo-time-tag">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:2px;display:inline-block;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      2026-06-25 15:00
+                      {{ item.todoTime ? item.todoTime.substring(0, 16) : '' }}
                     </span>
                   </div>
                 </div>
                 <div class="todo-item-right">
                   <span class="todo-status-text">进行中</span>
                   <div class="todo-action-group">
-                    <button class="btn btn-secondary btn-sm todo-action-btn complete" @click="handleTodoTip">
+                    <button class="btn btn-secondary btn-sm todo-action-btn complete" @click="handleComplete(item.matterId)">
                       完成
                     </button>
-                    <button class="btn btn-secondary btn-sm todo-action-btn cancel" @click="handleTodoTip">取消</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="todo-item-card">
-                <div class="todo-item-left">
-                  <span class="todo-dot" style="background-color: var(--color-warning);"></span>
-                  <div class="todo-info-group">
-                    <div class="todo-title-row">
-                      <span class="todo-title">发送商务合作方案</span>
-                      <span class="todo-priority-badge medium">中优先级</span>
-                    </div>
-                    <span class="todo-time-tag">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:2px;display:inline-block;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      2026-06-28 10:00
-                    </span>
-                  </div>
-                </div>
-                <div class="todo-item-right">
-                  <span class="todo-status-text">进行中</span>
-                  <div class="todo-action-group">
-                    <button class="btn btn-secondary btn-sm todo-action-btn complete" @click="handleTodoTip">完成</button>
-                    <button class="btn btn-secondary btn-sm todo-action-btn cancel" @click="handleTodoTip">取消</button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="todo-item-card">
-                <div class="todo-item-left">
-                  <span class="todo-dot" style="background-color: var(--color-info);"></span>
-                  <div class="todo-info-group">
-                    <div class="todo-title-row">
-                      <span class="todo-title">电话探讨实习事宜</span>
-                      <span class="todo-priority-badge low">低优先级</span>
-                    </div>
-                    <span class="todo-time-tag">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:2px;display:inline-block;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      2026-06-30 16:00
-                    </span>
-                  </div>
-                </div>
-                <div class="todo-item-right">
-                  <span class="todo-status-text">进行中</span>
-                  <div class="todo-action-group">
-                    <button class="btn btn-secondary btn-sm todo-action-btn complete" @click="handleTodoTip">完成</button>
-                    <button class="btn btn-secondary btn-sm todo-action-btn cancel" @click="handleTodoTip">取消</button>
+                    <button class="btn btn-secondary btn-sm todo-action-btn cancel" @click="handleCancel(item.matterId)">取消</button>
                   </div>
                 </div>
               </div>
@@ -256,29 +213,19 @@
 
             <!-- 已完成 -->
             <div v-if="currentTab === 'completed'" class="tab-pane active">
-              <div class="todo-item-card is-muted">
-                <div class="todo-item-left">
-                  <span class="todo-dot" style="background-color: var(--color-success);"></span>
-                  <div class="todo-info-group">
-                    <div class="todo-title-row">
-                      <span class="todo-title">交换商务名片并建立联系</span>
-                    </div>
-                    <span class="todo-time-tag">2026-06-15 11:00</span>
-                  </div>
-                </div>
-                <div class="todo-item-right">
-                  <span class="badge badge-todo-completed">已完成</span>
-                </div>
+              <div v-if="completedTodos.length === 0" class="todo-empty-tip">
+                暂无已完成事项
               </div>
-
-              <div class="todo-item-card is-muted">
+              <div v-else v-for="item in completedTodos" :key="item.matterId" class="todo-item-card is-muted">
                 <div class="todo-item-left">
                   <span class="todo-dot" style="background-color: var(--color-success);"></span>
                   <div class="todo-info-group">
                     <div class="todo-title-row">
-                      <span class="todo-title">微信添加好友并打招呼</span>
+                      <span class="todo-title">{{ item.content }}</span>
                     </div>
-                    <span class="todo-time-tag">2026-06-15 14:00</span>
+                    <span class="todo-time-tag">
+                      完成于：{{ item.completedAt ? item.completedAt.substring(0, 16) : '' }}
+                    </span>
                   </div>
                 </div>
                 <div class="todo-item-right">
@@ -289,14 +236,19 @@
 
             <!-- 已取消 -->
             <div v-if="currentTab === 'cancelled'" class="tab-pane active">
-              <div class="todo-item-card is-muted">
+              <div v-if="cancelledTodos.length === 0" class="todo-empty-tip">
+                暂无已取消事项
+              </div>
+              <div v-else v-for="item in cancelledTodos" :key="item.matterId" class="todo-item-card is-muted">
                 <div class="todo-item-left">
                   <span class="todo-dot" style="background-color: var(--color-neutral-text);"></span>
                   <div class="todo-info-group">
                     <div class="todo-title-row">
-                      <span class="todo-title">邀约本周末聚餐</span>
+                      <span class="todo-title">{{ item.content }}</span>
                     </div>
-                    <span class="todo-time-tag">2026-06-12 18:00</span>
+                    <span class="todo-time-tag">
+                      取消于：{{ item.cancelledAt ? item.cancelledAt.substring(0, 16) : '' }}
+                    </span>
                   </div>
                 </div>
                 <div class="todo-item-right">
@@ -306,7 +258,7 @@
             </div>
           </div>
           
-          <router-link :to="`/todos?contactId=${contact.contactId}`" class="btn btn-secondary btn-sm todo-view-all">
+          <router-link :to="`/todos?contactId=${contact?.contactId}`" class="btn btn-secondary btn-sm todo-view-all" v-if="contact">
             查看全部事项
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-left:4px;display:inline-block;vertical-align:middle;">
               <polyline points="9 18 15 12 9 6"/>
@@ -386,6 +338,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
+import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
+import type { TodoInfo } from '@/types/todo'
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
 
@@ -396,6 +350,9 @@ const loading = ref<boolean>(false)
 const contact = ref<ContactInfo | null>(null)
 const currentTab = ref<string>('pending')
 const showBlacklistConfirm = ref<boolean>(false)
+
+const todos = ref<TodoInfo[]>([])
+const todoLoading = ref<boolean>(false)
 
 const contactId = computed(() => route.params.contactId as string)
 
@@ -411,6 +368,64 @@ const loadContactDetail = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const loadContactTodos = async () => {
+  if (!contactId.value) return
+  todoLoading.value = true
+  try {
+    const data = await getTodos({
+      contactId: contactId.value,
+      pageSize: 100
+    })
+    todos.value = data.list
+  } catch (error) {
+    console.error('Failed to load contact todos:', error)
+  } finally {
+    todoLoading.value = false
+  }
+}
+
+const pendingTodos = computed(() => todos.value.filter(t => t.status === 0))
+const completedTodos = computed(() => todos.value.filter(t => t.status === 2))
+const cancelledTodos = computed(() => todos.value.filter(t => t.status === 1))
+
+const handleComplete = async (matterId: string) => {
+  try {
+    await completeTodo(matterId)
+    ElMessage.success('事项标记已完成')
+    loadContactTodos()
+  } catch (error) {
+    console.error('Failed to complete todo:', error)
+  }
+}
+
+const handleCancel = async (matterId: string) => {
+  try {
+    await cancelTodo(matterId)
+    ElMessage.success('事项已取消')
+    loadContactTodos()
+  } catch (error) {
+    console.error('Failed to cancel todo:', error)
+  }
+}
+
+const getPriorityText = (priority: number) => {
+  if (priority === 2) return '紧急'
+  if (priority === 1) return '重要'
+  return '普通'
+}
+
+const getPriorityClass = (priority: number) => {
+  if (priority === 2) return 'high'
+  if (priority === 1) return 'medium'
+  return 'low'
+}
+
+const getPriorityColor = (priority: number) => {
+  if (priority === 2) return 'var(--color-danger)'
+  if (priority === 1) return 'var(--color-warning)'
+  return 'var(--color-info)'
 }
 
 const formatGender = (gender: number | null) => {
@@ -464,6 +479,7 @@ const handleTodoTip = () => {
 
 onMounted(() => {
   loadContactDetail()
+  loadContactTodos()
 })
 </script>
 
@@ -929,5 +945,14 @@ onMounted(() => {
   .detail-body-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.todo-empty-tip {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
 }
 </style>

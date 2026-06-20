@@ -41,12 +41,14 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
         }
 
-        IPage<TodoVO> page = new Page<>(query.getPage(), query.getPageSize());
+        int pageNum = query.getPage() == null ? 1 : query.getPage();
+        int size = query.getPageSize() == null ? 10 : query.getPageSize();
+        IPage<TodoVO> page = new Page<>(pageNum, size);
         todoMapper.selectTodoPage(page, query, userId);
 
         LocalDateTime now = LocalDateTime.now();
         for (TodoVO vo : page.getRecords()) {
-            vo.setIsOverdue(vo.getTodoTime().isBefore(now) && Integer.valueOf(0).equals(vo.getStatus()));
+            vo.setOverdue(vo.getTodoTime().isBefore(now) && Integer.valueOf(0).equals(vo.getStatus()));
         }
 
         TodoListVO listVO = new TodoListVO();
@@ -94,7 +96,7 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
         TodoVO vo = new TodoVO();
         BeanUtils.copyProperties(todo, vo);
         vo.setContactName(contact.getName());
-        vo.setIsOverdue(vo.getTodoTime().isBefore(LocalDateTime.now()) && vo.getStatus() == 0);
+        vo.setOverdue(vo.getTodoTime().isBefore(LocalDateTime.now()) && vo.getStatus() == 0);
         return vo;
     }
 

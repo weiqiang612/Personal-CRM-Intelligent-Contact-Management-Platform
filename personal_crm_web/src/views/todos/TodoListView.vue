@@ -243,11 +243,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import { getContactsApi } from '@/api/contact'
 import type { TodoInfo, TodoParams } from '@/types/todo'
 import type { ContactInfo } from '@/api/contact'
+
+const route = useRoute()
 
 // 状态管理
 const loading = ref(false)
@@ -376,19 +379,26 @@ const fetchTodos = async () => {
 
 // 加载选项卡计数
 const fetchTabCounts = async () => {
+  console.log('DEBUG: fetchTabCounts started. contactId =', filterParams.contactId)
   try {
     const now = new Date()
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
     const weekEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6, 23, 59, 59)
 
+    // 如果有选定的联系人，统计限制在当前联系人范围内
+    const baseParams: any = {}
+    if (filterParams.contactId) {
+      baseParams.contactId = filterParams.contactId
+    }
+
     const [todayRes, overdueRes, weekRes, pendingRes, completedRes, cancelledRes] = await Promise.all([
-      getTodos({ page: 1, pageSize: 1, startTime: formatDate(todayStart), endTime: formatDate(todayEnd) }),
-      getTodos({ page: 1, pageSize: 1, status: 0, endTime: formatDate(now) }),
-      getTodos({ page: 1, pageSize: 1, startTime: formatDate(todayStart), endTime: formatDate(weekEnd) }),
-      getTodos({ page: 1, pageSize: 1, status: 0 }),
-      getTodos({ page: 1, pageSize: 1, status: 2 }),
-      getTodos({ page: 1, pageSize: 1, status: 1 })
+      getTodos({ page: 1, pageSize: 1, startTime: formatDate(todayStart), endTime: formatDate(todayEnd), ...baseParams }),
+      getTodos({ page: 1, pageSize: 1, status: 0, endTime: formatDate(now), ...baseParams }),
+      getTodos({ page: 1, pageSize: 1, startTime: formatDate(todayStart), endTime: formatDate(weekEnd), ...baseParams }),
+      getTodos({ page: 1, pageSize: 1, status: 0, ...baseParams }),
+      getTodos({ page: 1, pageSize: 1, status: 2, ...baseParams }),
+      getTodos({ page: 1, pageSize: 1, status: 1, ...baseParams })
     ])
 
     tabCounts.today = todayRes.total
@@ -397,7 +407,9 @@ const fetchTabCounts = async () => {
     tabCounts.pending = pendingRes.total
     tabCounts.completed = completedRes.total
     tabCounts.cancelled = cancelledRes.total
+    console.log('DEBUG: fetchTabCounts completed successfully. tabCounts =', JSON.stringify(tabCounts))
   } catch (error) {
+    console.error('DEBUG: fetchTabCounts error =', error)
     console.error('获取状态计数失败', error)
   }
 }
@@ -513,6 +525,7 @@ const handleSortChange = () => {
 
 // 重置筛选
 const resetFilters = () => {
+  console.log('DEBUG: resetFilters called')
   keywordInput.value = ''
   dateRangeSelect.value = ''
   sortOrderSelect.value = 'desc'
@@ -526,6 +539,7 @@ const resetFilters = () => {
   queryParams.endTime = undefined
   
   fetchTodos()
+  fetchTabCounts()
 }
 
 const handleSearchInput = () => {
@@ -573,6 +587,11 @@ const handlePageSizeChange = () => {
 }
 
 onMounted(async () => {
+  // 读取 URL 参数以实现联系人联动筛选
+  if (route.query.contactId) {
+    filterParams.contactId = route.query.contactId as string
+  }
+
   try {
     const res = await getContactsApi({ page: 1, pageSize: 1000 })
     contactOptions.value = res.list
@@ -725,5 +744,36 @@ onMounted(async () => {
 
 .popconfirm-container :deep(.el-popover) {
   padding: 12px;
+}
+
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 320px;
+  margin: 0 auto;
 }
 </style>

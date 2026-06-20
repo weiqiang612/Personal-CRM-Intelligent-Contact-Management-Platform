@@ -15,12 +15,12 @@ public class TodoQuery implements Serializable {
     /**
      * 页码，默认 1
      */
-    private Integer page = 1;
+    private Integer page;
 
     /**
-     * 每页条数，默认 10
-     */
-    private Integer pageSize = 10;
+      * 每页条数，默认 10
+      */
+    private Integer pageSize;
 
     /**
      * 联系人业务编号 (可选)
