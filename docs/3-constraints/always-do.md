@@ -23,6 +23,7 @@
 - ✅ Write tests before calling the task done
 - ✅ Re-run tests after each logical change
 - ✅ Sync long-lived Harness documents (`docs/1-requirements/`, `docs/2-designs/`, `docs/3-constraints/`, `AGENTS.md`) whenever you change what they describe
+- ✅ After modifying backend Java or XML files, run compile (`mvn compile`) to trigger spring-boot-devtools hot-reload
 
 ## Naming, Formatting & Logic Optimization
 - ✅ Use semantic English words or standard Pinyin combinations for clear, readable names
