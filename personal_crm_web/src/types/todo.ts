@@ -25,6 +25,7 @@ export interface TodoParams {
   status?: number // 0 待完成, 1 已取消, 2 已完成
   startTime?: string // yyyy-MM-dd HH:mm:ss
   endTime?: string // yyyy-MM-dd HH:mm:ss
+  sortBy?: string // 排序字段：todoTime, createdAt, completedAt, cancelledAt
   sortOrder?: string // asc 或 desc
 }
 

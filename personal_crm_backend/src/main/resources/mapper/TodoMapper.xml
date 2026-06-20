@@ -32,7 +32,21 @@
                 AND t.todo_time &lt;= #{query.endTime}
             </if>
         </where>
-        ORDER BY t.todo_time
+        ORDER BY 
+        <choose>
+            <when test="query.sortBy != null and query.sortBy == 'createdAt'">
+                t.created_at
+            </when>
+            <when test="query.sortBy != null and query.sortBy == 'completedAt'">
+                t.completed_at
+            </when>
+            <when test="query.sortBy != null and query.sortBy == 'cancelledAt'">
+                t.cancelled_at
+            </when>
+            <otherwise>
+                t.todo_time
+            </otherwise>
+        </choose>
         <choose>
             <when test="query.sortOrder != null and query.sortOrder.equalsIgnoreCase('desc')">
                 DESC

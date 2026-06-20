@@ -43,6 +43,11 @@ public class TodoQuery implements Serializable {
     private String endTime;
 
     /**
+     * 排序字段 (可选, todoTime, createdAt, completedAt 等)
+     */
+    private String sortBy;
+
+    /**
      * 排序顺序 (可选, asc 或 desc)
      */
     private String sortOrder;

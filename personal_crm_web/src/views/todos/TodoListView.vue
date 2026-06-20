@@ -88,8 +88,12 @@
         </select>
         
         <select class="select-control" v-model="sortOrderSelect" @change="handleSortChange">
-          <option value="desc">创建时间降序</option>
-          <option value="asc">创建时间升序</option>
+          <option value="desc">
+            {{ activeTab === 'completed' ? '完成时间降序' : (activeTab === 'cancelled' ? '取消时间降序' : '提醒时间降序') }}
+          </option>
+          <option value="asc">
+            {{ activeTab === 'completed' ? '完成时间升序' : (activeTab === 'cancelled' ? '取消时间升序' : '提醒时间升序') }}
+          </option>
         </select>
         
         <button class="btn btn-secondary btn-icon" title="重置筛选" @click="resetFilters">
@@ -264,7 +268,7 @@ const contactOptions = ref<ContactInfo[]>([])
 // 搜索和排序字段
 const keywordInput = ref('')
 const dateRangeSelect = ref('')
-const sortOrderSelect = ref('desc') // desc: 降序, asc: 升序
+const sortOrderSelect = ref('asc') // 默认升序，即将到期排最前
 
 // 查询参数
 const queryParams = reactive<{
@@ -274,6 +278,7 @@ const queryParams = reactive<{
   status?: number
   startTime?: string
   endTime?: string
+  sortBy?: string
   sortOrder?: string
 }>({
   page: 1,
@@ -282,7 +287,8 @@ const queryParams = reactive<{
   status: undefined,
   startTime: undefined,
   endTime: undefined,
-  sortOrder: 'desc'
+  sortBy: 'todoTime',
+  sortOrder: 'asc'
 })
 
 // 额外的前端筛选字段（用于优先级）
@@ -360,6 +366,7 @@ const fetchTodos = async () => {
       status: queryParams.status,
       startTime: queryParams.startTime,
       endTime: queryParams.endTime,
+      sortBy: queryParams.sortBy,
       sortOrder: sortOrderSelect.value
     }
     
@@ -423,6 +430,8 @@ const handleTabClick = (tab: string) => {
     queryParams.status = undefined
     queryParams.startTime = undefined
     queryParams.endTime = undefined
+    queryParams.sortBy = 'todoTime'
+    sortOrderSelect.value = 'asc'
   } else if (tab === 'today') {
     queryParams.status = undefined
     const now = new Date()
@@ -430,10 +439,14 @@ const handleTabClick = (tab: string) => {
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
     queryParams.startTime = formatDate(start)
     queryParams.endTime = formatDate(end)
+    queryParams.sortBy = 'todoTime'
+    sortOrderSelect.value = 'asc'
   } else if (tab === 'overdue') {
     queryParams.status = 0
     queryParams.startTime = undefined
     queryParams.endTime = formatDate(new Date())
+    queryParams.sortBy = 'todoTime'
+    sortOrderSelect.value = 'asc'
   } else if (tab === 'week') {
     queryParams.status = undefined
     const now = new Date()
@@ -441,18 +454,26 @@ const handleTabClick = (tab: string) => {
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 6, 23, 59, 59)
     queryParams.startTime = formatDate(start)
     queryParams.endTime = formatDate(end)
+    queryParams.sortBy = 'todoTime'
+    sortOrderSelect.value = 'asc'
   } else if (tab === 'pending') {
     queryParams.status = 0
     queryParams.startTime = undefined
     queryParams.endTime = undefined
+    queryParams.sortBy = 'todoTime'
+    sortOrderSelect.value = 'asc'
   } else if (tab === 'completed') {
     queryParams.status = 2
     queryParams.startTime = undefined
     queryParams.endTime = undefined
+    queryParams.sortBy = 'completedAt'
+    sortOrderSelect.value = 'desc'
   } else if (tab === 'cancelled') {
     queryParams.status = 1
     queryParams.startTime = undefined
     queryParams.endTime = undefined
+    queryParams.sortBy = 'cancelledAt'
+    sortOrderSelect.value = 'desc'
   }
 
   dateRangeSelect.value = ''
@@ -528,7 +549,7 @@ const resetFilters = () => {
   console.log('DEBUG: resetFilters called')
   keywordInput.value = ''
   dateRangeSelect.value = ''
-  sortOrderSelect.value = 'desc'
+  sortOrderSelect.value = 'asc'
   filterParams.contactId = ''
   filterParams.priority = ''
   activeTab.value = 'all'
@@ -537,6 +558,7 @@ const resetFilters = () => {
   queryParams.status = undefined
   queryParams.startTime = undefined
   queryParams.endTime = undefined
+  queryParams.sortBy = 'todoTime'
   
   fetchTodos()
   fetchTabCounts()
@@ -551,7 +573,14 @@ const handleComplete = async (matterId: string) => {
   try {
     await completeTodo(matterId)
     ElMessage.success('成功标记该事项为完成！')
-    fetchTodos()
+    
+    // 延迟合并：直接修改本地数组里的这一行状态，避免视图闪烁与翻页跳动
+    const hit = todos.value.find(t => t.matterId === matterId)
+    if (hit) {
+      hit.status = 2
+      hit.completedAt = formatDate(new Date())
+    }
+    
     fetchTabCounts()
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')
@@ -563,7 +592,14 @@ const handleCancel = async (matterId: string) => {
   try {
     await cancelTodo(matterId)
     ElMessage.success('已成功取消该事项！')
-    fetchTodos()
+    
+    // 延迟合并：直接修改本地属性
+    const hit = todos.value.find(t => t.matterId === matterId)
+    if (hit) {
+      hit.status = 1
+      hit.cancelledAt = formatDate(new Date())
+    }
+    
     fetchTabCounts()
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')
