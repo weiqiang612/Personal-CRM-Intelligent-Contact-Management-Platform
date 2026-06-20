@@ -11,10 +11,17 @@
               <span v-if="contact.status === 1" class="badge badge-status-normal" style="background-color: #fee2e2; color: #ef4444;">已拉黑</span>
               <span v-else class="badge badge-status-normal">正常</span>
             </h3>
-            <div class="detail-tags-row">
-              <span class="badge tag-class">同学</span>
-              <span class="badge tag-friend">朋友</span>
-              <span class="badge tag-partner" style="background-color: #f3e8ff; color: #7e22ce;">产品合作</span>
+            <div class="detail-tags-row" v-if="contact.tags && contact.tags.length > 0">
+              <span
+                v-for="t in contact.tags"
+                :key="t"
+                :class="['badge', getTagClass(t)]"
+              >
+                {{ t }}
+              </span>
+            </div>
+            <div class="detail-tags-row" v-else>
+              <span class="text-muted" style="font-size: 11px; opacity: 0.5;">-</span>
             </div>
           </div>
         </div>
@@ -443,6 +450,15 @@ const formatPhone = (phone: string) => {
   return phone
 }
 
+// 标签 CSS 类映射
+const getTagClass = (tag: string) => {
+  if (tag === '同学') return 'tag-class'
+  if (tag === '朋友') return 'tag-friend'
+  if (tag === '重要') return 'tag-important'
+  if (tag === '实习' || tag === '合作伙伴') return 'tag-partner'
+  return ''
+}
+
 // 加入黑名单
 const executeBlacklist = async () => {
   if (!contact.value) return
@@ -471,10 +487,6 @@ const executeRestore = async () => {
 
 const goBack = () => {
   router.push('/contacts')
-}
-
-const handleTodoTip = () => {
-  ElMessage.info('事项功能为 Phase 2 预留，当前为占位交互')
 }
 
 onMounted(() => {

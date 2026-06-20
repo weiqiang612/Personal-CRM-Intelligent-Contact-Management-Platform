@@ -293,7 +293,7 @@ const fetchContactsList = async () => {
 }
 
 // 搜索延迟触发
-let searchTimer: any = null
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 const handleSearch = () => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
@@ -399,10 +399,6 @@ const confirmToBlacklist = async (id: string) => {
   } catch (error) {
     console.error('Failed to blacklist contact:', error)
   }
-}
-
-const handleTodoClick = () => {
-  ElMessage.info('新增事项功能将在 Phase 2 实现，当前只作为占位入口')
 }
 
 // 点击空白关闭天气

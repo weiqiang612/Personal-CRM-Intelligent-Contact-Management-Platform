@@ -54,13 +54,19 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
             queryWrapper.eq(Contact::getGender, param.getGender());
         }
 
-        // 标签筛选（多对多子查询过滤）
+        // 标签筛选（安全参数化过滤）
         String tag = param.getTag();
         if (tag != null && !tag.trim().isEmpty()) {
-            String escapedTag = tag.trim().replace("'", "''");
-            queryWrapper.inSql(Contact::getCtId, 
-                "SELECT contact_id FROM contact_tag ct JOIN tag t ON ct.tag_id = t.id WHERE t.name = '" + escapedTag + "' AND ct.user_id = '" + userId + "'"
-            );
+            List<String> contactIds = contactMapper.getContactIdsByTagAndUser(tag.trim(), userId);
+            if (contactIds.isEmpty()) {
+                ContactListVO listVO = new ContactListVO();
+                listVO.setList(java.util.Collections.emptyList());
+                listVO.setPage(param.getPage());
+                listVO.setPageSize(param.getPageSize());
+                listVO.setTotal(0L);
+                return listVO;
+            }
+            queryWrapper.in(Contact::getCtId, contactIds);
         }
 
         // 模糊搜索（姓名、手机号、微信）
@@ -92,7 +98,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         this.page(page, queryWrapper);
 
         List<ContactVO> voList = page.getRecords().stream()
-                .map(this::convertToVO)
+                .map(contact -> convertToVO(contact, userId))
                 .collect(Collectors.toList());
 
         ContactListVO listVO = new ContactListVO();
@@ -107,7 +113,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     @Override
     public ContactVO getContactDetail(String contactId) {
         Contact contact = getAndValidateContact(contactId);
-        return convertToVO(contact);
+        return convertToVO(contact, UserContext.getUserId());
     }
 
     @Override
@@ -134,7 +140,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         this.save(contact);
 
-        return convertToVO(contact);
+        return convertToVO(contact, userId);
     }
 
     @Override
@@ -158,7 +164,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         this.updateById(contact);
 
-        return convertToVO(contact);
+        return convertToVO(contact, contact.getUserId());
     }
 
     @Override
@@ -243,7 +249,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     /**
      * 实体转 VO，并关联头像查询
      */
-    private ContactVO convertToVO(Contact contact) {
+    private ContactVO convertToVO(Contact contact, String userId) {
         if (contact == null) {
             return null;
         }
@@ -256,7 +262,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         vo.setAvatarUrl(avatarUrl);
         
         // 关联查询标签列表
-        List<String> tags = contactMapper.getTagsByContactId(contact.getCtId());
+        List<String> tags = contactMapper.getTagsByContactIdAndUser(contact.getCtId(), userId);
         vo.setTags(tags);
         
         return vo;

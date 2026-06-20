@@ -77,7 +77,17 @@
               <td>{{ formatPhone(row.phone) }}</td>
               <td>{{ row.email || '-' }}</td>
               <td>
-                <span class="badge tag-class" style="background-color:#e5e7eb; color:#4b5563;">同事</span>
+                <template v-if="row.tags && row.tags.length > 0">
+                  <span
+                    v-for="t in row.tags"
+                    :key="t"
+                    :class="['badge', getTagClass(t)]"
+                    style="margin-right: 4px;"
+                  >
+                    {{ t }}
+                  </span>
+                </template>
+                <span v-else class="text-muted" style="font-size: 11px; opacity: 0.5;">-</span>
               </td>
               <td>{{ row.createdAt }}</td>
               <td>
@@ -154,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getContactsApi, restoreFromBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
@@ -197,7 +207,7 @@ const fetchBlacklist = async () => {
 }
 
 // 搜索延迟触发
-let searchTimer: any = null
+let searchTimer: ReturnType<typeof setTimeout> | null = null
 const handleSearch = () => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
@@ -248,6 +258,15 @@ const formatPhone = (phone: string) => {
     return `${clean.substring(0, 3)} **** ${clean.substring(7)}`
   }
   return phone
+}
+
+// 标签 CSS 类映射
+const getTagClass = (tag: string) => {
+  if (tag === '同学') return 'tag-class'
+  if (tag === '朋友') return 'tag-friend'
+  if (tag === '重要') return 'tag-important'
+  if (tag === '实习' || tag === '合作伙伴') return 'tag-partner'
+  return ''
 }
 
 const openRestoreConfirm = (id: string) => {

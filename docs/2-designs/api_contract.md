@@ -103,7 +103,10 @@
 }
 ```
 
-## 5. 联系人模块 (Contact APIs)
+## 5. Contact APIs (联系人模块)
+
+> [!NOTE]
+> 本模块在 TASK-004 中收口标签展示与筛选，不新增标签管理 CRUD 接口（如 `/api/v1/tags`）。
 
 ### 5.1 联系人列表
 
@@ -117,6 +120,7 @@
 | pageSize | int | 否 | 每页条数，默认 10 |
 | keyword | string | 否 | 按姓名、手机号、微信模糊搜索 |
 | status | int | 否 | 0 正常，1 黑名单 |
+| tag | string | 否 | 按标签名称筛选 |
 | sortBy | string | 否 | `createdAt`、`birthday` |
 | sortOrder | string | 否 | `asc` 或 `desc` |
 
@@ -138,6 +142,7 @@
         "birthday": "2001-05-01",
         "status": 0,
         "avatarUrl": "/uploads/contact-avatar/c0001.png",
+        "tags": ["同学", "朋友"],
         "createdAt": "2026-06-15 10:00:00"
       }
     ],
@@ -151,6 +156,28 @@
 ### 5.2 联系人详情
 
 - `GET /api/v1/contacts/{contactId}`
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "contactId": "C000000001",
+    "name": "张三",
+    "phone": "13800000000",
+    "wechat": "zhangsan",
+    "email": "zhangsan@example.com",
+    "gender": 1,
+    "birthday": "2001-05-01",
+    "status": 0,
+    "avatarUrl": "/uploads/contact-avatar/c0001.png",
+    "tags": ["同学", "朋友"],
+    "createdAt": "2026-06-15 10:00:00"
+  }
+}
+```
 
 ### 5.3 新增联系人
 

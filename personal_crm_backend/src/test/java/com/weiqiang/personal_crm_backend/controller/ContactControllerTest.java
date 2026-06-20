@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.LocalDate;
 import java.util.concurrent.ThreadLocalRandom;
@@ -45,6 +46,9 @@ public class ContactControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private String token;
     private String otherToken;
     private String testCtId;
@@ -56,7 +60,7 @@ public class ContactControllerTest {
     void setUp() {
         // 为 ethan (U000000001) 生成测试 Token
         token = "Bearer " + jwtUtils.generateToken("U000000001");
-        
+
         // 为另一个用户 (U000000002) 生成测试 Token
         otherToken = "Bearer " + jwtUtils.generateToken("U000000002");
 
@@ -107,6 +111,21 @@ public class ContactControllerTest {
                         .header("Authorization", otherToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40301)));
+    }
+
+    @Test
+    void testGetContactDetail_TagIsolation_Success() throws Exception {
+        jdbcTemplate.update("INSERT INTO tag (id, user_id, name, color) VALUES (101, 'U000000001', 'OwnTag', '#ffffff') ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), name=VALUES(name)");
+        jdbcTemplate.update("INSERT INTO tag (id, user_id, name, color) VALUES (102, 'U000000002', 'ForeignTag', '#ffffff') ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), name=VALUES(name)");
+        jdbcTemplate.update("INSERT INTO contact_tag (user_id, contact_id, tag_id) VALUES ('U000000001', ?, 101) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), tag_id=VALUES(tag_id)", testCtId);
+        jdbcTemplate.update("INSERT INTO contact_tag (user_id, contact_id, tag_id) VALUES ('U000000002', ?, 102) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), tag_id=VALUES(tag_id)", testCtId);
+
+        mockMvc.perform(get("/api/v1/contacts/" + testCtId)
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.tags", hasItem("OwnTag")))
+                .andExpect(jsonPath("$.data.tags", not(hasItem("ForeignTag"))));
     }
 
     @Test
@@ -195,5 +214,69 @@ public class ContactControllerTest {
                         .content(createJsonBody(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001)));
+    }
+
+    @Test
+    void testListContacts_TagFilter_Success() throws Exception {
+        // U000000001 插入一个标签和标签关联
+        jdbcTemplate.update("INSERT INTO tag (id, user_id, name, color) VALUES (99, 'U000000001', 'TestTag', '#ffffff') ON DUPLICATE KEY UPDATE name=VALUES(name)");
+        jdbcTemplate.update("INSERT INTO contact_tag (user_id, contact_id, tag_id) VALUES ('U000000001', ?, 99) ON DUPLICATE KEY UPDATE contact_id=VALUES(contact_id)", testCtId);
+
+        // 用 token（U000000001）查询，带上 tag=TestTag
+        mockMvc.perform(get("/api/v1/contacts")
+                        .header("Authorization", token)
+                        .param("tag", "TestTag"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.list", hasSize(1)))
+                .andExpect(jsonPath("$.data.list[0].contactId", is(testCtId)))
+                .andExpect(jsonPath("$.data.list[0].tags", hasItem("TestTag")));
+
+        // 尝试用一个不存在的标签过滤，应该返回空列表
+        mockMvc.perform(get("/api/v1/contacts")
+                        .header("Authorization", token)
+                        .param("tag", "NonExistingTag"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.list", hasSize(0)));
+    }
+
+    @Test
+    void testListContacts_TagFilter_SecurityIsolation() throws Exception {
+        // U000000001 插入一个标签和标签关联
+        jdbcTemplate.update("INSERT INTO tag (id, user_id, name, color) VALUES (99, 'U000000001', 'TestTag', '#ffffff') ON DUPLICATE KEY UPDATE name=VALUES(name)");
+        jdbcTemplate.update("INSERT INTO contact_tag (user_id, contact_id, tag_id) VALUES ('U000000001', ?, 99) ON DUPLICATE KEY UPDATE contact_id=VALUES(contact_id)", testCtId);
+
+        // 创建 U000000002（另一个用户）的联系人，并关联一个同名标签 "TestTag"
+        String otherCtId = "C99" + String.format("%07d", ThreadLocalRandom.current().nextInt(10_000_000));
+        Contact otherContact = new Contact();
+        otherContact.setUserId("U000000002");
+        otherContact.setCtId(otherCtId);
+        otherContact.setName("Other User Contact");
+        otherContact.setPhone("13900002222");
+        otherContact.setStatus(0);
+        contactMapper.insert(otherContact);
+
+        // U000000002 插入一个标签和标签关联
+        jdbcTemplate.update("INSERT INTO tag (id, user_id, name, color) VALUES (100, 'U000000002', 'TestTag', '#ffffff') ON DUPLICATE KEY UPDATE name=VALUES(name)");
+        jdbcTemplate.update("INSERT INTO contact_tag (user_id, contact_id, tag_id) VALUES ('U000000002', ?, 100) ON DUPLICATE KEY UPDATE contact_id=VALUES(contact_id)", otherCtId);
+
+        // 1. 用 U000000001 的 token，查询 tag=TestTag，应该查出自己的 testCtId，但绝不应包含 U000000002 的 otherCtId
+        mockMvc.perform(get("/api/v1/contacts")
+                        .header("Authorization", token)
+                        .param("tag", "TestTag"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.list[*].contactId", hasItem(testCtId)))
+                .andExpect(jsonPath("$.data.list[*].contactId", not(hasItem(otherCtId))));
+
+        // 2. 用 U000000002 的 token，查询 tag=TestTag，应该查出自己的 otherCtId，且不包含 U000000001 的 testCtId
+        mockMvc.perform(get("/api/v1/contacts")
+                        .header("Authorization", otherToken)
+                        .param("tag", "TestTag"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.list", hasSize(1)))
+                .andExpect(jsonPath("$.data.list[0].contactId", is(otherCtId)));
     }
 }

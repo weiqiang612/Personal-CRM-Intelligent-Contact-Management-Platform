@@ -3,12 +3,12 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-003-todo-module/`
-- spec.md ✅ Ready
+None (Next: `docs/4-tasks/features/TASK-005-dashboard-upload/`)
+- spec.md → Not started
 - tasks.md → Not started
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-002-contact-module/`
+`docs/4-tasks/features/TASK-003-todo-module/`
 - spec.md ✅ Ready
 - tasks.md ✅ Completed
 
@@ -46,30 +46,31 @@
 - 里程碑 2：T8-T14，完成事项前端 API、路由、列表、新增页面和后续任务提示
 - 里程碑 3：T15-T19，完成前后端联调、测试、自测验收和计划状态回写
 
+### TASK-004: Contact Tag and Blacklist Polish
+- [x] Implementation (17 tasks) Completed
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
-- TASK-002: 联系人模块完善
-  - 范围：联系人前后端联调、联系人详情页、黑名单体验完善、分页筛选与表单校验补齐
-- TASK-003: 事项模块完善
-  - 范围：事项前后端联调、事项列表筛选、状态流转页面交互、逾期展示与异常处理补齐
-- TASK-004: 看板与上传模块完善
+- TASK-004: 联系人标签与黑名单收口
+  - 范围：联系人列表/详情/黑名单真实标签展示、标签筛选契约、种子数据归属一致性和黑名单页一致性补齐
+- TASK-005: 看板与上传模块完善
   - 范围：看板图表展示、统计接口联调、头像上传回显、上传失败处理与页面体验补齐
 
 ### Phase 3: 增强功能
-- TASK-005: 标签管理功能
+- TASK-006: 标签管理功能
   - 范围：标签表管理、联系人绑定标签、标签筛选与联调
-- TASK-006: Contact Agent 查询能力
+- TASK-007: Contact Agent 查询能力
   - 范围：自然语言查询联系人和事项、查询结果展示、Agent 日志基础留痕
-- TASK-007: Contact Agent 写操作确认链路
+- TASK-008: Contact Agent 写操作确认链路
   - 范围：创建事项等写操作预确认、确认执行、取消执行、操作记录完善
 
 ### Phase 4: 质量与交付
-- TASK-008: 测试与缺陷修复
+- TASK-009: 测试与缺陷修复
   - 范围：单元测试、接口测试、自测清单、联调缺陷修复、验收问题收敛
-- TASK-009: 部署与验收材料
+- TASK-010: 部署与验收材料
   - 范围：部署脚本和说明、演示环境验证、用户使用说明、答辩或验收材料整理
-- TASK-010: 项目收尾与版本归档
+- TASK-011: 项目收尾与版本归档
   - 范围：README 和 docs 收口、版本标签、最终成果检查、可展示内容整理
 
 ## Completed
@@ -81,8 +82,8 @@
 - 2026-06-15: added SRS draft, backend dev config, seed script, and root README
 - 2026-06-18: completed TASK-002 Contact Module (frontend & backend integration and E2E verification)
 - 2026-06-20: completed TASK-003 Todo Module (frontend & backend integration and E2E verification)
+- 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前已成功交付 `TASK-003`，下阶段将开启 `TASK-004` 看板与上传模块。
-- 需开发看板后端聚合统计 API 并对齐 api_contract.md，前端使用 ECharts 绘制图表替换占位页。
-- 需完成头像上传与访问路径回显，并修复当前前端遗留的头像展示缺陷。
+- 当前已成功交付 `TASK-004`，下阶段开启 `TASK-005` 看板与上传模块完善。
+- 需要继续推进工作台看板图表展示、统计接口联调、头像上传回显、上传失败处理与页面体验补齐。
