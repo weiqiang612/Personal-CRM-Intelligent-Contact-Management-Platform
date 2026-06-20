@@ -27,17 +27,13 @@
               <el-select
                 v-model="form.contactId"
                 filterable
-                remote
-                reserve-keyword
-                placeholder="请输入姓名或手机号搜索联系人"
-                :remote-method="searchContacts"
-                :loading="searchLoading"
+                placeholder="请输入或选择联系人"
                 class="select-control-el"
                 style="width: 100%;"
                 @change="handleContactChange"
               >
                 <el-option
-                  v-for="item in searchResults"
+                  v-for="item in allContacts"
                   :key="item.contactId"
                   :label="`${item.name} (${item.phone})`"
                   :value="item.contactId"
@@ -230,11 +226,10 @@ const router = useRouter()
 
 // 状态
 const isContactFixed = ref(false)
-const searchLoading = ref(false)
 const submitLoading = ref(false)
 
 const selectedContact = ref<ContactInfo | null>(null)
-const searchResults = ref<ContactInfo[]>([])
+const allContacts = ref<ContactInfo[]>([])
 
 // 原始绑定输入框的时间
 const rawTime = ref('')
@@ -278,27 +273,10 @@ const setPriority = (prio: number) => {
   form.priority = prio
 }
 
-// 模糊搜索联系人
-const searchContacts = async (query: string) => {
-  if (!query.trim()) {
-    searchResults.value = []
-    return
-  }
-  searchLoading.value = true
-  try {
-    const res = await getContactsApi({ page: 1, pageSize: 20, keyword: query })
-    searchResults.value = res.list
-  } catch (error) {
-    console.error('搜索联系人失败', error)
-  } finally {
-    searchLoading.value = false
-  }
-}
-
 // 联系人下拉框选择事件
 const handleContactChange = (val: string) => {
   errors.contact = false
-  const hit = searchResults.value.find(item => item.contactId === val)
+  const hit = allContacts.value.find(item => item.contactId === val)
   if (hit) {
     selectedContact.value = hit
   } else {
@@ -371,6 +349,14 @@ const handleCancel = () => {
 // 初始化
 onMounted(async () => {
   const contactIdParam = route.query.contactId as string
+  
+  // 无论是否带入联系人，均预加载联系人列表以备普通创建或预览时使用
+  try {
+    const res = await getContactsApi({ page: 1, pageSize: 1000 })
+    allContacts.value = res.list
+  } catch (error) {
+    console.error('获取联系人列表失败', error)
+  }
   
   if (contactIdParam) {
     isContactFixed.value = true
@@ -585,5 +571,10 @@ onMounted(async () => {
 
 :deep(.select-control-el .el-input__wrapper.is-focus) {
   border-color: var(--color-primary) !important;
+}
+
+.required-star {
+  color: var(--color-danger);
+  margin-left: 2px;
 }
 </style>
