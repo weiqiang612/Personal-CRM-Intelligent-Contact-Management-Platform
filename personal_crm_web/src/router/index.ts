@@ -48,8 +48,14 @@ const router = createRouter({
         {
           path: 'todos',
           name: 'todos',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
+          component: () => import('../views/todos/TodoListView.vue'),
           meta: { title: '事项提醒', requiresAuth: true }
+        },
+        {
+          path: 'todos/new',
+          name: 'todo-new',
+          component: () => import('../views/todos/TodoFormView.vue'),
+          meta: { title: '新增事项', requiresAuth: true }
         },
         {
           path: 'blacklist',

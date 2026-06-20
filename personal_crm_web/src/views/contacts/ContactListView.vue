@@ -175,7 +175,7 @@
                 <div class="action-cell-right">
                   <router-link :to="`/contacts/${row.contactId}`" class="btn btn-secondary btn-sm">查看</router-link>
                   <router-link :to="`/contacts/${row.contactId}/edit`" class="btn btn-secondary btn-sm">编辑</router-link>
-                  <button class="btn btn-secondary btn-sm" @click="handleTodoClick">事项</button>
+                  <router-link :to="`/todos?contactId=${row.contactId}`" class="btn btn-secondary btn-sm">事项</router-link>
                   
                   <!-- 拉黑确认框 -->
                   <div class="popconfirm-container" style="display: inline-block; position: relative;">

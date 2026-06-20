@@ -27,12 +27,12 @@
             编辑资料
           </router-link>
           
-          <button class="btn btn-secondary" @click="handleTodoTip">
+          <router-link :to="`/todos/new?contactId=${contact.contactId}`" class="btn btn-secondary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:4px;display:inline-block;vertical-align:middle;">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             添加事项
-          </button>
+          </router-link>
 
           <!-- 拉黑 / 移出 切换按钮及其二次确认 -->
           <div class="popconfirm-container" style="display: inline-block; position: relative;">
@@ -306,12 +306,12 @@
             </div>
           </div>
           
-          <button class="btn btn-secondary btn-sm todo-view-all" @click="handleTodoTip">
+          <router-link :to="`/todos?contactId=${contact.contactId}`" class="btn btn-secondary btn-sm todo-view-all">
             查看全部事项
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-left:4px;display:inline-block;vertical-align:middle;">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
-          </button>
+          </router-link>
         </div>
       </section>
 
