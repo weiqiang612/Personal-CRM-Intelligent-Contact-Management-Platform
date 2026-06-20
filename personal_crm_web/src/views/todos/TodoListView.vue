@@ -649,7 +649,7 @@ onMounted(async () => {
 .todo-tabs-bar {
   display: flex;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
