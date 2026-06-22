@@ -433,15 +433,16 @@ watch(recentContacts, () => {
   }
   nextTick(() => {
     if (carouselTrackRef.value) {
-      // 锁定轨道位置
       gsap.set(carouselTrackRef.value, { xPercent: 0 })
       const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
       pages.forEach((page, idx) => {
         if (idx === activeSlide.value) {
-          gsap.set(page, { autoAlpha: 1, scale: 1.0, x: 0 })
+          gsap.set(page, { autoAlpha: 1 })
         } else {
-          gsap.set(page, { autoAlpha: 0, scale: 1.0, x: 0 })
+          gsap.set(page, { autoAlpha: 0 })
         }
+        // 清理任何残留的 3D 缩放或偏移属性，确保纯净就地渲染
+        gsap.set(page, { scale: 1.0, x: 0 })
       })
     }
   })
@@ -457,29 +458,24 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 1. 上一页缓慢向深处缩小淡出 (0.8s)
+    // 1. 上一页就地纯净淡出 (0.5s)
     if (prevPage) {
       gsap.to(prevPage, {
-        duration: 0.8,
+        duration: 0.5,
         autoAlpha: 0,
-        scale: 0.96, // 向背景推移退化
-        ease: "power2.out",
+        ease: "power1.out",
         overwrite: "auto"
       })
     }
 
-    // 2. 新一页以凸显比例缓慢淡入并还原到正常比例 (1.2s，超强高端阻尼呼吸感)
+    // 2. 新一页就地纯净淡入 (0.6s)
     if (nextPage) {
       gsap.fromTo(nextPage,
-        { 
-          autoAlpha: 0, 
-          scale: 1.04 // 从前景拉伸引入
-        },
+        { autoAlpha: 0 },
         {
-          duration: 1.2,
+          duration: 0.6,
           autoAlpha: 1,
-          scale: 1.0,
-          ease: "power2.out",
+          ease: "power1.out",
           overwrite: "auto"
         }
       )
