@@ -18,7 +18,7 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
+          component: () => import('../views/dashboard/DashboardView.vue'),
           meta: { title: '工作台', requiresAuth: true }
         },
         {
@@ -72,8 +72,8 @@ const router = createRouter({
         {
           path: 'settings',
           name: 'settings',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
-          meta: { title: '设置', requiresAuth: true }
+          component: () => import('../views/settings/SettingsView.vue'),
+          meta: { title: '系统设置', requiresAuth: true }
         }
       ]
     },

@@ -4,21 +4,21 @@
     <form @submit.prevent="handleSubmit">
       <div class="card form-layout" v-loading="loading">
         <!-- 左侧：头像上传 -->
-        <div class="avatar-upload-card">
+        <div class="avatar-upload-card" v-loading="uploading" element-loading-text="上传中...">
           <div class="avatar-upload-placeholder" id="avatarBox" @click="triggerFileUpload">
             <svg v-if="!avatarPreview" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 52px; height: 52px; color: #b2bac7;">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             <img v-else :src="avatarPreview" class="avatar-preview-img" alt="头像预览" style="display: block;">
           </div>
-          <input type="file" ref="fileInputRef" accept="image/*" style="display: none;" @change="handleFileChange">
-          <button type="button" class="btn btn-secondary btn-sm" @click="triggerFileUpload" style="color:var(--color-primary);border-color:var(--color-primary-border);">
+          <input type="file" ref="fileInputRef" accept="image/png, image/jpeg, image/jpg, image/webp" style="display: none;" @change="handleFileChange">
+          <button type="button" class="btn btn-secondary btn-sm" @click="triggerFileUpload" style="color:var(--color-primary);border-color:var(--color-primary-border);" :disabled="uploading">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;margin-right:4px;display:inline-block;vertical-align:middle;">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             上传头像
           </button>
-          <span class="upload-tip">支持 jpg/png/jpeg/webp，最大 2MB<br/>(头像物理上传属于 Phase 2 扩展，当前仅支持本地实时预览)</span>
+          <span class="upload-tip">支持 jpg/png/jpeg/webp，最大 2MB</span>
         </div>
 
         <!-- 右侧：表单区 -->
@@ -98,15 +98,32 @@
               <input type="date" id="birthday" class="input-control" v-model="form.birthday" style="width: 100%;">
             </div>
 
-            <!-- 关系标签 (静态置灰) -->
+            <!-- 关系标签 (多选) -->
             <div class="form-group col-span-2">
-              <label class="form-group-label" style="opacity: 0.6;">标签 (Phase 2)</label>
-              <div class="tag-select-wrapper" style="pointer-events: none; opacity: 0.65;">
-                <div class="tag-chips-input">
-                  <span class="badge tag-class" style="margin-right:6px;">同学</span>
-                  <span class="badge tag-friend">朋友</span>
-                </div>
-              </div>
+              <label class="form-group-label" for="tagIds">关系标签</label>
+              <el-select
+                id="tagIds"
+                v-model="form.tagIds"
+                multiple
+                clearable
+                placeholder="请选择标签"
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="item in tagList"
+                  :key="item.tagId"
+                  :label="item.name"
+                  :value="item.tagId"
+                >
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span
+                      style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                      :style="{ backgroundColor: item.color }"
+                    ></span>
+                    <span>{{ item.name }}</span>
+                  </div>
+                </el-option>
+              </el-select>
             </div>
           </div>
 
@@ -129,18 +146,33 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getContactDetailApi, createContactApi, updateContactApi } from '@/api/contact'
 import type { ContactSaveParams } from '@/api/contact'
+import { getTagsApi } from '@/api/tag'
+import type { TagInfo } from '@/api/tag'
+import { uploadContactAvatar } from '@/api/upload'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref<boolean>(false)
 const submitting = ref<boolean>(false)
+const uploading = ref<boolean>(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const avatarPreview = ref<string>('')
+const pendingFile = ref<File | null>(null)
 
 // 检查是否为编辑模式
 const isEdit = computed(() => route.name === 'contact-edit')
 const contactId = computed(() => route.params.contactId as string)
+
+const tagList = ref<TagInfo[]>([])
+
+const fetchTagList = async () => {
+  try {
+    tagList.value = await getTagsApi()
+  } catch (error) {
+    console.error('Failed to fetch tags:', error)
+  }
+}
 
 // 表单对象
 const form = reactive({
@@ -152,7 +184,8 @@ const form = reactive({
   wechat: '',
   address: '',
   postcode: '',
-  birthday: ''
+  birthday: '',
+  tagIds: [] as number[]
 })
 
 // 校验错误状态
@@ -160,6 +193,12 @@ const errors = reactive({
   name: false,
   phone: false
 })
+
+function getAvatarUrl(url: string | null): string {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `http://localhost:8080${url}`
+}
 
 // 获取现有详情
 const loadContactDetail = async () => {
@@ -176,10 +215,16 @@ const loadContactDetail = async () => {
     form.postcode = data.postcode || ''
     form.birthday = data.birthday || ''
     
+    if (data.tags && data.tags.length > 0) {
+      form.tagIds = data.tags
+        .map(tagName => tagList.value.find(t => t.name === tagName)?.tagId)
+        .filter((id): id is number => id !== undefined)
+    } else {
+      form.tagIds = []
+    }
+    
     if (data.avatarUrl) {
-      avatarPreview.value = data.avatarUrl.startsWith('http') 
-        ? data.avatarUrl 
-        : `http://localhost:8080${data.avatarUrl}`
+      avatarPreview.value = getAvatarUrl(data.avatarUrl)
     }
   } catch (error) {
     console.error('Failed to load contact detail:', error)
@@ -192,11 +237,12 @@ const loadContactDetail = async () => {
 
 // 触发头像上传
 const triggerFileUpload = () => {
+  if (uploading.value) return
   fileInputRef.value?.click()
 }
 
 // 头像即时预览
-const handleFileChange = (e: Event) => {
+const handleFileChange = async (e: Event) => {
   const files = (e.target as HTMLInputElement).files
   if (!files || files.length === 0) return
   
@@ -204,23 +250,48 @@ const handleFileChange = (e: Event) => {
   if (!file) return
   
   // 校验大小和类型
-  const isImage = file.type.startsWith('image/')
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  const isImage = allowedTypes.includes(file.type)
   const isLt2M = file.size / 1024 / 1024 < 2
   
   if (!isImage) {
-    ElMessage.error('只支持上传图片文件')
+    ElMessage.error('只支持上传 JPG, JPEG, PNG, WEBP 格式的图片文件')
+    // 重置选择器
+    ;(e.target as HTMLInputElement).value = ''
     return
   }
   if (!isLt2M) {
     ElMessage.error('图片大小不能超过 2MB')
+    ;(e.target as HTMLInputElement).value = ''
     return
   }
   
-  const reader = new FileReader()
-  reader.onload = () => {
-    avatarPreview.value = reader.result as string
+  // 如果是编辑模式，选择后立即触发上传
+  if (isEdit.value) {
+    try {
+      uploading.value = true
+      const res = await uploadContactAvatar(file, contactId.value)
+      // 成功后在表单内保存 accessUrl 并展示预览
+      avatarPreview.value = getAvatarUrl(res.accessUrl)
+      ElMessage.success('头像上传成功')
+    } catch (error: any) {
+      console.error('Upload contact avatar failed:', error)
+      ElMessage.error(error.message || '头像上传失败，已保留原头像')
+    } finally {
+      uploading.value = false
+      ;(e.target as HTMLInputElement).value = ''
+    }
+  } else {
+    // 新建模式下，由于没有 contactId，先进行本地预览，并在保存时统一上传
+    pendingFile.value = file
+    const reader = new FileReader()
+    reader.onload = () => {
+      avatarPreview.value = reader.result as string
+    }
+    reader.readAsDataURL(file)
+    // 重置选择器以便可重复选择同一文件
+    ;(e.target as HTMLInputElement).value = ''
   }
-  reader.readAsDataURL(file)
 }
 
 const clearError = (field: 'name' | 'phone') => {
@@ -261,21 +332,31 @@ const handleSubmit = async () => {
     wechat: form.wechat.trim() || null,
     address: form.address.trim() || null,
     postcode: form.postcode.trim() || null,
-    birthday: form.birthday || null
+    birthday: form.birthday || null,
+    tagIds: form.tagIds
   }
   
   try {
     if (isEdit.value) {
       await updateContactApi(contactId.value, saveParams)
       ElMessage.success('联系人修改成功')
+      router.push('/contacts')
     } else {
-      await createContactApi(saveParams)
+      const newContact = await createContactApi(saveParams)
+      // 新建成功，判断是否需要上传头像
+      if (pendingFile.value) {
+        try {
+          await uploadContactAvatar(pendingFile.value, newContact.contactId)
+        } catch (uploadError: any) {
+          console.error('Pending avatar upload failed:', uploadError)
+          ElMessage.warning('联系人创建成功，但头像上传失败')
+        }
+      }
       ElMessage.success('联系人创建成功')
+      router.push('/contacts')
     }
-    router.push('/contacts')
   } catch (error: any) {
     console.error('Save contact error:', error)
-    // 拦截器通常会自动展示错，此处做补救展示
   } finally {
     submitting.value = false
   }
@@ -285,7 +366,8 @@ const handleCancel = () => {
   router.push('/contacts')
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchTagList()
   if (isEdit.value) {
     loadContactDetail()
   }
@@ -325,7 +407,7 @@ onMounted(() => {
   width: 142px;
   height: 142px;
   border-radius: var(--radius-full);
-  border: 2px dashed #dbe3ee;
+  border: 2px solid #dbe3ee;
   display: flex;
   flex-direction: column;
   align-items: center;

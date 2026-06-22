@@ -25,10 +25,7 @@
 
         <select class="select-control" v-model="queryParams.tag" @change="handleFilterChange">
           <option value="">全部标签</option>
-          <option value="同学">同学</option>
-          <option value="朋友">朋友</option>
-          <option value="重要">重要</option>
-          <option value="实习">实习</option>
+          <option v-for="t in tagList" :key="t.tagId" :value="t.name">{{ t.name }}</option>
         </select>
 
         <select class="select-control" v-model="sortConfig" @change="handleSortChange">
@@ -42,6 +39,12 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
+        </button>
+        <button class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 13px;" @click="openTagManager">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          标签管理
         </button>
       </div>
 
@@ -159,8 +162,15 @@
                   <span
                     v-for="t in row.tags"
                     :key="t"
-                    :class="['badge', getTagClass(t)]"
-                    style="margin-right: 4px;"
+                    class="badge"
+                    :style="{
+                      marginRight: '4px',
+                      backgroundColor: getTagColor(t) + '15',
+                      color: getTagColor(t),
+                      borderColor: getTagColor(t) + '30',
+                      borderWidth: '1px',
+                      borderStyle: 'solid'
+                    }"
                   >
                     {{ t }}
                   </span>
@@ -241,6 +251,84 @@
         </div>
       </div>
     </section>
+    <!-- 标签管理弹窗 -->
+    <el-dialog
+      v-model="tagManagerVisible"
+      title="标签管理"
+      width="500px"
+      @closed="handleTagManagerClosed"
+      destroy-on-close
+    >
+      <div class="tag-manager-container" v-loading="tagLoading">
+        <!-- 新增/编辑表单 -->
+        <div class="tag-edit-form" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+          <div style="flex: 1;">
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569;">
+              {{ currentTagId ? '编辑标签' : '新增标签' }}
+            </div>
+            <input
+              type="text"
+              class="input-control"
+              v-model="tagForm.name"
+              placeholder="输入标签名称 (如 工作)"
+              style="width: 100%; height: 36px;"
+            />
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569;">颜色</div>
+            <el-color-picker v-model="tagForm.color" :predefine="predefineColors" size="default" />
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-primary" style="height: 36px; padding: 0 16px;" @click="saveTag">
+              确定
+            </button>
+            <button v-if="currentTagId" class="btn btn-secondary" style="height: 36px; padding: 0 12px;" @click="cancelEditTag">
+              取消
+            </button>
+          </div>
+        </div>
+
+        <!-- 标签列表 -->
+        <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">标签列表 ({{ tagList.length }})</div>
+        <div class="tag-list-scroll" style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px;">
+          <div v-if="tagList.length === 0" style="text-align: center; color: #94a3b8; padding: 30px 0; font-size: 13px;">
+            暂无标签，请在上方创建第一个标签
+          </div>
+          <div
+            v-for="item in tagList"
+            :key="item.tagId"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f1f5f9;"
+          >
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span
+                style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                :style="{ backgroundColor: item.color }"
+              ></span>
+              <span style="font-size: 13px; font-weight: 500; color: #334155;">{{ item.name }}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 12px;" @click="editTag(item)">
+                编辑
+              </button>
+              
+              <el-popconfirm
+                title="确定删除此标签吗？这会清理联系人关联关系，但不会删除联系人本身。"
+                confirm-button-text="确定"
+                cancel-button-text="取消"
+                width="220"
+                @confirm="deleteTag(item.tagId)"
+              >
+                <template #reference>
+                  <button class="btn btn-danger-outline btn-sm" style="padding: 2px 8px; font-size: 12px;">
+                    删除
+                  </button>
+                </template>
+              </el-popconfirm>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -249,6 +337,8 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getContactsApi, addToBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
+import { getTagsApi, createTagApi, updateTagApi, deleteTagApi } from '@/api/tag'
+import type { TagInfo } from '@/api/tag'
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
 
@@ -258,6 +348,104 @@ const total = ref<number>(0)
 const weatherOpen = ref<boolean>(false)
 const activePopconfirmId = ref<string | null>(null)
 const weatherRef = ref<HTMLElement | null>(null)
+const tagList = ref<TagInfo[]>([])
+
+const fetchTagList = async () => {
+  try {
+    tagList.value = await getTagsApi()
+  } catch (error) {
+    console.error('Failed to load tags:', error)
+  }
+}
+
+const getTagColor = (tagName: string) => {
+  const t = tagList.value.find(item => item.name === tagName)
+  return t ? t.color : '#64748b'
+}
+
+// 标签管理相关业务逻辑
+const tagManagerVisible = ref<boolean>(false)
+const tagLoading = ref<boolean>(false)
+const currentTagId = ref<number | null>(null)
+const tagForm = reactive({
+  name: '',
+  color: '#409EFF'
+})
+
+const predefineColors = ref([
+  '#409EFF',
+  '#67C23A',
+  '#E6A23C',
+  '#F56C6C',
+  '#909399',
+  '#00ffff',
+  '#2f4f4f',
+  '#ba55d3',
+  '#ff00ff'
+])
+
+const openTagManager = () => {
+  tagManagerVisible.value = true
+}
+
+const handleTagManagerClosed = () => {
+  cancelEditTag()
+  fetchContactsList()
+}
+
+const cancelEditTag = () => {
+  currentTagId.value = null
+  tagForm.name = ''
+  tagForm.color = '#409EFF'
+}
+
+const editTag = (tag: TagInfo) => {
+  currentTagId.value = tag.tagId
+  tagForm.name = tag.name
+  tagForm.color = tag.color
+}
+
+const saveTag = async () => {
+  if (!tagForm.name.trim()) {
+    ElMessage.warning('标签名称不能为空')
+    return
+  }
+  tagLoading.value = true
+  try {
+    if (currentTagId.value) {
+      await updateTagApi(currentTagId.value, {
+        name: tagForm.name.trim(),
+        color: tagForm.color
+      })
+      ElMessage.success('标签修改成功')
+    } else {
+      await createTagApi({
+        name: tagForm.name.trim(),
+        color: tagForm.color
+      })
+      ElMessage.success('标签创建成功')
+    }
+    cancelEditTag()
+    await fetchTagList()
+  } catch (error: any) {
+    console.error('Failed to save tag:', error)
+  } finally {
+    tagLoading.value = false
+  }
+}
+
+const deleteTag = async (tagId: number) => {
+  tagLoading.value = true
+  try {
+    await deleteTagApi(tagId)
+    ElMessage.success('标签删除成功')
+    await fetchTagList()
+  } catch (error) {
+    console.error('Failed to delete tag:', error)
+  } finally {
+    tagLoading.value = false
+  }
+}
 
 // 排序绑定
 const sortConfig = ref<string>('createdAt-desc')
@@ -410,6 +598,7 @@ const handleOutsideClick = (e: MouseEvent) => {
 
 onMounted(() => {
   fetchContactsList()
+  fetchTagList()
   document.addEventListener('click', handleOutsideClick)
 })
 

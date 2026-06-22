@@ -4,7 +4,12 @@
       <!-- 头部大卡片 -->
       <section class="card detail-header-card">
         <div class="detail-header-left">
-          <img :src="contact.avatarUrl || defaultAvatar" :alt="contact.name" class="detail-header-avatar">
+          <div class="detail-avatar-container">
+            <img v-if="contact.avatarUrl" :src="getAvatarUrl(contact.avatarUrl)" :alt="contact.name" class="detail-header-avatar">
+            <div v-else class="detail-header-avatar-placeholder">
+              {{ contact.name ? contact.name.charAt(0).toUpperCase() : '?' }}
+            </div>
+          </div>
           <div class="detail-header-info">
             <h3>
               {{ contact.name }}
@@ -15,7 +20,15 @@
               <span
                 v-for="t in contact.tags"
                 :key="t"
-                :class="['badge', getTagClass(t)]"
+                class="badge"
+                :style="{
+                  marginRight: '4px',
+                  backgroundColor: getTagColor(t) + '15',
+                  color: getTagColor(t),
+                  borderColor: getTagColor(t) + '30',
+                  borderWidth: '1px',
+                  borderStyle: 'solid'
+                }"
               >
                 {{ t }}
               </span>
@@ -345,6 +358,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
+import { getTagsApi } from '@/api/tag'
+import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 
@@ -359,6 +374,20 @@ const currentTab = ref<string>('pending')
 const showBlacklistConfirm = ref<boolean>(false)
 
 const todos = ref<TodoInfo[]>([])
+const tagList = ref<TagInfo[]>([])
+
+const fetchTagList = async () => {
+  try {
+    tagList.value = await getTagsApi()
+  } catch (error) {
+    console.error('Failed to load tags:', error)
+  }
+}
+
+const getTagColor = (tagName: string) => {
+  const t = tagList.value.find(item => item.name === tagName)
+  return t ? t.color : '#64748b'
+}
 const todoLoading = ref<boolean>(false)
 
 const contactId = computed(() => route.params.contactId as string)
@@ -489,9 +518,16 @@ const goBack = () => {
   router.push('/contacts')
 }
 
+function getAvatarUrl(url: string | null): string {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `http://localhost:8080${url}`
+}
+
 onMounted(() => {
   loadContactDetail()
   loadContactTodos()
+  fetchTagList()
 })
 </script>
 
@@ -505,6 +541,26 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 24px 32px;
+}
+
+.detail-avatar-container {
+  flex-shrink: 0;
+}
+
+.detail-header-avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-full);
+  background: #cbd5e1;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 28px;
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-md);
+  user-select: none;
 }
 
 .detail-header-left {

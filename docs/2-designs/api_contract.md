@@ -12,6 +12,7 @@
 ## 2. 规划模块 (Planned Modules)
 - 认证：登录、登出、当前用户信息
 - 联系人：列表、详情、新增、修改、加入黑名单、恢复
+- 标签：列表、新增、修改、删除
 - 事项：列表、新增、完成、取消、按时间与状态筛选
 - 看板：联系人数量、事项统计、今日事项、逾期事项
 - 上传：头像上传、头像访问路径回显
@@ -106,7 +107,7 @@
 ## 5. Contact APIs (联系人模块)
 
 > [!NOTE]
-> 本模块在 TASK-004 中收口标签展示与筛选，不新增标签管理 CRUD 接口（如 `/api/v1/tags`）。
+> 本模块支持联系人标签绑定与筛选，标签的 CRUD 管理接口位于单独的标签模块（`/api/v1/tags`）。
 
 ### 5.1 联系人列表
 
@@ -195,15 +196,19 @@
   "email": "zhangsan@example.com",
   "gender": 1,
   "birthday": "2001-05-01",
-  "phone": "13800000000"
+  "phone": "13800000000",
+  "tagIds": [1, 2]
 }
 ```
+
+请求体说明：
+- `tagIds`: 标签主键 ID 数组（可选，例如 `[1, 2]`）。关联时后端会验证传入的标签 ID 是否都属于当前登录用户；若存在越权标签 ID，则拒绝创建并返回 `40301` 错误码。
 
 ### 5.4 修改联系人
 
 - `PUT /api/v1/contacts/{contactId}`
 
-请求体与新增保持一致。
+请求体与新增保持一致（同样支持通过可选的 `tagIds` 进行标签的更新与绑定）。如果传入空数组或未传，则表示该联系人将不绑定任何标签。
 
 ### 5.5 加入黑名单
 
@@ -229,7 +234,119 @@
 }
 ```
 
-## 6. 事项模块 (Todo APIs)
+## 6. Tag APIs (标签模块)
+
+### 6.1 标签列表
+
+- `GET /api/v1/tags`
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "tagId": 1,
+      "name": "同学",
+      "color": "#409EFF",
+      "createdAt": "2026-06-15 10:00:00"
+    },
+    {
+      "tagId": 2,
+      "name": "朋友",
+      "color": "#67C23A",
+      "createdAt": "2026-06-15 10:00:00"
+    }
+  ]
+}
+```
+
+### 6.2 新增标签
+
+- `POST /api/v1/tags`
+
+请求体：
+
+```json
+{
+  "name": "工作",
+  "color": "#E6A23C"
+}
+```
+
+请求校验规则：
+- `name`: 标签名称（必填，String，1-50字符）。同用户下标签名称唯一，若重复则返回 `40901` 状态冲突。
+- `color`: 标签颜色（可选，String，最大20字符），格式为十六进制颜色码（例如 `#E6A23C`）或 CSS 颜色值。
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "tagId": 3,
+    "name": "工作",
+    "color": "#E6A23C",
+    "createdAt": "2026-06-21 16:00:00"
+  }
+}
+```
+
+### 6.3 修改标签
+
+- `PUT /api/v1/tags/{tagId}`
+
+请求体：
+
+```json
+{
+  "name": "工作-改",
+  "color": "#F56C6C"
+}
+```
+
+请求校验规则：
+- 路径参数 `tagId` 对应 `tag` 表的主键 `id`，必须为当前用户拥有的标签，否则拒绝修改并返回 `40301` 或 `40401`。
+- 修改后的 `name` 在该用户下必须唯一（排除当前标签自身），冲突时返回 `40901`。
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "tagId": 3,
+    "name": "工作-改",
+    "color": "#F56C6C",
+    "createdAt": "2026-06-21 16:00:00"
+  }
+}
+```
+
+### 6.4 删除标签
+
+- `DELETE /api/v1/tags/{tagId}`
+
+业务规则：
+- 路径参数 `tagId` 必须是当前用户拥有的标签，否则拒绝并返回 `40301` 或 `40401`。
+- 删除标签时，自动清理当前用户下的联系人标签绑定关系（删除 `contact_tag` 关联表中与该 `tag_id` 的记录），但不删除联系人本身。
+- 其他用户的同名标签不受任何影响。
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+## 7. 事项模块 (Todo APIs)
 
 ### 6.1 事项列表
 
@@ -280,7 +397,7 @@
 - 已完成和已取消事项不允许重复提交状态变更。
 - 逾期事项通过 `todoTime < now` 且 `status = 0` 动态计算，不单独存储字段。
 
-## 7. 上传模块 (Upload APIs)
+## 8. 上传模块 (Upload APIs)
 
 ### 7.1 上传联系人头像
 
@@ -319,7 +436,7 @@
 
 规则与联系人头像一致，只是不再传 `contactId`。
 
-## 8. 看板模块 (Dashboard APIs)
+## 9. 看板模块 (Dashboard APIs)
 
 ### 8.1 看板概览
 
@@ -345,11 +462,56 @@
 
 - `GET /api/v1/dashboard/todo-trend?days=7`
 
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "date": "2026-06-22",
+      "count": 3
+    },
+    {
+      "date": "2026-06-23",
+      "count": 0
+    }
+  ]
+}
+```
+
 ### 8.3 联系人性别分布
 
 - `GET /api/v1/dashboard/contact-gender-distribution`
 
-## 9. Agent 模块 (Agent APIs)
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "gender": 0,
+      "name": "未知",
+      "count": 2
+    },
+    {
+      "gender": 1,
+      "name": "男",
+      "count": 10
+    },
+    {
+      "gender": 2,
+      "name": "女",
+      "count": 8
+    }
+  ]
+}
+```
+
+## 10. Agent 模块 (Agent APIs)
 
 ### 9.1 自然语言请求
 
@@ -420,7 +582,7 @@
 - `confirmed = false` 时记录取消状态，不执行写操作。
 - `operationId` 对应 `agent_operation_log.id`。
 
-## 10. 当前实现状态 (Implementation Status)
+## 11. 当前实现状态 (Implementation Status)
 
 - 后端 Controller 仍未开始实现。
 - 当前文档已经固定了开发第一阶段所需的最小接口集合。

@@ -8,6 +8,9 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -52,6 +55,16 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         log.error("BindException occurred: {}", message);
         return Result.error(ErrorCode.PARAMS_ERROR.getCode(), "validation failed: " + message);
+    }
+
+    /**
+     * 处理资源未找到异常 (例如静态文件 404)
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Result<?> handleNoResourceFoundException(NoResourceFoundException e) {
+        log.warn("Resource not found: {}", e.getMessage());
+        return Result.error(404, e.getMessage());
     }
 
     /**

@@ -57,6 +57,7 @@ export interface ContactSaveParams {
   gender?: number | null
   birthday?: string | null // yyyy-MM-dd
   phone: string
+  tagIds?: number[]
 }
 
 /**

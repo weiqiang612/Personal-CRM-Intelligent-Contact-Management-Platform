@@ -81,8 +81,15 @@
                   <span
                     v-for="t in row.tags"
                     :key="t"
-                    :class="['badge', getTagClass(t)]"
-                    style="margin-right: 4px;"
+                    class="badge"
+                    :style="{
+                      marginRight: '4px',
+                      backgroundColor: getTagColor(t) + '15',
+                      color: getTagColor(t),
+                      borderColor: getTagColor(t) + '30',
+                      borderWidth: '1px',
+                      borderStyle: 'solid'
+                    }"
                   >
                     {{ t }}
                   </span>
@@ -168,6 +175,8 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getContactsApi, restoreFromBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
+import { getTagsApi } from '@/api/tag'
+import type { TagInfo } from '@/api/tag'
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
 
@@ -175,6 +184,20 @@ const loading = ref<boolean>(false)
 const contacts = ref<ContactInfo[]>([])
 const total = ref<number>(0)
 const activePopconfirmId = ref<string | null>(null)
+const tagList = ref<TagInfo[]>([])
+
+const fetchTagList = async () => {
+  try {
+    tagList.value = await getTagsApi()
+  } catch (error) {
+    console.error('Failed to load tags:', error)
+  }
+}
+
+const getTagColor = (tagName: string) => {
+  const t = tagList.value.find(item => item.name === tagName)
+  return t ? t.color : '#64748b'
+}
 
 // 排序绑定
 const sortConfig = ref<string>('createdAt-desc')
@@ -290,6 +313,7 @@ const confirmRestore = async (id: string) => {
 
 onMounted(() => {
   fetchBlacklist()
+  fetchTagList()
 })
 </script>
 

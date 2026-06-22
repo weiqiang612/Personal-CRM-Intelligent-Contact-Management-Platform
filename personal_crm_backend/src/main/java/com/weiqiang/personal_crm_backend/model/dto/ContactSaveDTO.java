@@ -62,4 +62,9 @@ public class ContactSaveDTO implements Serializable {
     @NotBlank(message = "phone cannot be blank")
     @Pattern(regexp = "^[0-9+\\-()\\s]+$", message = "invalid phone format")
     private String phone;
+
+    /**
+     * 绑定的标签 ID 列表 (选填)
+     */
+    private java.util.List<Long> tagIds;
 }

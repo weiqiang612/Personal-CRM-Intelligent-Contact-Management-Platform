@@ -5,8 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.Contact;
+import com.weiqiang.personal_crm_backend.entity.ContactTag;
+import com.weiqiang.personal_crm_backend.entity.Tag;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.mapper.ContactMapper;
+import com.weiqiang.personal_crm_backend.mapper.ContactTagMapper;
+import com.weiqiang.personal_crm_backend.mapper.TagMapper;
 import com.weiqiang.personal_crm_backend.model.dto.ContactQueryParam;
 import com.weiqiang.personal_crm_backend.model.dto.ContactSaveDTO;
 import com.weiqiang.personal_crm_backend.model.vo.ContactListVO;
@@ -31,6 +35,8 @@ import java.util.stream.Collectors;
 public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> implements ContactService {
 
     private final ContactMapper contactMapper;
+    private final TagMapper tagMapper;
+    private final ContactTagMapper contactTagMapper;
 
     @Override
     public ContactListVO listContacts(ContactQueryParam param) {
@@ -127,6 +133,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         // 校验电话格式与合法性
         validateSaveDTO(dto);
 
+        // 验证标签是否越权
+        validateTagIds(dto.getTagIds(), userId);
+
         Contact contact = new Contact();
         BeanUtils.copyProperties(dto, contact);
         contact.setUserId(userId);
@@ -140,6 +149,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         this.save(contact);
 
+        // 保存标签关联
+        saveContactTags(ctId, dto.getTagIds(), userId);
+
         return convertToVO(contact, userId);
     }
 
@@ -147,8 +159,12 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     @Transactional(rollbackFor = Exception.class)
     public ContactVO updateContact(String contactId, ContactSaveDTO dto) {
         Contact contact = getAndValidateContact(contactId);
+        String userId = contact.getUserId();
         
         validateSaveDTO(dto);
+
+        // 验证标签是否越权
+        validateTagIds(dto.getTagIds(), userId);
 
         // 更新字段
         contact.setName(dto.getName());
@@ -164,7 +180,16 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         this.updateById(contact);
 
-        return convertToVO(contact, contact.getUserId());
+        // 清理旧的标签关联
+        LambdaQueryWrapper<ContactTag> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ContactTag::getContactId, contactId)
+                .eq(ContactTag::getUserId, userId);
+        contactTagMapper.delete(wrapper);
+
+        // 保存新的标签关联
+        saveContactTags(contactId, dto.getTagIds(), userId);
+
+        return convertToVO(contact, userId);
     }
 
     @Override
@@ -266,5 +291,41 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         vo.setTags(tags);
         
         return vo;
+    }
+
+    /**
+     * 校验传入的标签 ID 集合是否完全归属于当前登录用户
+     */
+    private void validateTagIds(List<Long> tagIds, String userId) {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        List<Long> uniqueTagIds = tagIds.stream().distinct().collect(Collectors.toList());
+        
+        Long count = tagMapper.selectCount(new LambdaQueryWrapper<Tag>()
+                .in(Tag::getId, uniqueTagIds)
+                .eq(Tag::getUserId, userId));
+
+        if (count.intValue() != uniqueTagIds.size()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "invalid tag id or access denied");
+        }
+    }
+
+    /**
+     * 保存联系人与标签的关联映射关系
+     */
+    private void saveContactTags(String contactId, List<Long> tagIds, String userId) {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+        List<Long> uniqueTagIds = tagIds.stream().distinct().collect(Collectors.toList());
+        for (Long tagId : uniqueTagIds) {
+            ContactTag contactTag = new ContactTag();
+            contactTag.setUserId(userId);
+            contactTag.setContactId(contactId);
+            contactTag.setTagId(tagId);
+            contactTag.setCreatedAt(LocalDateTime.now());
+            contactTagMapper.insert(contactTag);
+        }
     }
 }

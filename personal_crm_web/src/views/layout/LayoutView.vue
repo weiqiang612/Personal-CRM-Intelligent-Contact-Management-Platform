@@ -44,7 +44,7 @@
             <span class="user-online-dot"></span>
           </div>
           <div class="user-meta">
-            <span class="user-name">{{ user?.username || 'Ethan' }}</span>
+            <span class="user-name">{{ user?.username ? (user.username.charAt(0).toUpperCase() + user.username.slice(1)) : 'Ethan' }}</span>
             <span class="user-email">{{ user?.username || 'ethan' }}@example.com</span>
           </div>
         </router-link>
@@ -70,7 +70,7 @@
           <p class="page-subtitle">{{ pageSubtitle }}</p>
         </div>
 
-        <div v-if="!showBackButton" class="topbar-right">
+        <div v-if="!showBackButton && route.path !== '/settings'" class="topbar-right">
           <div v-if="pageActions.length > 0" class="topbar-actions">
             <router-link
               v-for="action in pageActions"
@@ -149,7 +149,7 @@ const { user } = storeToRefs(authStore)
 const isCollapsed = ref<boolean>(false)
 const showDropdown = ref<boolean>(false)
 
-const defaultAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80'
+const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
 
 // 侧边栏折叠切换
 const toggleSidebar = () => {
@@ -222,8 +222,21 @@ const goBack = () => {
   router.back()
 }
 
+const getFormattedToday = () => {
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+  const weekday = weekdays[date.getDay()]
+  return `${year}年${month}月${day}日${weekday}`
+}
+
 // 动态大标题
 const pageTitle = computed(() => {
+  if (route.path === '/dashboard') {
+    return `下午好，${user.value?.username || 'Ethan'}`
+  }
   const routeTitle = (route.meta.title as string) || '工作台'
   if (route.path === '/contacts') {
     return '联系人管理'
@@ -233,9 +246,10 @@ const pageTitle = computed(() => {
 
 // 动态副说明文字
 const pageSubtitle = computed(() => {
+  if (route.path === '/dashboard') {
+    return getFormattedToday()
+  }
   switch (route.path) {
-    case '/dashboard':
-      return '智能数据看板与事项压力提示'
     case '/contacts':
       return '维护联系人资料、标签与提醒事项'
     case '/contacts/new':
@@ -247,7 +261,7 @@ const pageSubtitle = computed(() => {
     case '/agent':
       return 'AI Agent 自然语言人脉分析与写操作二次确认'
     case '/settings':
-      return '配置个人信息、头像档案及账号安全'
+      return '修改个人资料、更换头像及系统退出'
     default:
       if (route.name === 'contact-detail') {
         return '查看联系人详细资料与历史往来'
