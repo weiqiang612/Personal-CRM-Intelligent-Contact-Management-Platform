@@ -85,7 +85,10 @@
               v-for="pageIndex in totalSlides"
               :key="pageIndex"
               class="carousel-page"
-              :class="{ active: pageIndex - 1 === activeSlide }"
+              :class="{ 
+                active: pageIndex - 1 === activeSlide,
+                'is-static': pageIndex === 1
+              }"
             >
               <div
                 v-for="contact in getPageContacts(pageIndex - 1)"
@@ -1099,13 +1102,13 @@ onBeforeUnmount(() => {
   overflow: hidden;
   margin-top: 4px;
   flex: 1;
-  height: 184px; /* 增加高度，为下方的邮件/电话圆形按钮与 hover/scale 动效预留充足空间 */
+  /* 高度不写死，由 relative 定位的 .is-static（第一页）自适应内容撑开 */
 }
 
 .carousel-track {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
 }
 
 .carousel-page {
@@ -1113,13 +1116,20 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   opacity: 0;
   visibility: hidden;
   pointer-events: none; /* 屏蔽背景页面的操作 */
+}
+
+/* 第一页作为占位，始终以相对定位在文档流中撑开整体高度，自适应任何缩放和行数变化 */
+.carousel-page.is-static {
+  position: relative;
+  top: auto;
+  left: auto;
+  height: auto;
 }
 
 .carousel-page.active {
@@ -1129,9 +1139,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 640px) {
-  .carousel-container {
-    height: 378px; /* 2行卡片自适应高度 */
-  }
   .carousel-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
