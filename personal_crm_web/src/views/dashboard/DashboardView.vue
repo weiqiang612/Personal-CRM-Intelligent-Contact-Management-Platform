@@ -430,14 +430,14 @@ watch(recentContacts, () => {
   }
   nextTick(() => {
     if (carouselTrackRef.value) {
-      // 锁定大轨道，不再平移它本身
+      // 锁定轨道位置
       gsap.set(carouselTrackRef.value, { xPercent: 0 })
       const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
       pages.forEach((page, idx) => {
         if (idx === activeSlide.value) {
-          gsap.set(page, { opacity: 1, visibility: 'visible', x: 0 })
+          gsap.set(page, { autoAlpha: 1, scale: 1.0, x: 0 })
         } else {
-          gsap.set(page, { opacity: 0, visibility: 'hidden', x: 0 })
+          gsap.set(page, { autoAlpha: 0, scale: 1.0, x: 0 })
         }
       })
     }
@@ -454,38 +454,28 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 方向判断：右翻则旧页左偏新页右入，左翻则旧页右偏新页左入
-    const isNext = index > prevIndex
-    const drift = 30 // 30px 微位移，呼吸感强烈且不杂乱
-    const prevTargetX = isNext ? -drift : drift
-    const nextStartX = isNext ? drift : -drift
-
-    // 1. 上一页缓慢淡出并轻拂偏移 (1.0s)
+    // 1. 上一页缓慢向深处缩小淡出 (0.8s)
     if (prevPage) {
       gsap.to(prevPage, {
-        duration: 1.0,
-        opacity: 0,
-        x: prevTargetX,
+        duration: 0.8,
+        autoAlpha: 0,
+        scale: 0.96, // 向背景推移退化
         ease: "power2.out",
-        overwrite: "auto",
-        onComplete: () => {
-          gsap.set(prevPage, { visibility: 'hidden' })
-        }
+        overwrite: "auto"
       })
     }
 
-    // 2. 新一页激活，并从 0 缓慢淡入与归位滑入 (1.2s，更柔和沉稳)
+    // 2. 新一页以凸显比例缓慢淡入并还原到正常比例 (1.2s，超强高端阻尼呼吸感)
     if (nextPage) {
       gsap.fromTo(nextPage,
         { 
-          opacity: 0, 
-          x: nextStartX,
-          visibility: 'visible'
+          autoAlpha: 0, 
+          scale: 1.04 // 从前景拉伸引入
         },
         {
           duration: 1.2,
-          opacity: 1,
-          x: 0,
+          autoAlpha: 1,
+          scale: 1.0,
           ease: "power2.out",
           overwrite: "auto"
         }
@@ -1109,7 +1099,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   margin-top: 4px;
   flex: 1;
-  height: 134px; /* 固定高度，防止绝对定位重叠时塌陷 */
+  height: 184px; /* 增加高度，为下方的邮件/电话圆形按钮与 hover/scale 动效预留充足空间 */
 }
 
 .carousel-track {
@@ -1140,7 +1130,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 640px) {
   .carousel-container {
-    height: 278px; /* 2行卡片自适应高度 */
+    height: 378px; /* 2行卡片自适应高度 */
   }
   .carousel-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
