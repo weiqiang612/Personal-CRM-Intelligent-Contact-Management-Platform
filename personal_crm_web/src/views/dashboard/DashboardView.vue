@@ -81,7 +81,12 @@
             <p>暂无重要联系人，请先去联系人中心添加！</p>
           </div>
           <div v-else class="carousel-track" ref="carouselTrackRef">
-            <div v-for="pageIndex in totalSlides" :key="pageIndex" class="carousel-page">
+            <div
+              v-for="pageIndex in totalSlides"
+              :key="pageIndex"
+              class="carousel-page"
+              :class="{ active: pageIndex - 1 === activeSlide }"
+            >
               <div
                 v-for="contact in getPageContacts(pageIndex - 1)"
                 :key="contact.contactId"
@@ -425,10 +430,15 @@ watch(recentContacts, () => {
   }
   nextTick(() => {
     if (carouselTrackRef.value) {
-      gsap.set(carouselTrackRef.value, { xPercent: -activeSlide.value * 100 })
+      // 锁定大轨道，不再平移它本身
+      gsap.set(carouselTrackRef.value, { xPercent: 0 })
       const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
       pages.forEach((page, idx) => {
-        gsap.set(page, { opacity: idx === activeSlide.value ? 1 : 0 })
+        if (idx === activeSlide.value) {
+          gsap.set(page, { opacity: 1, visibility: 'visible', x: 0 })
+        } else {
+          gsap.set(page, { opacity: 0, visibility: 'hidden', x: 0 })
+        }
       })
     }
   })
@@ -444,31 +454,38 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 1. 整体大轨道平移，时长慢速至 1.0 秒
-    gsap.to(carouselTrackRef.value, {
-      duration: 1.0,
-      xPercent: -index * 100,
-      ease: "power2.out",
-      overwrite: "auto"
-    })
+    // 方向判断：右翻则旧页左偏新页右入，左翻则旧页右偏新页左入
+    const isNext = index > prevIndex
+    const drift = 30 // 30px 微位移，呼吸感强烈且不杂乱
+    const prevTargetX = isNext ? -drift : drift
+    const nextStartX = isNext ? drift : -drift
 
-    // 2. 上一页缓慢淡出 (0.8s)
+    // 1. 上一页缓慢淡出并轻拂偏移 (1.0s)
     if (prevPage) {
       gsap.to(prevPage, {
-        duration: 0.8,
+        duration: 1.0,
         opacity: 0,
+        x: prevTargetX,
         ease: "power2.out",
-        overwrite: "auto"
+        overwrite: "auto",
+        onComplete: () => {
+          gsap.set(prevPage, { visibility: 'hidden' })
+        }
       })
     }
 
-    // 3. 新一页从 0 缓慢淡入至 1 (1.0s)
+    // 2. 新一页激活，并从 0 缓慢淡入与归位滑入 (1.2s，更柔和沉稳)
     if (nextPage) {
       gsap.fromTo(nextPage,
-        { opacity: 0 },
+        { 
+          opacity: 0, 
+          x: nextStartX,
+          visibility: 'visible'
+        },
         {
-          duration: 1.0,
+          duration: 1.2,
           opacity: 1,
+          x: 0,
           ease: "power2.out",
           overwrite: "auto"
         }
@@ -1092,23 +1109,39 @@ onBeforeUnmount(() => {
   overflow: hidden;
   margin-top: 4px;
   flex: 1;
+  height: 134px; /* 固定高度，防止绝对定位重叠时塌陷 */
 }
 
 .carousel-track {
-  display: flex;
+  position: relative;
   width: 100%;
-  transition: none;
+  height: 100%;
 }
 
 .carousel-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  width: 100%;
-  flex-shrink: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none; /* 屏蔽背景页面的操作 */
+}
+
+.carousel-page.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto; /* 允许点击激活页面的卡片 */
 }
 
 @media (max-width: 640px) {
+  .carousel-container {
+    height: 278px; /* 2行卡片自适应高度 */
+  }
   .carousel-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
