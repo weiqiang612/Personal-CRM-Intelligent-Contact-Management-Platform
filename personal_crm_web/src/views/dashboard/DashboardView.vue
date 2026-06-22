@@ -456,18 +456,18 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 1. 上一页就地纯净快速淡出 (慢一倍至 0.8s) - 点击后稍微停顿 0.1s 后再执行退场，防仓促
+    // 1. 上一页就地快速淡出 (0.25s) - 点击后稍微停顿 0.1s 后再执行退场，快速清空视线防重影
     if (prevPage) {
       gsap.to(prevPage, {
         delay: 0.1,
-        duration: 0.8,
+        duration: 0.25,
         autoAlpha: 0,
         ease: "power1.out",
         overwrite: "auto"
       })
     }
 
-    // 2. 新一页根据方向从侧边极其平缓地滑入 (慢一倍至 2.4s) - 延迟 0.1s 启动，慢速而大气
+    // 2. 新一页延迟 0.3s 启动 (错开上一页淡出时间)，从侧边极其平缓地滑入 (2.4s)
     if (nextPage) {
       const isNext = index > prevIndex
       const startX = isNext ? 80 : -80 // 向后切换从右侧引入，向前切换从左侧引入
@@ -478,7 +478,7 @@ function slideCarousel(index: number) {
           x: startX
         },
         {
-          delay: 0.1,
+          delay: 0.3, // 错开 0.3s 保证上一张卡片淡影完全消失，彻底消除重影
           duration: 2.4, // 速度慢一倍，时长增加为原来的两倍 (1.2s -> 2.4s)
           autoAlpha: 1,
           x: 0,
