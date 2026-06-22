@@ -437,12 +437,10 @@ watch(recentContacts, () => {
       const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
       pages.forEach((page, idx) => {
         if (idx === activeSlide.value) {
-          gsap.set(page, { autoAlpha: 1 })
+          gsap.set(page, { autoAlpha: 1, x: 0, scale: 1.0 })
         } else {
-          gsap.set(page, { autoAlpha: 0 })
+          gsap.set(page, { autoAlpha: 0, x: 0, scale: 1.0 })
         }
-        // 清理任何残留的 3D 缩放或偏移属性，确保纯净就地渲染
-        gsap.set(page, { scale: 1.0, x: 0 })
       })
     }
   })
@@ -458,24 +456,31 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 1. 上一页就地纯净淡出 (0.5s)
+    // 1. 上一页就地纯净快速淡出 (0.4s) - 无任何缩放和偏移，保证退场干净利落不干扰视觉
     if (prevPage) {
       gsap.to(prevPage, {
-        duration: 0.5,
+        duration: 0.4,
         autoAlpha: 0,
         ease: "power1.out",
         overwrite: "auto"
       })
     }
 
-    // 2. 新一页就地纯净淡入 (0.6s)
+    // 2. 新一页根据方向从侧边（80px外）极其平缓地滑入归位并淡入 (1.2s，极速递减，高大气质感)
     if (nextPage) {
+      const isNext = index > prevIndex
+      const startX = isNext ? 80 : -80 // 向后切换从右侧引入，向前切换从左侧引入
+      
       gsap.fromTo(nextPage,
-        { autoAlpha: 0 },
+        { 
+          autoAlpha: 0,
+          x: startX
+        },
         {
-          duration: 0.6,
+          duration: 1.2,
           autoAlpha: 1,
-          ease: "power1.out",
+          x: 0,
+          ease: "power3.out", // 用减速显著的 power3.out 缓动，使滑动在最后阶段极轻极慢，优雅收尾
           overwrite: "auto"
         }
       )
