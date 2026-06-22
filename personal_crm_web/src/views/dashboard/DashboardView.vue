@@ -75,40 +75,41 @@
           <router-link to="/contacts" class="view-all-link">查看全部</router-link>
         </div>
         
-        <div class="carousel-container">
+        <div class="carousel-container" ref="carouselContainerRef">
           <div v-if="recentContacts.length === 0" class="empty-state">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
             <p>暂无重要联系人，请先去联系人中心添加！</p>
           </div>
-          <div v-else class="carousel-track">
-            <!-- 渲染 4 个联系人卡片 -->
-            <div
-              v-for="contact in carouselContacts"
-              :key="contact.contactId"
-              class="contact-card"
-              @click="goToContactDetail(contact.contactId)"
-            >
-              <img :src="getAvatarUrl(contact.avatarUrl)" :alt="contact.name" class="card-avatar">
-              <span class="badge" :style="getTagStyle(getContactFirstTag(contact))">
-                {{ getContactFirstTag(contact) }}
-              </span>
-              <div class="card-name">{{ contact.name }}</div>
-              <div class="card-company">{{ contact.address || '个人客户' }}</div>
-              <div class="card-actions">
-                <a :href="`mailto:${contact.email || ''}`" class="contact-action-btn" @click.stop v-if="contact.email">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                </a>
-                <a :href="`tel:${contact.phone || ''}`" class="contact-action-btn" @click.stop v-if="contact.phone">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                </a>
+          <div v-else class="carousel-track" ref="carouselTrackRef">
+            <div v-for="pageIndex in totalSlides" :key="pageIndex" class="carousel-page">
+              <div
+                v-for="contact in getPageContacts(pageIndex - 1)"
+                :key="contact.contactId"
+                class="contact-card"
+                @click="goToContactDetail(contact.contactId)"
+              >
+                <img :src="getAvatarUrl(contact.avatarUrl)" :alt="contact.name" class="card-avatar">
+                <span class="badge" :style="getTagStyle(getContactFirstTag(contact))">
+                  {{ getContactFirstTag(contact) }}
+                </span>
+                <div class="card-name">{{ contact.name }}</div>
+                <div class="card-company">{{ contact.address || '个人客户' }}</div>
+                <div class="card-actions">
+                  <a :href="`mailto:${contact.email || ''}`" class="contact-action-btn" @click.stop v-if="contact.email">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                  </a>
+                  <a :href="`tel:${contact.phone || ''}`" class="contact-action-btn" @click.stop v-if="contact.phone">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="carousel-indicators">
+        <div class="carousel-indicators" v-if="totalSlides > 1">
           <span
-            v-for="i in 4"
+            v-for="i in totalSlides"
             :key="i"
             class="indicator-dot"
             :class="{ active: activeSlide === i - 1 }"
@@ -327,6 +328,7 @@ import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
+import { gsap } from 'gsap'
 import { getDashboardOverview, getTodoTrend, getContactGenderDistribution } from '@/api/dashboard'
 import type { DashboardOverview, TodoTrendItem, ContactGenderDistributionItem } from '@/api/dashboard'
 import { getContactsApi } from '@/api/contact'
@@ -404,12 +406,75 @@ function goToContactDetail(contactId: string) {
 
 // 2. 轮播组件控制
 const activeSlide = ref<number>(0)
-const carouselContacts = computed(() => {
-  return recentContacts.value.slice(0, 4)
+const carouselContainerRef = ref<HTMLDivElement | null>(null)
+const carouselTrackRef = ref<HTMLDivElement | null>(null)
+let carouselCtx: any = null
+
+const totalSlides = computed(() => {
+  return Math.ceil(recentContacts.value.length / 4) || 0
+})
+
+function getPageContacts(pageIndex: number) {
+  const start = pageIndex * 4
+  return recentContacts.value.slice(start, start + 4)
+}
+
+watch(recentContacts, () => {
+  if (activeSlide.value >= totalSlides.value) {
+    activeSlide.value = 0
+  }
+  nextTick(() => {
+    if (carouselTrackRef.value) {
+      gsap.set(carouselTrackRef.value, { xPercent: -activeSlide.value * 100 })
+      const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
+      pages.forEach((page, idx) => {
+        gsap.set(page, { opacity: idx === activeSlide.value ? 1 : 0 })
+      })
+    }
+  })
 })
 
 function slideCarousel(index: number) {
+  if (index === activeSlide.value) return
+  const prevIndex = activeSlide.value
   activeSlide.value = index
+
+  if (carouselTrackRef.value) {
+    const pages = carouselTrackRef.value.querySelectorAll('.carousel-page')
+    const prevPage = pages[prevIndex]
+    const nextPage = pages[index]
+
+    // 1. 整体大轨道平移，时长慢速至 1.0 秒
+    gsap.to(carouselTrackRef.value, {
+      duration: 1.0,
+      xPercent: -index * 100,
+      ease: "power2.out",
+      overwrite: "auto"
+    })
+
+    // 2. 上一页缓慢淡出 (0.8s)
+    if (prevPage) {
+      gsap.to(prevPage, {
+        duration: 0.8,
+        opacity: 0,
+        ease: "power2.out",
+        overwrite: "auto"
+      })
+    }
+
+    // 3. 新一页从 0 缓慢淡入至 1 (1.0s)
+    if (nextPage) {
+      gsap.fromTo(nextPage,
+        { opacity: 0 },
+        {
+          duration: 1.0,
+          opacity: 1,
+          ease: "power2.out",
+          overwrite: "auto"
+        }
+      )
+    }
+  }
 }
 
 // 3. 事项勾选切换状态
@@ -462,7 +527,7 @@ async function fetchRecentContacts() {
   try {
     const res = await getContactsApi({
       page: 1,
-      pageSize: 4,
+      pageSize: 16,
       sortBy: 'createdAt',
       sortOrder: 'desc'
     })
@@ -816,12 +881,17 @@ onMounted(async () => {
   await initGenderChart()
 
   window.addEventListener('resize', handleResize)
+
+  if (carouselContainerRef.value) {
+    carouselCtx = gsap.context(() => {}, carouselContainerRef.value)
+  }
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   trendChartInstance?.dispose()
   genderChartInstance?.dispose()
+  carouselCtx?.revert()
 })
 </script>
 
@@ -1025,14 +1095,21 @@ onBeforeUnmount(() => {
 }
 
 .carousel-track {
+  display: flex;
+  width: 100%;
+  transition: none;
+}
+
+.carousel-page {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {
-  .carousel-track {
+  .carousel-page {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

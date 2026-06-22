@@ -24,14 +24,15 @@
           >
         </div>
         
-        <select class="select-control" disabled title="性别筛选将在后续接口扩展中实现">
+        <select class="select-control" v-model="queryParams.gender" @change="handleFilterChange">
           <option value="">性别</option>
           <option value="1">男</option>
           <option value="2">女</option>
         </select>
 
-        <select class="select-control" disabled title="Phase 2 标签管理功能">
-          <option value="">标签 (Phase 2)</option>
+        <select class="select-control" v-model="queryParams.tag" @change="handleFilterChange">
+          <option value="">全部标签</option>
+          <option v-for="t in tagList" :key="t.tagId" :value="t.name">{{ t.name }}</option>
         </select>
         
         <select class="select-control" v-model="sortConfig" @change="handleSortChange">
@@ -207,6 +208,8 @@ const queryParams = reactive({
   page: 1,
   pageSize: 10,
   keyword: '',
+  gender: '',
+  tag: '',
   status: 1,
   sortBy: 'createdAt',
   sortOrder: 'desc'
@@ -239,6 +242,11 @@ const handleSearch = () => {
   }, 300)
 }
 
+const handleFilterChange = () => {
+  queryParams.page = 1
+  fetchBlacklist()
+}
+
 const handleSortChange = () => {
   const parts = sortConfig.value.split('-')
   queryParams.sortBy = parts[0] || 'createdAt'
@@ -249,6 +257,8 @@ const handleSortChange = () => {
 
 const resetFilters = () => {
   queryParams.keyword = ''
+  queryParams.gender = ''
+  queryParams.tag = ''
   sortConfig.value = 'createdAt-desc'
   queryParams.sortBy = 'createdAt'
   queryParams.sortOrder = 'desc'
