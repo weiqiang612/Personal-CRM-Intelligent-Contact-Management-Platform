@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <!-- 四个大指标卡 -->
+    <!-- 四个摘要卡 -->
     <section class="stats-grid">
       <!-- 联系人总数 -->
       <div class="card stat-card">
@@ -65,12 +65,12 @@
 
     <!-- 中部两栏内容 -->
     <section class="dashboard-layout">
-      <!-- 左侧：重要联系人 -->
+      <!-- 左侧：最近联系人 -->
       <div class="card panel-card contacts-panel">
         <div class="card-header">
           <h3 class="card-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:17px;height:17px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            重要联系人
+            最近联系人
           </h3>
           <router-link to="/contacts" class="view-all-link">查看全部</router-link>
         </div>
@@ -78,7 +78,7 @@
         <div class="carousel-container" ref="carouselContainerRef">
           <div v-if="recentContacts.length === 0" class="empty-state">
             <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
-            <p>暂无重要联系人，请先去联系人中心添加！</p>
+            <p>暂无最近联系人，请先去联系人中心添加！</p>
           </div>
           <div v-else class="carousel-track" ref="carouselTrackRef">
             <div
@@ -143,19 +143,21 @@
           </div>
           <div
             v-else
-            v-for="todo in todayTodos.slice(0, 4)"
+            v-for="todo in displayTodayTodos.slice(0, 4)"
             :key="todo.matterId"
             class="todo-item"
-            :class="{ completed: todo.status === 2 }"
-            @click="toggleTodoStatus(todo)"
+            :class="{ 
+              completed: todo.status === 2,
+              cancelled: todo.status === 1
+            }"
           >
             <div class="todo-item-left">
-              <div class="todo-checkbox">
+              <button type="button" class="todo-checkbox todo-action-icon" @click="markTodoCompleted(todo)" :disabled="todo.status !== 0">
                 <!-- unchecked-icon -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="unchecked-icon"><circle cx="12" cy="12" r="10"/></svg>
                 <!-- checked-icon -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="checked-icon"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-              </div>
+              </button>
               <div class="todo-details">
                 <span class="todo-title">{{ todo.content }}</span>
                 <span class="todo-time">
@@ -167,12 +169,16 @@
                 </span>
               </div>
             </div>
-            <div class="todo-item-right">
-              <span class="badge" :class="getPriorityClass(todo.priority)">
+            <div class="todo-item-right todo-actions">
+              <span class="badge" :class="getPriorityClass(todo.priority)" v-if="todo.status === 0">
                 {{ getPriorityName(todo.priority) }}
               </span>
-              <span class="todo-status pending">待完成</span>
-              <span class="todo-status completed-text">已完成</span>
+              <template v-if="todo.status === 0">
+                <button type="button" class="todo-inline-btn complete" @click="markTodoCompleted(todo)">完成</button>
+                <button type="button" class="todo-inline-btn cancel" @click="markTodoCancelled(todo)">取消</button>
+              </template>
+              <span class="badge badge-priority-normal" v-else-if="todo.status === 2" style="background-color: #f0fdf4; color: #15803d; border-color: #bbf7d0;">已完成</span>
+              <span class="badge badge-priority-emergency" v-else style="background-color: #f1f5f9; color: #64748b; border-color: #cbd5e1;">已取消</span>
             </div>
           </div>
         </div>
@@ -341,8 +347,9 @@ import { getDashboardOverview, getTodoTrend, getContactGenderDistribution } from
 import type { DashboardOverview, TodoTrendItem, ContactGenderDistributionItem } from '@/api/dashboard'
 import { getContactsApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
-import { getTodos, completeTodo } from '@/api/todo'
+import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
+import { resolveAvatarUrl } from '@/utils/avatar'
 
 const router = useRouter()
 
@@ -356,13 +363,18 @@ const overview = ref<DashboardOverview>({
 })
 
 const todayTodos = ref<TodoInfo[]>([])
+const displayTodayTodos = computed(() => {
+  return [...todayTodos.value].sort((a, b) => {
+    const aFinished = a.status === 2 || a.status === 1 ? 1 : 0
+    const bFinished = b.status === 2 || b.status === 1 ? 1 : 0
+    return aFinished - bFinished
+  })
+})
 const recentContacts = ref<ContactInfo[]>([])
 
 // 获取头像地址
 function getAvatarUrl(url: string | null): string {
-  if (!url) return 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80'
-  if (url.startsWith('http')) return url
-  return `http://localhost:8080${url}`
+  return resolveAvatarUrl(url) || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80'
 }
 
 // 格式化今日待办的时间
@@ -491,15 +503,29 @@ function slideCarousel(index: number) {
 }
 
 // 3. 事项勾选切换状态
-async function toggleTodoStatus(todo: TodoInfo) {
-  if (todo.status === 2) return // 已经完成不再重复标记
+async function markTodoCompleted(todo: TodoInfo) {
   try {
     await completeTodo(todo.matterId)
     ElMessage.success('已标记事项为完成')
-    await fetchOverview()
     todo.status = 2
+    // 同时更新大指标卡数据
+    if (overview.value.pendingTodoCount > 0) overview.value.pendingTodoCount--
+    if (overview.value.todayTodoCount > 0) overview.value.todayTodoCount--
   } catch (e) {
     console.error('Failed to complete todo:', e)
+  }
+}
+
+async function markTodoCancelled(todo: TodoInfo) {
+  try {
+    await cancelTodo(todo.matterId)
+    ElMessage.success('已取消事项')
+    todo.status = 1
+    // 同时更新大指标卡数据
+    if (overview.value.pendingTodoCount > 0) overview.value.pendingTodoCount--
+    if (overview.value.todayTodoCount > 0) overview.value.todayTodoCount--
+  } catch (e) {
+    console.error('Failed to cancel todo:', e)
   }
 }
 
@@ -523,6 +549,7 @@ async function fetchTodayTodos() {
     const endTime = `${today} 23:59:59`
 
     const res = await getTodos({
+      status: 0,
       startTime,
       endTime,
       page: 1,
@@ -534,6 +561,10 @@ async function fetchTodayTodos() {
   } catch (e) {
     console.error('Failed to fetch today todos:', e)
   }
+}
+
+async function refreshDashboardData() {
+  await Promise.all([fetchOverview(), fetchTodayTodos(), initTrendChart()])
 }
 
 async function fetchRecentContacts() {
@@ -1389,25 +1420,81 @@ onBeforeUnmount(() => {
   border: 1px solid #bbf7d0;
 }
 
-.todo-status {
-  min-width: 42px;
-  text-align: right;
-  font-size: 10px;
+.todo-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.todo-action-icon {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.todo-inline-btn {
+  min-width: 44px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: #fff;
+  font-size: 11px;
   font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.todo-status.pending {
-  color: var(--color-primary);
-}
-
-.todo-status.completed-text {
+.todo-inline-btn.complete {
   color: var(--color-success);
-  display: none;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
 }
 
+.todo-inline-btn.cancel {
+  color: #b45309;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.todo-inline-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* 空状态美化 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  width: 100%;
+}
+
+.empty-icon {
+  width: 48px !important;
+  height: 48px !important;
+  margin-bottom: 12px;
+  color: #94a3b8;
+  opacity: 0.85;
+}
+
+.empty-state p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* 已完成与已取消事项的样式 */
 .todo-item.completed {
-  opacity: 0.7;
-  background: rgba(248, 250, 252, 0.92);
+  opacity: 0.65;
+  background: rgba(248, 250, 252, 0.85);
+  border-color: rgba(203, 213, 225, 0.8);
 }
 
 .todo-item.completed .todo-title {
@@ -1423,12 +1510,15 @@ onBeforeUnmount(() => {
   display: block;
 }
 
-.todo-item.completed .pending {
-  display: none;
+.todo-item.cancelled {
+  opacity: 0.55;
+  background: rgba(248, 250, 252, 0.75);
+  border-color: rgba(226, 232, 240, 0.8);
 }
 
-.todo-item.completed .completed-text {
-  display: inline;
+.todo-item.cancelled .todo-title {
+  color: #94a3b8;
+  text-decoration: line-through;
 }
 
 /* 底部图表 */

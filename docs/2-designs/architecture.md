@@ -5,7 +5,7 @@
 - **Service 业务逻辑层**：处理联系人、事项、看板、上传、登录和 Agent 的业务规则，必要时声明事务。
 - **Mapper 数据持久层**：负责 MyBatis-Plus CRUD 和自定义 SQL，禁止写权限、确认、流程控制类逻辑。
 - **Config / Security / Interceptor**：统一管理 JWT 鉴权、当前用户上下文、跨域、异常和 MyBatis-Plus 分页等基础设施。
-- **Storage / Agent**：分别封装文件存储和 Contact Agent 适配，不直接绕过已有业务 Service。
+- **Storage / Agent**：分别封装文件存储和 Contact Agent 适配。Agent 作为业务编排层，**必须复用并调用**既有的 `ContactService` 与 `TodoService`，严禁直接注入其对应的 Mapper。这确保了在 Agent 查询时，仍然受控于现有业务层的数据隔离（多租户）、黑名单过滤及参数校验机制。
 
 ## 2. 架构图 (Architecture Diagrams)
 ```mermaid

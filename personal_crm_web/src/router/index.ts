@@ -66,7 +66,7 @@ const router = createRouter({
         {
           path: 'agent',
           name: 'agent',
-          component: () => import('../views/placeholder/PlaceholderView.vue'),
+          component: () => import('../views/agent/AgentView.vue'),
           meta: { title: '智能助手', requiresAuth: true }
         },
         {

@@ -140,7 +140,11 @@ public class DashboardControllerTest {
         todo1.setMatterId("M0" + String.format("%08d", ThreadLocalRandom.current().nextInt(100_000_000)));
         todo1.setUserId(userId);
         todo1.setContactId(contact1.getCtId());
-        todo1.setTodoTime(LocalDateTime.now().withHour(12).withMinute(0));
+        LocalDateTime todayTodoTime = LocalDateTime.now().plusHours(1);
+        if (todayTodoTime.toLocalDate().isAfter(LocalDate.now())) {
+            todayTodoTime = LocalDateTime.now().with(LocalTime.MAX).minusSeconds(1);
+        }
+        todo1.setTodoTime(todayTodoTime);
         todo1.setContent("Today Todo");
         todo1.setStatus(0);
         todoMapper.insert(todo1);

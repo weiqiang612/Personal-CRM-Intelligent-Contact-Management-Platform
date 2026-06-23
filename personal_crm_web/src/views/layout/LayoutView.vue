@@ -138,6 +138,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { resolveAvatarUrl } from '@/utils/avatar'
 
 const route = useRoute()
 const router = useRouter()
@@ -291,10 +292,7 @@ const pageActions = computed(() => {
 // 计算头像
 const avatarSrc = computed(() => {
   if (user.value?.avatarUrl) {
-    if (user.value.avatarUrl.startsWith('http')) {
-      return user.value.avatarUrl
-    }
-    return `http://localhost:8080${user.value.avatarUrl}`
+    return resolveAvatarUrl(user.value.avatarUrl)
   }
   return ''
 })

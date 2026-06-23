@@ -513,74 +513,130 @@
 
 ## 10. Agent 模块 (Agent APIs)
 
-### 9.1 自然语言请求
+### 9.1 自然语言查询接口（本期实现）
 
-- `POST /api/v1/agent/execute`
+- `POST /api/v1/agent/query`
 
 请求体：
 
 ```json
 {
-  "input": "明天下午三点提醒我联系张三"
+  "input": "帮我查张三的联系方式"
 }
 ```
 
-查询类响应示例：
+响应体结构定义：
+* `code`: 0 (正常), 非 0 (异常)
+* `message`: 提示信息
+* `data`: 查询结果负载对象
+  * `queryType`: 标识命中数据类别，取值 `"contact"` (联系人), `"todo"` (待办/事项), `"unsupported"` (不支持/超出本期范围)
+  * `intent`: 识别出的意图编码，如 `"query_contact"`, `"query_todo"`, `"unsupported"`
+  * `summary`: 统一的摘要文本描述
+  * `results`: 列表，泛型承载实体对象。若是联系人，则返回包含标签和头像相对路径的联系人信息；若是事项，则包含关联联系人姓名及逾期标志。
+
+#### 9.1.1 联系人查询成功响应示例（以姓名“张三”为例）：
 
 ```json
 {
   "code": 0,
   "message": "success",
   "data": {
-    "mode": "direct",
+    "queryType": "contact",
     "intent": "query_contact",
-    "reply": "已找到联系人张三",
-    "result": {
-      "contactId": "C000000001",
-      "name": "张三"
-    }
+    "summary": "已查找到包含关键字 '张三' 的联系人信息",
+    "results": [
+      {
+        "ctId": "C000000001",
+        "name": "张三",
+        "phone": "13800000000",
+        "wechat": "zhangsan_123",
+        "email": "zhangsan@example.com",
+        "gender": 1,
+        "birthday": "1995-05-10",
+        "notes": "重要客户",
+        "avatarUrl": "/uploads/contact-avatar/avatar.jpg",
+        "status": 0,
+        "tags": ["客户", "朋友"]
+      }
+    ]
   }
 }
 ```
 
-写操作预确认响应示例：
+#### 9.1.2 事项查询成功响应示例（以张三的待办为例）：
 
 ```json
 {
   "code": 0,
-  "message": "need_confirm",
+  "message": "success",
   "data": {
-    "mode": "confirm",
-    "operationId": 1001,
-    "intent": "create_todo",
-    "summary": "将为联系人张三创建一条事项",
-    "preview": {
-      "contactId": "C000000001",
-      "todoTime": "2026-06-16 15:00:00",
-      "content": "联系张三"
-    }
+    "queryType": "todo",
+    "intent": "query_todo",
+    "summary": "已查找到联系人 '张三' 关联的 1 条待办事项",
+    "results": [
+      {
+        "matterId": "T000000001",
+        "contactId": "C000000001",
+        "contactName": "张三",
+        "todoTime": "2026-06-25 15:00:00",
+        "content": "和张三确定合同细节",
+        "status": 0,
+        "priority": 2,
+        "overdue": false,
+        "completedAt": null,
+        "cancelledAt": null,
+        "createdAt": "2026-06-22 10:00:00"
+      }
+    ]
   }
 }
 ```
 
-### 9.2 确认执行写操作
-
-- `POST /api/v1/agent/confirm`
-
-请求体：
+#### 9.1.3 空结果成功响应示例：
 
 ```json
 {
-  "operationId": 1001,
-  "confirmed": true
+  "code": 0,
+  "message": "success",
+  "data": {
+    "queryType": "contact",
+    "intent": "query_contact",
+    "summary": "未查找到匹配的联系人信息",
+    "results": []
+  }
 }
 ```
 
-规则：
+#### 9.1.4 超出本期范围（如写操作或未识别意图）响应示例：
 
-- `confirmed = true` 才允许真正落库。
-- `confirmed = false` 时记录取消状态，不执行写操作。
-- `operationId` 对应 `agent_operation_log.id`。
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "queryType": "unsupported",
+    "intent": "unsupported",
+    "summary": "抱歉，本期智能助手仅支持查询联系人和事项，暂不支持创建、修改等写操作。",
+    "results": []
+  }
+}
+```
+
+#### 9.1.5 输入校验失败响应示例：
+
+```json
+{
+  "code": 40000,
+  "message": "输入内容不能为空"
+}
+```
+
+### 9.2 自然语言写操作与二次确认接口（后续 Phase 3 预留）
+
+- `POST /api/v1/agent/execute` (写意图预处理)
+- `POST /api/v1/agent/confirm` (二次确认提交)
+
+*(本期不进行这两个接口的实现，统一在查询编排层对写意图进行拦截并返回 `unsupported`)*
 
 ## 11. 当前实现状态 (Implementation Status)
 

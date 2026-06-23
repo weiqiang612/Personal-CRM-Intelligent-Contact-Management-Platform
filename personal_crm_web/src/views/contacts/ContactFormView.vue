@@ -149,6 +149,7 @@ import type { ContactSaveParams } from '@/api/contact'
 import { getTagsApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
 import { uploadContactAvatar } from '@/api/upload'
+import { resolveAvatarUrl } from '@/utils/avatar'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,9 +196,7 @@ const errors = reactive({
 })
 
 function getAvatarUrl(url: string | null): string {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return `http://localhost:8080${url}`
+  return resolveAvatarUrl(url)
 }
 
 // 获取现有详情

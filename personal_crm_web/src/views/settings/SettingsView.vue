@@ -90,6 +90,7 @@ import { storeToRefs } from 'pinia'
 import { ElNotification, ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { uploadUserAvatar } from '@/api/upload'
+import { resolveAvatarUrl } from '@/utils/avatar'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -103,10 +104,7 @@ const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69d
 // 计算展示的头像 URL，支持后端相对地址拼接
 const avatarUrl = computed(() => {
   if (user.value?.avatarUrl) {
-    if (user.value.avatarUrl.startsWith('http')) {
-      return user.value.avatarUrl
-    }
-    return `http://localhost:8080${user.value.avatarUrl}`
+    return resolveAvatarUrl(user.value.avatarUrl)
   }
   return ''
 })

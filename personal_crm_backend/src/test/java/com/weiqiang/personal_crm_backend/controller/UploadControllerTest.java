@@ -1,27 +1,29 @@
 package com.weiqiang.personal_crm_backend.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.entity.ContactAvatar;
-import com.weiqiang.personal_crm_backend.entity.UserAvatar;
 import com.weiqiang.personal_crm_backend.mapper.ContactAvatarMapper;
 import com.weiqiang.personal_crm_backend.mapper.ContactMapper;
 import com.weiqiang.personal_crm_backend.mapper.UserAvatarMapper;
 import com.weiqiang.personal_crm_backend.security.JwtUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.hamcrest.Matchers.is;
@@ -39,6 +41,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @Rollback
 public class UploadControllerTest {
+
+    private static final Path TEST_UPLOAD_DIR = createTestUploadDir();
 
     @Autowired
     private MockMvc mockMvc;
@@ -58,6 +62,30 @@ public class UploadControllerTest {
     private String token;
     private String otherToken;
     private String myContactId;
+
+    @DynamicPropertySource
+    static void registerUploadDirectory(DynamicPropertyRegistry registry) {
+        registry.add("app.storage.upload-dir", () -> TEST_UPLOAD_DIR.toString());
+    }
+
+    @AfterAll
+    static void cleanupUploadDirectory() throws IOException {
+        if (Files.notExists(TEST_UPLOAD_DIR)) {
+            return;
+        }
+
+        try (var paths = Files.walk(TEST_UPLOAD_DIR)) {
+            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException exception) {
+                    throw new UncheckedIOException(exception);
+                }
+            });
+        } catch (UncheckedIOException exception) {
+            throw exception.getCause();
+        }
+    }
 
     @BeforeEach
     void setUp() {
@@ -171,5 +199,13 @@ public class UploadControllerTest {
                 .andExpect(jsonPath("$.code", is(0)));
 
         assertFalse(Files.exists(tempFile), "Old physical file should be deleted");
+    }
+
+    private static Path createTestUploadDir() {
+        try {
+            return Files.createTempDirectory("personal-crm-upload-test-");
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
     }
 }

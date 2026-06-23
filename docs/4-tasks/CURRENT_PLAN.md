@@ -3,10 +3,10 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-None (Next: TASK-007 Contact Agent Query Capability)
+None (TASK-007 completed, pending next feature scoping)
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-005-tag-management-mvp/`
+`docs/4-tasks/features/TASK-007-contact-agent-query/`
 - spec.md ✅ Ready
 - tasks.md ✅ Completed
 
@@ -15,9 +15,9 @@ None (Next: TASK-007 Contact Agent Query Capability)
 - Stage 1: 完成开发前准备，冻结需求、数据库和接口基线 ✅
 - Stage 2: 搭建后端基础设施，完成统一响应、异常处理、MyBatis-Plus、JWT 鉴权和认证入口 ✅
 - Stage 3: 替换前端脚手架页面，建立 CRM 基础布局、登录页、路由、状态管理与 API 层 ✅
-- Stage 4: 按独立任务顺序实现核心业务模块：contacts -> todos -> tags -> dashboard/upload
-- Stage 5: 实现 Agent 查询与写操作确认链路
-- Stage 6: 自测、接口联调、补测试文档与验收材料
+- Stage 4: 按独立任务顺序实现核心业务模块：contacts -> todos -> tags -> dashboard/upload ✅
+- Stage 5: 实现 Agent 查询与写操作确认链路 (只读查询已完成)
+- Stage 6: 自测、接口联调、补测试文档与验收材料 ✅
 
 ### TASK-000: Static HTML Prototype Baseline
 - [x] Implementation (12 tasks) Completed
@@ -53,6 +53,9 @@ None (Next: TASK-007 Contact Agent Query Capability)
 ### TASK-006: Dashboard and Upload MVP
 - [x] Implementation (17 tasks) Completed
 
+### TASK-007: Contact Agent Query Capability
+- [x] Implementation (15 tasks) Completed
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
@@ -76,6 +79,7 @@ None (Next: TASK-007 Contact Agent Query Capability)
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-22: completed TASK-007 Contact Agent Query Capability (15 tasks, frontend & backend integration, E2E multi-viewport verification)
 - 2026-06-22: completed TASK-006 Dashboard and Upload MVP (17 tasks, frontend & backend integration and E2E verification)
 - 2026-06-21: completed TASK-005 Tag Management MVP (15 tasks, frontend & backend integration and E2E verification)
 - 2026-06-15: completed TASK-000 static HTML prototype baseline (10 high-fidelity pages)
@@ -89,5 +93,5 @@ None (Next: TASK-007 Contact Agent Query Capability)
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前已成功交付并修补通过 `TASK-005` 标签管理，下一个活动任务将是 `TASK-006` 看板与上传模块完善。
-- 需要优先启动看板与上传模块的开发、完成看板图表展示、统计接口联调、头像上传回显。
+- 当前活动任务已切换为 `TASK-007 Contact Agent Query Capability`。
+- 需要优先完成独立 `/agent` 页面上的联系人/事项自然语言查询闭环，不做工作台抽屉联动与真实模型接入。

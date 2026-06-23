@@ -22,6 +22,7 @@
 - 新增新的统计维度、复杂筛选器、同比环比分析或导出能力。
 - 新增文件管理中心、批量上传、头像裁剪、云存储或新的外部依赖。
 - 修改数据库物理表结构、索引、运行时端口或启动方式。
+- 移动端断点专项可用性验收、Chrome MCP 截图归档与响应式细节收口。
 - Agent 工作台入口增强、写操作确认链路扩展和消息中心能力。
 
 ## Acceptance criteria
@@ -93,19 +94,6 @@
       "验证当前用户头像上传不会改写其他用户的头像访问地址或资料展示。"
     ],
     "passes": true
-  },
-  {
-    "id": "AC-UI-UX",
-    "category": "integration",
-    "description": "Chrome MCP validates the dashboard and avatar upload flows across desktop and mobile breakpoints with clean interactions and console state.",
-    "steps": [
-      "Open /dashboard, /contacts/new or /contacts/:contactId/edit, and /settings in Chrome MCP at 1440x900 and verify layout, spacing, chart visibility, avatar upload controls, and overflow are correct.",
-      "Switch to 375x812 and verify the responsive layout, dashboard list sections, upload controls, and primary actions remain usable without clipping or overlap.",
-      "Hover the dashboard quick actions, today-todo action buttons, recent-contact links, and avatar upload triggers and verify expected visual feedback appears.",
-      "Audit the browser console during the dashboard and upload flows and verify there are zero JavaScript errors.",
-      "Archive screenshots as artifacts/desktop_dashboard_task006.webp and artifacts/mobile_dashboard_task006.webp."
-    ],
-    "passes": true
   }
 ]
 ```
@@ -130,3 +118,6 @@
 ### Explicit non-maintenance
 - `docs/2-designs/db_schema.md` 不需要维护，因为本任务复用既有上传和业务表，不新增字段或级联规则。
 - `docs/2-designs/architecture.md` 不需要维护，因为仍沿用现有 Controller / Service / Mapper / Local Upload Directory 分层与存储边界。
+
+### Deferred validation
+- 移动端断点可用性与 Chrome MCP 截图归档已从本次 `TASK-006` 收尾范围移出，后续如需补做，应在质量任务中单独验收。

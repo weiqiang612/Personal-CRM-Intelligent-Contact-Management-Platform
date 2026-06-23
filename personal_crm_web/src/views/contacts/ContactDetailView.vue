@@ -362,6 +362,7 @@ import { getTagsApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
+import { resolveAvatarUrl } from '@/utils/avatar'
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
 
@@ -519,9 +520,7 @@ const goBack = () => {
 }
 
 function getAvatarUrl(url: string | null): string {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return `http://localhost:8080${url}`
+  return resolveAvatarUrl(url)
 }
 
 onMounted(() => {
