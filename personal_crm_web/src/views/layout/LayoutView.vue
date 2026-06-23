@@ -67,12 +67,46 @@
             </a>
             <h1 class="page-title">
               {{ pageTitle }}
-              <span v-if="route.path === '/dashboard' && weatherData" class="topbar-weather">
-                <img :src="getWeatherIconUrl(weatherData.currentIcon)" :alt="weatherData.currentText" class="topbar-weather-icon" />
-                <span class="topbar-weather-temp">{{ weatherData.currentTemp }}°C</span>
-                <span class="topbar-weather-text">{{ weatherData.currentText }}</span>
-                <span class="topbar-weather-city">{{ weatherData.cityName }}</span>
-              </span>
+              <el-popover
+                v-if="route.path === '/dashboard' && weatherData"
+                placement="bottom"
+                :width="290"
+                trigger="click"
+                popper-class="weather-forecast-popover"
+                :teleported="true"
+              >
+                <template #reference>
+                  <span class="topbar-weather interactive">
+                    <img :src="getWeatherIconUrl(weatherData.currentIcon)" :alt="weatherData.currentText" class="topbar-weather-icon" />
+                    <span class="topbar-weather-temp">{{ weatherData.currentTemp }}°C</span>
+                    <span class="topbar-weather-text">{{ weatherData.currentText }}</span>
+                    <span class="topbar-weather-city">{{ weatherData.cityName }}</span>
+                  </span>
+                </template>
+                
+                <div class="weather-forecast-container">
+                  <div class="forecast-header">
+                    <span class="forecast-city">{{ weatherData.cityName }}</span>
+                    <span class="forecast-title">未来三日预报</span>
+                  </div>
+                  <div class="forecast-list">
+                    <div v-for="item in weatherData.dailyForecast" :key="item.date" class="forecast-item">
+                      <div class="forecast-date-group">
+                        <span class="forecast-date">{{ formatForecastDate(item.date) }}</span>
+                      </div>
+                      <div class="forecast-status">
+                        <img :src="getWeatherIconUrl(item.iconDay)" :alt="item.textDay" class="forecast-weather-icon" />
+                        <span class="forecast-text">{{ item.textDay }}</span>
+                      </div>
+                      <div class="forecast-temp-range">
+                        <span class="temp-min">{{ item.tempMin }}°C</span>
+                        <span class="temp-sep">~</span>
+                        <span class="temp-max">{{ item.tempMax }}°C</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </el-popover>
             </h1>
           </div>
           <p class="page-subtitle">{{ pageSubtitle }}</p>
@@ -147,6 +181,7 @@ import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { getWeatherIconUrl } from '@/utils/weather-icons'
 import { getWeather } from '@/api/weather'
 import type { WeatherData } from '@/api/weather'
 
@@ -170,8 +205,33 @@ const loadWeather = async () => {
   }
 }
 
-function getWeatherIconUrl(iconCode: string): string {
-  return `https://npm.elemecdn.com/qweather-icons@1.6.0/icons/${iconCode}.svg`
+const formatForecastDate = (dateStr: string): string => {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    const afterTomorrow = new Date(today)
+    afterTomorrow.setDate(today.getDate() + 2)
+
+    const isToday = date.toDateString() === today.toDateString()
+    const isTomorrow = date.toDateString() === tomorrow.toDateString()
+    const isAfterTomorrow = date.toDateString() === afterTomorrow.toDateString()
+
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const dateFormatted = `${month}/${day}`
+
+    if (isToday) return `今天 (${dateFormatted})`
+    if (isTomorrow) return `明天 (${dateFormatted})`
+    if (isAfterTomorrow) return `后天 (${dateFormatted})`
+    
+    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${weekdays[date.getDay()]} (${dateFormatted})`
+  } catch (e) {
+    return dateStr
+  }
 }
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
@@ -409,9 +469,22 @@ onMounted(() => {
   box-shadow: var(--shadow-sm);
 }
 
+.topbar-weather.interactive {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.topbar-weather.interactive:hover {
+  background: rgba(226, 232, 240, 0.95);
+  transform: translateY(-0.5px);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
 .topbar-weather-icon {
   width: 18px;
   height: 18px;
+  object-fit: contain;
 }
 
 .topbar-weather-temp {
@@ -430,6 +503,119 @@ onMounted(() => {
   background: var(--color-primary-light);
   padding: 1px 6px;
   border-radius: 4px;
+}
+
+/* 天气气泡卡片自定义样式 */
+.weather-forecast-popover {
+  padding: 14px !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.weather-forecast-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-main);
+}
+
+.forecast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  padding-bottom: 6px;
+}
+
+.forecast-city {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--color-primary);
+}
+
+.forecast-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: rgba(241, 245, 249, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.forecast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forecast-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(241, 245, 249, 0.6);
+  transition: all 0.2s ease;
+}
+
+.forecast-item:hover {
+  background: rgba(241, 245, 249, 0.95);
+  transform: translateY(-1px);
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+.forecast-date-group {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-main);
+  min-width: 75px;
+}
+
+.forecast-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+.forecast-weather-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.forecast-text {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.forecast-temp-range {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  justify-content: flex-end;
+  min-width: 80px;
+}
+
+.temp-min {
+  color: var(--text-muted);
+}
+
+.temp-sep {
+  color: var(--text-light);
+  font-weight: normal;
+}
+
+.temp-max {
+  color: var(--color-primary);
 }
 
 /* 顶部过渡动画 */

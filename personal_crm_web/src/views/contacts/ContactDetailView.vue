@@ -394,6 +394,7 @@ import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { getWeatherIconUrl } from '@/utils/weather-icons'
 import { getWeather } from '@/api/weather'
 import type { WeatherData } from '@/api/weather'
 
@@ -428,10 +429,6 @@ const toggleWeatherForecast = () => {
   if (contactWeather.value) {
     showWeatherForecast.value = !showWeatherForecast.value
   }
-}
-
-function getWeatherIconUrl(iconCode: string): string {
-  return `https://npm.elemecdn.com/qweather-icons@1.6.0/icons/${iconCode}.svg`
 }
 
 const formatForecastDate = (dateStr: string) => {
@@ -1264,11 +1261,17 @@ onMounted(() => {
 }
 
 .forecast-temp-range {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
   font-family: var(--font-mono, monospace);
   font-weight: 600;
   color: #64748b;
   width: 80px;
   text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* 动效 slide-fade */
