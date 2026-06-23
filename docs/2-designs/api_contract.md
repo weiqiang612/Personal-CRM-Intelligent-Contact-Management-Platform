@@ -104,7 +104,31 @@
 }
 ```
 
+### 4.3 用户注册
+
+- `POST /api/v1/auth/register`
+
+请求体：
+
+```json
+{
+  "username": "newuser",
+  "password": "newpassword123"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
 ## 5. Contact APIs (联系人模块)
+
 
 > [!NOTE]
 > 本模块支持联系人标签绑定与筛选，标签的 CRUD 管理接口位于单独的标签模块（`/api/v1/tags`）。

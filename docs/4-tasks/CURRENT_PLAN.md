@@ -3,10 +3,10 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-None (TASK-007 completed, pending next feature scoping)
+None (TASK-008 completed, pending next feature scoping)
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-007-contact-agent-query/`
+`docs/4-tasks/features/TASK-008-user-registration/`
 - spec.md ✅ Ready
 - tasks.md ✅ Completed
 
@@ -56,6 +56,9 @@ None (TASK-007 completed, pending next feature scoping)
 ### TASK-007: Contact Agent Query Capability
 - [x] Implementation (15 tasks) Completed
 
+### TASK-008: User Registration
+- [x] Implementation (13 tasks) Completed
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
@@ -79,6 +82,7 @@ None (TASK-007 completed, pending next feature scoping)
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-23: completed TASK-008 User Registration (13 tasks, frontend & backend integration and E2E verification)
 - 2026-06-22: completed TASK-007 Contact Agent Query Capability (15 tasks, frontend & backend integration, E2E multi-viewport verification)
 - 2026-06-22: completed TASK-006 Dashboard and Upload MVP (17 tasks, frontend & backend integration and E2E verification)
 - 2026-06-21: completed TASK-005 Tag Management MVP (15 tasks, frontend & backend integration and E2E verification)
@@ -93,5 +97,5 @@ None (TASK-007 completed, pending next feature scoping)
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前活动任务已切换为 `TASK-007 Contact Agent Query Capability`。
-- 需要优先完成独立 `/agent` 页面上的联系人/事项自然语言查询闭环，不做工作台抽屉联动与真实模型接入。
+- 当前活动任务已切换为 `TASK-008 User Registration`。
+- 需要优先完成后端注册接口开发放行、并发安全 ID 生成，以及前端高保真 RegisterView.vue 页面实现。

@@ -170,14 +170,14 @@
       <div class="preview-footer">© 2024 Personal CRM. 让每一段关系更有价值。</div>
     </section>
 
-    <!-- ══ 右侧登录 ══ -->
+    <!-- ══ 右侧注册 ══ -->
     <section class="auth-col">
       <div class="auth-card">
         <div class="auth-avatar-header">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <h2 class="auth-title">欢迎回来</h2>
-        <p class="auth-sub">登录您的 Personal CRM 账户</p>
+        <h2 class="auth-title">创建你的账号</h2>
+        <p class="auth-sub">立即注册，开启智能人脉管理之旅</p>
 
         <!-- 原型统一错误红框 -->
         <div v-show="showError" class="error-alert">
@@ -185,14 +185,15 @@
           <span>{{ errorText }}</span>
         </div>
 
-        <form @submit.prevent="handleLogin">
+        <form @submit.prevent="handleRegister">
+          <!-- 账号或邮箱 -->
           <div class="form-group">
             <label class="form-label" for="username">账号或邮箱</label>
             <div class="input-wrap">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               <input
                 id="username"
-                v-model="loginForm.username"
+                v-model="registerForm.username"
                 type="text"
                 placeholder="请输入账号或邮箱"
                 autocomplete="username"
@@ -200,16 +201,17 @@
             </div>
           </div>
 
+          <!-- 密码 -->
           <div class="form-group">
             <label class="form-label" for="password">密码</label>
             <div class="input-wrap">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <input
                 id="password"
-                v-model="loginForm.password"
+                v-model="registerForm.password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="请输入密码"
-                autocomplete="current-password"
+                placeholder="请输入密码（至少8位）"
+                autocomplete="new-password"
               />
               <svg
                 class="toggle-pw"
@@ -231,22 +233,59 @@
             </div>
           </div>
 
-          <div class="form-options">
-            <label class="checkbox-container">
-              <input id="rememberMe" v-model="rememberMe" type="checkbox" />
-              <span class="checkmark"></span>
-              记住我
-            </label>
-            <a href="#" class="forgot-link" @click.prevent="forgotPassword">忘记密码?</a>
+          <!-- 确认密码 -->
+          <div class="form-group">
+            <label class="form-label" for="confirmPassword">确认密码</label>
+            <div class="input-wrap">
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input
+                id="confirmPassword"
+                v-model="registerForm.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                placeholder="请再次输入密码"
+                autocomplete="new-password"
+              />
+              <svg
+                class="toggle-pw"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                @click="toggleConfirmPasswordVisibility"
+              >
+                <template v-if="showConfirmPassword">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                </template>
+                <template v-else>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </template>
+              </svg>
+            </div>
           </div>
 
-          <button type="submit" class="btn-login" :disabled="loading">
-            {{ loading ? '正在登录...' : '登录' }}
+          <!-- 用户协议勾选 -->
+          <div class="agreement-row">
+            <label class="checkbox-container">
+              <input id="agreement" v-model="agreement" type="checkbox" />
+              <span class="checkmark"></span>
+              <span class="agreement-text">
+                我已阅读并同意
+                <a href="#" @click.prevent="showAgreement">《用户协议》</a>
+                和
+                <a href="#" @click.prevent="showPrivacy">《隐私政策》</a>
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" class="btn-register" :disabled="loading">
+            {{ loading ? '正在注册...' : '立即注册' }}
           </button>
           
-          <p class="register-row">
-            <span>还没有账号？</span>
-            <a href="#" @click.prevent="goToRegister">立即注册</a>
+          <p class="login-row">
+            <span>已有账号？</span>
+            <a href="#" @click.prevent="goToLogin">去登录</a>
           </p>
         </form>
 
@@ -257,91 +296,132 @@
         </div>
       </div>
     </section>
+
+    <!-- 成功提示弹窗 -->
+    <div v-if="showSuccessModal" class="success-modal">
+      <div class="modal-content">
+        <div class="success-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>注册成功</h3>
+        <p>正在为您跳转到登录页面...</p>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
+import { registerApi } from '@/api/auth'
 
 const router = useRouter()
-const authStore = useAuthStore()
 
 const loading = ref<boolean>(false)
-const rememberMe = ref<boolean>(true)
 const showPassword = ref<boolean>(false)
+const showConfirmPassword = ref<boolean>(false)
+const agreement = ref<boolean>(false)
 
 // 错误提示控制
 const showError = ref<boolean>(false)
-const errorText = ref<string>('账号或密码错误')
+const errorText = ref<string>('请完整填写注册信息')
+const showSuccessModal = ref<boolean>(false)
 
-const loginForm = reactive({
+const registerForm = reactive({
   username: '',
-  password: ''
-})
-
-onMounted(() => {
-  const savedUsername = localStorage.getItem('saved_username')
-  if (savedUsername) {
-    loginForm.username = savedUsername
-    rememberMe.value = true
-  }
+  password: '',
+  confirmPassword: ''
 })
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-const handleLogin = async () => {
-  showError.value = false
-  const username = loginForm.username.trim()
-  const password = loginForm.password
+const toggleConfirmPasswordVisibility = () => {
+  showConfirmPassword.value = !showConfirmPassword.value
+}
 
-  // 1. 原型规定的非空拦截校验
-  if (!username || !password) {
-    errorText.value = '请输入账号和密码'
+const showAgreement = () => {
+  ElMessage.info('用户协议（模拟）：我们承诺尊重和保护您的个人隐私数据，本平台仅作为智能联系人协助与事项记录之用。')
+}
+
+const showPrivacy = () => {
+  ElMessage.info('隐私政策（模拟）：本平台对您的联系人及事项信息实行强加密处理，绝不会泄露给第三方。')
+}
+
+const goToLogin = () => {
+  router.push({ name: 'login' })
+}
+
+const handleRegister = async () => {
+  showError.value = false
+  const username = registerForm.username.trim()
+  const password = registerForm.password
+  const confirmPassword = registerForm.confirmPassword
+
+  // 1. 非空校验
+  if (!username || !password || !confirmPassword) {
+    errorText.value = '请完整填写注册信息'
     showError.value = true
     return
   }
 
-  // 2. 原型规定的简易校验拦截 (当账号为 admin 且密码不是 admin 时)
-  if (username === 'admin' && password !== 'admin') {
-    errorText.value = '账号或密码错误'
+  // 2. 账号或邮箱校验
+  if (username.includes('@')) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(username)) {
+      errorText.value = '请输入有效的邮箱地址'
+      showError.value = true
+      return
+    }
+  } else {
+    if (username.length < 3) {
+      errorText.value = '账号长度至少为 3 位'
+      showError.value = true
+      return
+    }
+  }
+
+  // 3. 密码长度校验
+  if (password.length < 8) {
+    errorText.value = '密码长度至少为 8 位'
+    showError.value = true
+    return
+  }
+
+  // 4. 两次密码一致性校验
+  if (password !== confirmPassword) {
+    errorText.value = '两次密码输入不一致'
+    showError.value = true
+    return
+  }
+
+  // 5. 用户协议校验
+  if (!agreement.value) {
+    errorText.value = '请先阅读并同意用户协议和隐私政策'
     showError.value = true
     return
   }
 
   loading.value = true
   try {
-    // 3. 执行真实后端联调登录
-    await authStore.login({ username, password })
-
-    if (rememberMe.value) {
-      localStorage.setItem('saved_username', username)
-    } else {
-      localStorage.removeItem('saved_username')
-    }
-
-    ElMessage.success('登录成功')
-    router.push('/dashboard')
+    // 6. 调用后端注册 API
+    await registerApi({ username, password })
+    // 显示成功弹窗
+    showSuccessModal.value = true
+    // 2秒后跳转登录页
+    setTimeout(() => {
+      router.push({ name: 'login' })
+    }, 2000)
   } catch (error: any) {
-    console.error('Login error:', error)
-    // 4. 将 API 层的报错显示在原型规定的红框中
-    errorText.value = error.message || '账号或密码错误'
+    console.error('Register error:', error)
+    // 显示 API 报错在红框中
+    errorText.value = error.message || '注册失败，请稍后重试'
     showError.value = true
   } finally {
     loading.value = false
   }
-}
-
-const forgotPassword = () => {
-  ElMessage.info('请使用系统预置演示账号 ethan / 123456 进行登录')
-}
-
-const goToRegister = () => {
-  router.push({ name: 'register' })
 }
 </script>
 
@@ -440,213 +520,227 @@ const goToRegister = () => {
 }
 
 .hero-sub {
-  font-size: clamp(0.75rem, 0.9vw, 0.88rem);
-  color: #64748b;
+  font-size: 13.5px;
+  color: #4b5563;
   font-weight: 500;
 }
 
 .cards-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  flex: 1;
   min-height: 0;
+  z-index: 10;
 }
 
 .top-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 14px;
+  min-height: 0;
+  flex: 1;
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(219, 228, 241, 0.88);
-  border-radius: 14px;
-  box-shadow: 0 4px 20px -8px rgba(30, 50, 100, 0.1);
+  background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  padding: 12px 14px 10px;
-  overflow: hidden;
+  min-height: 0;
+  box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.04);
 }
 
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-  flex-shrink: 0;
+  margin-bottom: 12px;
 }
 
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: #334155;
+  color: #0f172a;
 }
 
 .panel-title svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: #2f5bff;
 }
 
 .panel-link {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #2f5bff;
   text-decoration: none;
 }
 
+.panel-link:hover {
+  text-decoration: underline;
+}
+
 .contact-list {
-  flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .contact-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
 }
 
-.contact-item:last-of-type {
-  border-bottom: none;
+.contact-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(47, 91, 255, 0.15);
+  transform: translateY(-0.5px);
 }
 
 .contact-left {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  min-width: 0;
+  align-items: center;
+  gap: 8px;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 4px 10px -4px rgba(15, 23, 42, 0.3);
-  background: #e2e8f0;
+  background: #f1f5f9;
+  border: 1px solid #fff;
+  box-shadow: 0 4px 10px -4px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
-.av-a { background: linear-gradient(135deg, #93c5fd, #2563eb); }
-.av-b { background: linear-gradient(135deg, #6ee7b7, #059669); }
-.av-c { background: linear-gradient(135deg, #f9a8d4, #db2777); }
-.av-d { background: linear-gradient(135deg, #fcd34d, #f97316); }
-
 .contact-info {
-  min-width: 0;
-  text-align: left;
+  line-height: 1.25;
 }
 
 .contact-name-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
   font-size: 12.5px;
   font-weight: 700;
-  color: #1f2937;
-  white-space: nowrap;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 700;
-  white-space: nowrap;
+  padding: 1px 4px;
+  border-radius: 4px;
 }
 
-.tag-green {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.tag-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
+.tag-green { background: #ecfdf5; color: #10b981; }
+.tag-blue { background: #eff6ff; color: #3b82f6; }
 
 .contact-org {
-  font-size: 11px;
-  color: #94a3b8;
+  font-size: 10.5px;
+  color: #64748b;
   font-weight: 500;
   margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .contact-topic {
-  font-size: 11px;
-  font-weight: 700;
-  color: #2f5bff;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 500;
   margin-top: 1px;
 }
 
 .contact-time {
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 10px;
   color: #94a3b8;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding-top: 2px;
+  font-weight: 600;
+}
+
+.panel-footer-btn {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  background: rgba(255, 255, 255, 0.4);
+  color: #475569;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.panel-footer-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: #2f5bff;
+  color: #2f5bff;
 }
 
 .todo-list {
-  flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .todo-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
 }
 
-.todo-item:last-of-type {
-  border-bottom: none;
+.todo-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(47, 91, 255, 0.15);
 }
 
 .todo-left {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
-  min-width: 0;
 }
 
 .todo-check {
-  width: 15px;
-  height: 15px;
-  border: 1.5px solid #cbd5e1;
+  width: 14px;
+  height: 14px;
   border-radius: 4px;
-  flex-shrink: 0;
-  margin-top: 1px;
+  border: 1.5px solid #cbd5e1;
   background: #fff;
 }
 
@@ -654,19 +748,12 @@ const goToRegister = () => {
   font-size: 12.5px;
   font-weight: 600;
   color: #334155;
-  line-height: 1.45;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .todo-date {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: #94a3b8;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding-top: 1px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -677,67 +764,43 @@ const goToRegister = () => {
 }
 
 .todo-date svg {
-  width: 11px;
-  height: 11px;
-}
-
-.panel-footer-btn {
-  width: 100%;
-  height: 30px;
-  margin-top: 12px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 8px;
-  background: #fff;
-  color: #2f5bff;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-
-.panel-footer-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 
 .ai-panel {
-  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(239, 246, 255, 0.6) 0%, rgba(245, 243, 255, 0.6) 100%);
+  border: 1px solid rgba(219, 234, 254, 0.5);
   flex-shrink: 0;
 }
 
 .ai-head {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 13px;
-  font-weight: 700;
-  color: #334155;
-  margin-bottom: 8px;
+  font-weight: 800;
+  color: #1e1b4b;
+  margin-bottom: 10px;
 }
 
 .ai-head svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: #6366f1;
 }
 
 .ai-row {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .ai-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  background: linear-gradient(180deg, #3b5bff, #111827);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -746,19 +809,22 @@ const goToRegister = () => {
 }
 
 .ai-avatar svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 .ai-bubble {
   flex: 1;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  background: #f8fbff;
-  font-size: 11.5px;
+  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 12px;
+  border-top-left-radius: 2px;
+  padding: 8px 12px;
+  font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: #1e293b;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.03);
 }
 
 .ai-actions {
@@ -769,19 +835,27 @@ const goToRegister = () => {
 .ai-action {
   flex: 1;
   height: 28px;
-  padding: 0 8px;
   border-radius: 8px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #fff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
   color: #475569;
-  font-size: 11px;
-  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px -2px rgba(0,0,0,0.02);
+}
+
+.ai-action:hover {
+  background: #fff;
+  border-color: #6366f1;
+  color: #4f46e5;
+  transform: translateY(-0.5px);
 }
 
 .ai-action svg {
@@ -801,7 +875,7 @@ const goToRegister = () => {
   flex-shrink: 0;
 }
 
-/* 右侧登录 */
+/* 右侧注册 */
 .auth-col {
   display: flex;
   align-items: center;
@@ -946,11 +1020,10 @@ const goToRegister = () => {
   color: #475569;
 }
 
-.form-options {
+.agreement-row {
+  margin: 14px 0 20px 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 14px 0 20px 0;
 }
 
 .checkbox-container {
@@ -1016,18 +1089,27 @@ const goToRegister = () => {
   transform: rotate(45deg);
 }
 
-.forgot-link {
-  color: #2f5bff;
-  font-weight: 700;
-  text-decoration: none;
-  font-size: 13px;
+.agreement-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 6px;
+  text-align: left;
 }
 
-.forgot-link:hover {
+.agreement-text a {
+  color: #2f5bff;
+  text-decoration: none;
+  font-weight: 700;
+  background: transparent;
+  padding: 0;
+}
+
+.agreement-text a:hover {
   text-decoration: underline;
 }
 
-.btn-login {
+.btn-register {
   width: 100%;
   height: 44px;
   border-radius: 10px;
@@ -1040,24 +1122,25 @@ const goToRegister = () => {
   cursor: pointer;
   box-shadow: 0 10px 20px -8px rgba(47, 91, 255, 0.4);
   transition: all 0.2s ease;
+  margin-top: 14px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.btn-login:hover:not(:disabled) {
+.btn-register:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 12px 24px -6px rgba(47, 91, 255, 0.5);
   background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
 }
 
-.btn-login:disabled {
+.btn-register:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.register-row {
+.login-row {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
@@ -1070,29 +1153,29 @@ const goToRegister = () => {
   position: relative;
 }
 
-.register-row::before,
-.register-row::after {
+.login-row::before,
+.login-row::after {
   content: '';
   flex: 1;
   height: 1px;
   background: #e2e8f0;
 }
 
-.register-row span,
-.register-row a {
+.login-row span,
+.login-row a {
   background: #fff;
   padding: 0 8px;
   z-index: 1;
 }
 
-.register-row a {
+.login-row a {
   color: #2f5bff;
   font-weight: 700;
   text-decoration: none;
   margin-left: -8px;
 }
 
-.register-row a:hover {
+.login-row a:hover {
   text-decoration: underline;
 }
 
@@ -1109,6 +1192,74 @@ const goToRegister = () => {
 .security-tips svg {
   width: 12px;
   height: 12px;
+}
+
+/* 成功提示弹窗 */
+.success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modal-content {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+  text-align: center;
+  width: 90%;
+  max-width: 360px;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.success-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  box-shadow: 0 10px 20px -8px rgba(16, 185, 129, 0.5);
+}
+
+.success-icon-wrap svg {
+  width: 32px;
+  height: 32px;
+}
+
+.modal-content h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.modal-content p {
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @media (max-width: 900px) {

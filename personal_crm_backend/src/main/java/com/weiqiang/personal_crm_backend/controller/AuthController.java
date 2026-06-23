@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import com.weiqiang.personal_crm_backend.model.dto.RegisterRequest;
+
 /**
  * 认证控制器
  */
@@ -37,5 +39,14 @@ public class AuthController {
         String userId = UserContext.getUserId();
         UserMeVo userMeVo = sysUserService.getUserMe(userId);
         return Result.success(userMeVo);
+    }
+
+    /**
+     * 用户注册
+     */
+    @PostMapping("/register")
+    public Result<Void> register(@Validated @RequestBody RegisterRequest registerRequest) {
+        sysUserService.register(registerRequest);
+        return Result.success();
     }
 }

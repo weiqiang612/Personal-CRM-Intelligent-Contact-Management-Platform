@@ -44,3 +44,18 @@ export function loginApi(data: LoginParams): Promise<LoginResult> {
 export function getMeApi(): Promise<UserMeResult> {
   return request.get('/auth/me')
 }
+
+/**
+ * 注册请求参数接口
+ */
+export interface RegisterParams {
+  username: string
+  password: string
+}
+
+/**
+ * 注册 API
+ */
+export function registerApi(data: RegisterParams): Promise<void> {
+  return request.post('/auth/register', data)
+}

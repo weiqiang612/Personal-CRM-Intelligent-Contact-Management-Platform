@@ -8,6 +8,7 @@ import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.mapper.SysUserMapper;
 import com.weiqiang.personal_crm_backend.mapper.UserAvatarMapper;
 import com.weiqiang.personal_crm_backend.model.dto.LoginRequest;
+import com.weiqiang.personal_crm_backend.model.dto.RegisterRequest;
 import com.weiqiang.personal_crm_backend.model.vo.LoginVo;
 import com.weiqiang.personal_crm_backend.model.vo.UserMeVo;
 import com.weiqiang.personal_crm_backend.security.JwtUtils;
@@ -15,6 +16,8 @@ import com.weiqiang.personal_crm_backend.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户服务实现类
@@ -86,5 +89,67 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         userMeVo.setAvatarUrl(avatar != null ? avatar.getAccessUrl() : null);
 
         return userMeVo;
+    }
+
+    @Override
+    public void register(RegisterRequest registerRequest) {
+        String username = registerRequest.getUsername().trim();
+        String password = registerRequest.getPassword();
+
+        // 1. 基础校验
+        if (username.contains("@")) {
+            String emailPattern = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+            if (!username.matches(emailPattern)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid email address format");
+            }
+        } else {
+            if (username.length() < 3) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username must be at least 3 characters");
+            }
+        }
+
+        if (password.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password must be at least 8 characters");
+        }
+
+        // 2. 重名校验
+        SysUser existingUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
+        if (existingUser != null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username already exists");
+        }
+
+        // 3. 生成全局唯一的业务用户ID
+        String userId = generateUserId();
+
+        // 4. 构建并保存用户实体
+        SysUser sysUser = new SysUser();
+        sysUser.setUserId(userId);
+        sysUser.setUsername(username);
+        sysUser.setPasswordHash(passwordEncoder.encode(password));
+        sysUser.setStatus(0);
+        sysUser.setCreatedAt(LocalDateTime.now());
+        sysUser.setUpdatedAt(LocalDateTime.now());
+
+        this.save(sysUser);
+    }
+
+    /**
+     * 并发安全地生成全局唯一用户业务编号 (U000000001格式)
+     */
+    private synchronized String generateUserId() {
+        SysUser latestUser = this.lambdaQuery()
+                .orderByDesc(SysUser::getUserId)
+                .last("LIMIT 1")
+                .one();
+        if (latestUser == null) {
+            return "U000000001";
+        }
+        String latestUserId = latestUser.getUserId();
+        try {
+            int nextNumber = Integer.parseInt(latestUserId.substring(1)) + 1;
+            return String.format("U%09d", nextNumber);
+        } catch (Exception e) {
+            return "U" + (System.currentTimeMillis() % 1000000000L);
+        }
     }
 }
