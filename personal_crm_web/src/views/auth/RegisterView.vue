@@ -1,12 +1,12 @@
 <template>
   <div class="page">
-    <!-- ══ 左侧预览 ══ -->
+    <!-- ══ 左侧预览 (根据原型 register.html) ══ -->
     <section class="preview">
       <!-- 品牌 -->
       <div class="brand">
         <div class="brand-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
         <span class="brand-name">Personal CRM</span>
@@ -14,185 +14,200 @@
 
       <!-- 主标题 -->
       <div class="hero">
-        <h1 class="hero-title">Personal CRM</h1>
-        <p class="hero-sub">管理联系人、待办事项与智能提醒的个人关系管理平台</p>
+        <h1 class="hero-title">AI 驱动的人脉管理系统</h1>
+        <p class="hero-sub">智能管理联系人，AI 助力关系维护，让每一次连接都产生价值</p>
       </div>
 
-      <!-- 卡片区 -->
-      <div class="cards-area">
-        <div class="top-cards">
-          <!-- 联系人 -->
-          <div class="panel">
-            <div class="panel-head">
-              <div class="panel-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>联系人</span>
-              </div>
-              <a href="#" class="panel-link" @click.prevent>查看全部</a>
-            </div>
-            <div class="contact-list">
-              <div class="contact-item">
-                <div class="contact-left">
-                  <div class="avatar av-a">
-                    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80" alt="张雨薇">
-                  </div>
-                  <div class="contact-info">
-                    <div class="contact-name-row">张雨薇 <span class="tag tag-green">同事</span></div>
-                    <div class="contact-org">腾讯科技 · 产品经理</div>
-                    <div class="contact-topic">产品合作</div>
-                  </div>
-                </div>
-                <div class="contact-time">今天</div>
-              </div>
-              <div class="contact-item">
-                <div class="contact-left">
-                  <div class="avatar av-b">
-                    <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" alt="李明轩">
-                  </div>
-                  <div class="contact-info">
-                    <div class="contact-name-row">李明轩 <span class="tag tag-blue">朋友</span></div>
-                    <div class="contact-org">独立开发者</div>
-                    <div class="contact-topic">技术交流</div>
-                  </div>
-                </div>
-                <div class="contact-time">昨天</div>
-              </div>
-              <div class="contact-item">
-                <div class="contact-left">
-                  <div class="avatar av-c">
-                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&auto=format&fit=crop&q=80" alt="王思颖">
-                  </div>
-                  <div class="contact-info">
-                    <div class="contact-name-row">王思颖 <span class="tag tag-green">同学</span></div>
-                    <div class="contact-org">清华大学 · 市场营销</div>
-                    <div class="contact-topic">校友</div>
-                  </div>
-                </div>
-                <div class="contact-time">2天前</div>
-              </div>
-              <div class="contact-item">
-                <div class="contact-left">
-                  <div class="avatar av-d">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="陈泽宇">
-                  </div>
-                  <div class="contact-info">
-                    <div class="contact-name-row">陈泽宇 <span class="tag tag-blue">客户</span></div>
-                    <div class="contact-org">某公司 · 运营总监</div>
-                    <div class="contact-topic">商务合作</div>
-                  </div>
-                </div>
-                <div class="contact-time">3天前</div>
-              </div>
-            </div>
-            <button class="panel-footer-btn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              添加联系人
-            </button>
+      <!-- 4大特性卡网格 -->
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
           </div>
-
-          <!-- 待办事项 -->
-          <div class="panel">
-            <div class="panel-head">
-              <div class="panel-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                <span>待办事项</span>
-              </div>
-              <a href="#" class="panel-link" @click.prevent>查看全部</a>
-            </div>
-            <div class="todo-list">
-              <div class="todo-item">
-                <div class="todo-left">
-                  <div class="todo-check"></div>
-                  <div class="todo-text">跟进张雨薇的产品需求</div>
-                </div>
-                <div class="todo-date hot">今天
-                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"/></svg>
-                </div>
-              </div>
-              <div class="todo-item">
-                <div class="todo-left">
-                  <div class="todo-check"></div>
-                  <div class="todo-text">准备与李明轩的技术分享</div>
-                </div>
-                <div class="todo-date">明天</div>
-              </div>
-              <div class="todo-item">
-                <div class="todo-left">
-                  <div class="todo-check"></div>
-                  <div class="todo-text">发送合作方案给陈泽宇</div>
-                </div>
-                <div class="todo-date">6月2日</div>
-              </div>
-              <div class="todo-item">
-                <div class="todo-left">
-                  <div class="todo-check"></div>
-                  <div class="todo-text">校友聚会活动报名</div>
-                </div>
-                <div class="todo-date">6月5日</div>
-              </div>
-            </div>
-            <button class="panel-footer-btn" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              新建待办
-            </button>
+          <div class="feature-meta">
+            <h3>联系人管理</h3>
+            <p>统一管理所有联系人，分类清晰</p>
           </div>
         </div>
-
-        <!-- AI 助手 -->
-        <div class="panel ai-panel">
-          <div class="ai-head">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><path d="M20 3v4m2-2h-4"/></svg>
-            <span>AI 智能助手</span>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
           </div>
-          <div class="ai-row">
-            <div class="ai-avatar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-            </div>
-            <div class="ai-bubble">下午好！我是您的智能助手小P，有什么可以帮您的吗？</div>
+          <div class="feature-meta">
+            <h3>待办提醒</h3>
+            <p>智能提醒跟进，不再错过重要关系</p>
           </div>
-          <div class="ai-actions">
-            <button class="ai-action" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              总结最近联系
-            </button>
-            <button class="ai-action" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-              推荐跟进联系人
-            </button>
-            <button class="ai-action" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><path d="M12 18a6 6 0 0 0 0-12"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/></svg>
-              待办事项建议
-            </button>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="18" y1="9" x2="18" y2="15"/><line x1="9" y1="18" x2="15" y2="18"/>
+            </svg>
+          </div>
+          <div class="feature-meta">
+            <h3>关系图谱</h3>
+            <p>可视化关系网络，发现更多可能</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3-1.912 5.886L4.2 9l5.887 1.912L12 21l1.912-5.887L19.8 15l-5.887-1.912Z"/>
+            </svg>
+          </div>
+          <div class="feature-meta">
+            <h3>AI 跟进建议</h3>
+            <p>提供个性化沟通建议，提高成功率</p>
           </div>
         </div>
       </div>
 
+      <!-- 人脉拓扑图与今日建议卡片 (毛玻璃效果) -->
+      <div class="preview-card">
+        <!-- 人脉拓扑关系图 -->
+        <div class="network-diagram">
+          <svg class="network-lines">
+            <!-- 动态连接虚线 -->
+            <line x1="110" y1="130" x2="110" y2="31" stroke="rgba(99, 102, 241, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <line x1="110" y1="130" x2="26" y2="126" stroke="rgba(99, 102, 241, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <line x1="110" y1="130" x2="186" y2="126" stroke="rgba(99, 102, 241, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <line x1="110" y1="130" x2="110" y2="216" stroke="rgba(99, 102, 241, 0.4)" stroke-width="1.5" stroke-dasharray="4,4"/>
+            <!-- 外层连线轨道 -->
+            <circle cx="110" cy="130" r="80" stroke="rgba(99, 102, 241, 0.08)" stroke-width="1.5" fill="none" stroke-dasharray="3,3"/>
+          </svg>
+
+          <!-- 中心节点 -->
+          <div class="node node-center">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <!-- 周边联系人节点 -->
+          <div class="node node-top">
+            <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=80&auto=format&fit=crop&q=80" alt="张雨薇">
+            <span>张雨薇</span>
+          </div>
+          <div class="node node-left">
+            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&auto=format&fit=crop&q=80" alt="李明轩">
+            <span>李明轩</span>
+          </div>
+          <div class="node node-right">
+            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" alt="陈泽宇">
+            <span>陈泽宇</span>
+          </div>
+          <div class="node node-bottom">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="王思颖">
+            <span>王思颖</span>
+          </div>
+        </div>
+
+        <!-- AI建议区 -->
+        <div class="ai-suggestions">
+          <div class="suggestions-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m12 3-1.912 5.886L4.2 9l5.887 1.912L12 21l1.912-5.887L19.8 15l-5.887-1.912Z"/>
+            </svg>
+            <span>AI 今日建议</span>
+          </div>
+          <div class="suggestion-list">
+            <div class="suggestion-item">
+              <div class="s-icon s-icon-orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="s-content">
+                <div class="s-header">
+                  <span class="s-name">张雨薇</span>
+                  <span class="s-badge badge-orange">7天未联系</span>
+                </div>
+                <p class="s-desc">建议跟进产品需求进展</p>
+              </div>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon s-icon-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="s-content">
+                <div class="s-header">
+                  <span class="s-name">李明轩</span>
+                  <span class="s-badge badge-green">3天后生日</span>
+                </div>
+                <p class="s-desc">发送生日祝福</p>
+              </div>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon s-icon-blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="s-content">
+                <div class="s-header">
+                  <span class="s-name">王思颖</span>
+                  <span class="s-badge badge-blue">14天未联系</span>
+                </div>
+                <p class="s-desc">可能弱化关系，建议跟进</p>
+              </div>
+            </div>
+            <div class="suggestion-item">
+              <div class="s-icon s-icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+              <div class="s-content">
+                <div class="s-header">
+                  <span class="s-name">陈泽宇</span>
+                  <span class="s-badge badge-purple">项目合作机会</span>
+                </div>
+                <p class="s-desc">有合作机会，建议联系</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 用户评价气泡 -->
+      <div class="testimonial-card">
+        <div class="quote-icon">“</div>
+        <div class="testimonial-content">
+          <p class="testimonial-text">自从使用 Personal CRM，我再也不会忘记跟进重要的人，人脉关系变得更紧密，工作机会也更多了。</p>
+          <span class="testimonial-author">— 产品经理 · 使用了 3 个月</span>
+        </div>
+      </div>
+
+      <!-- 版权 -->
       <div class="preview-footer">© 2024 Personal CRM. 让每一段关系更有价值。</div>
     </section>
 
-    <!-- ══ 右侧注册 ══ -->
+    <!-- ══ 右侧注册表单 ══ -->
     <section class="auth-col">
       <div class="auth-card">
         <div class="auth-avatar-header">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
         </div>
         <h2 class="auth-title">创建你的账号</h2>
         <p class="auth-sub">立即注册，开启智能人脉管理之旅</p>
 
-        <!-- 原型统一错误红框 -->
+        <!-- 错误提示红框 -->
         <div v-show="showError" class="error-alert">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
           <span>{{ errorText }}</span>
         </div>
 
         <form @submit.prevent="handleRegister">
           <!-- 账号或邮箱 -->
           <div class="form-group">
-            <label class="form-label" for="username">账号或邮箱</label>
+            <label class="form-label" for="usernameOrEmail">账号或邮箱</label>
             <div class="input-wrap">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
               <input
-                id="username"
+                id="usernameOrEmail"
                 v-model="registerForm.username"
                 type="text"
                 placeholder="请输入账号或邮箱"
@@ -205,7 +220,9 @@
           <div class="form-group">
             <label class="form-label" for="password">密码</label>
             <div class="input-wrap">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
               <input
                 id="password"
                 v-model="registerForm.password"
@@ -237,7 +254,9 @@
           <div class="form-group">
             <label class="form-label" for="confirmPassword">确认密码</label>
             <div class="input-wrap">
-              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
               <input
                 id="confirmPassword"
                 v-model="registerForm.confirmPassword"
@@ -283,17 +302,18 @@
             {{ loading ? '正在注册...' : '立即注册' }}
           </button>
           
-          <p class="login-row">
-            <span>已有账号？</span>
-            <a href="#" @click.prevent="goToLogin">去登录</a>
-          </p>
-        </form>
+          <div class="login-row">
+            <span>已有账号？ <a href="#" @click.prevent="goToLogin">去登录</a></span>
+          </div>
 
-        <!-- 数据安全提示 -->
-        <div class="security-tips">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-          <span>我们将严格保护你的数据安全</span>
-        </div>
+          <!-- 数据安全提示 -->
+          <div class="security-tips">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>我们将严格保护你的数据安全</span>
+          </div>
+        </form>
       </div>
     </section>
 
@@ -301,7 +321,9 @@
     <div v-if="showSuccessModal" class="success-modal">
       <div class="modal-content">
         <div class="success-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
         </div>
         <h3>注册成功</h3>
         <p>正在为您跳转到登录页面...</p>
@@ -426,21 +448,31 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-/* 引入页面特有样式（保持与 login.html 高度一致） */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .page {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: 1.25fr 1fr;
   width: 100vw;
   height: 100vh;
-  background:
-    radial-gradient(ellipse 60% 70% at 20% 50%, rgba(255, 255, 255, 0.85) 0%, transparent 100%),
-    linear-gradient(135deg, #eef3ff 0%, #f0f4ff 50%, #edf1fb 100%);
+  background: 
+    radial-gradient(circle at 5% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+    linear-gradient(135deg, #f0f4ff 0%, #f7f9fc 50%, #edf1fb 100%);
   font-family: 'Inter', 'Outfit', -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
   color: #1f2937;
+  overflow: hidden;
 }
 
+/* ═══════════════════════════════════
+   左侧预览区
+ ═══════════════════════════════════ */
 .preview {
   display: flex;
   flex-direction: column;
@@ -454,27 +486,14 @@ const handleRegister = async () => {
 .preview::before {
   content: '';
   position: absolute;
-  width: 520px;
-  height: 520px;
+  width: 600px; height: 600px;
   border-radius: 50%;
-  border: 1px solid rgba(147, 197, 253, 0.2);
-  top: -180px;
-  left: 36%;
+  border: 1px solid rgba(99, 102, 241, 0.05);
+  top: -200px; left: 30%;
   pointer-events: none;
 }
 
-.preview::after {
-  content: '';
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  border: 1px solid rgba(191, 219, 254, 0.25);
-  bottom: -80px;
-  left: -80px;
-  pointer-events: none;
-}
-
+/* 顶部品牌 */
 .brand {
   display: flex;
   align-items: center;
@@ -485,402 +504,347 @@ const handleRegister = async () => {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(180deg, #4f7cff 0%, #2f5bff 100%);
-  box-shadow: 0 8px 20px -8px rgba(47, 91, 255, 0.7);
+  background: #2f5bff;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
+  box-shadow: 0 8px 20px -8px rgba(47, 91, 255, 0.7);
   flex-shrink: 0;
 }
-
 .brand-icon svg {
   width: 18px;
   height: 18px;
 }
 
 .brand-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: #111827;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  font-family: 'Outfit', sans-serif;
 }
 
+/* 主标题区 */
 .hero {
-  margin-top: 24px;
-  margin-bottom: 16px;
 }
 
 .hero-title {
-  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-size: clamp(1.8rem, 2.8vw, 2.6rem);
   font-weight: 800;
-  letter-spacing: -0.04em;
-  color: #0c1538;
-  line-height: 1;
-  margin-bottom: 4px;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #0f172a 30%, #312e81 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero-sub {
-  font-size: 13.5px;
-  color: #4b5563;
+  font-size: clamp(0.8rem, 1vw, 0.95rem);
+  color: #475569;
   font-weight: 500;
+  line-height: 1.5;
 }
 
-.cards-area {
-  flex: 1;
+/* 4大特性卡网格 */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.feature-item {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+.feature-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 10px 25px -10px rgba(47, 91, 255, 0.1);
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f5bff;
+  flex-shrink: 0;
+}
+.feature-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.feature-meta h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+.feature-meta p {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* ── 人脉与建议毛玻璃卡片 ── */
+.preview-card {
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px -15px rgba(30, 50, 100, 0.06);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  padding: 16px 20px;
+  gap: 20px;
+  align-items: center;
+  flex: 1;
   min-height: 0;
   z-index: 10;
 }
 
-.top-cards {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 14px;
-  min-height: 0;
-  flex: 1;
+/* 左侧人脉图 */
+.network-diagram {
+  position: relative;
+  width: 220px;
+  height: 250px;
+  margin: 0 auto;
 }
 
-.panel {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 16px;
-  padding: 16px;
+.network-lines {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.node {
+  position: absolute;
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.04);
-}
-
-.panel-head {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  z-index: 2;
 }
-
-.panel-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.panel-title svg {
-  width: 16px;
-  height: 16px;
-  color: #2f5bff;
-}
-
-.panel-link {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #2f5bff;
-  text-decoration: none;
-}
-
-.panel-link:hover {
-  text-decoration: underline;
-}
-
-.contact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.2s ease;
-}
-
-.contact-item:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(47, 91, 255, 0.15);
-  transform: translateY(-0.5px);
-}
-
-.contact-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
+.node img {
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  overflow: hidden;
-  background: #f1f5f9;
-  border: 1px solid #fff;
-  box-shadow: 0 4px 10px -4px rgba(0,0,0,0.1);
-  flex-shrink: 0;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   object-fit: cover;
 }
-
-.contact-info {
-  line-height: 1.25;
-}
-
-.contact-name-row {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tag {
-  font-size: 9.5px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 4px;
-}
-
-.tag-green { background: #ecfdf5; color: #10b981; }
-.tag-blue { background: #eff6ff; color: #3b82f6; }
-
-.contact-org {
-  font-size: 10.5px;
-  color: #64748b;
-  font-weight: 500;
-  margin-top: 1px;
-}
-
-.contact-topic {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 500;
-  margin-top: 1px;
-}
-
-.contact-time {
-  font-size: 10px;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.panel-footer-btn {
-  width: 100%;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px dashed #cbd5e1;
-  background: rgba(255, 255, 255, 0.4);
-  color: #475569;
-  font-family: inherit;
+.node span {
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
+  color: #475569;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1px 6px;
+  border-radius: 99px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.node-center {
+  top: 108px; left: 88px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin-top: 10px;
-  transition: all 0.2s ease;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+  border: 3px solid #fff;
+}
+.node-center svg {
+  width: 18px;
+  height: 18px;
 }
 
-.panel-footer-btn svg {
-  width: 12px;
-  height: 12px;
-}
+.node-top { top: 10px; left: 89px; }
+.node-left { top: 105px; left: 5px; }
+.node-right { top: 105px; left: 165px; }
+.node-bottom { top: 195px; left: 89px; }
 
-.panel-footer-btn:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: #2f5bff;
-  color: #2f5bff;
-}
-
-.todo-list {
+/* 右侧 AI 建议 */
+.ai-suggestions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 2px;
+  text-align: left;
+  min-height: 0;
+  height: 100%;
 }
 
-.todo-item {
+.suggestions-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #312e81;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.suggestions-title svg {
+  width: 15px;
+  height: 15px;
+  color: #4f46e5;
+}
+
+.suggestion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+.suggestion-item:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.s-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.s-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.s-icon-orange { background: #fff7ed; color: #ea580c; }
+.s-icon-green { background: #f0fdf4; color: #16a34a; }
+.s-icon-blue { background: #eff6ff; color: #2563eb; }
+.s-icon-purple { background: #faf5ff; color: #9333ea; }
+
+.s-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.s-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.2s ease;
+  margin-bottom: 1px;
+  gap: 6px;
 }
 
-.todo-item:hover {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(47, 91, 255, 0.15);
+.s-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.todo-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.todo-check {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  border: 1.5px solid #cbd5e1;
-  background: #fff;
-}
-
-.todo-text {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.todo-date {
+.s-badge {
   font-size: 10px;
   font-weight: 700;
-  color: #64748b;
-  display: flex;
-  align-items: center;
-  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  white-space: nowrap;
 }
+.badge-orange { background: #ffedd5; color: #ea580c; }
+.badge-green { background: #dcfce7; color: #15803d; }
+.badge-blue { background: #dbeafe; color: #1d4ed8; }
+.badge-purple { background: #f3e8ff; color: #7e22ce; }
 
-.todo-date.hot {
-  color: #ef4444;
-}
-
-.todo-date svg {
-  width: 10px;
-  height: 10px;
-}
-
-.ai-panel {
-  background: linear-gradient(135deg, rgba(239, 246, 255, 0.6) 0%, rgba(245, 243, 255, 0.6) 100%);
-  border: 1px solid rgba(219, 234, 254, 0.5);
-  flex-shrink: 0;
-}
-
-.ai-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #1e1b4b;
-  margin-bottom: 10px;
-}
-
-.ai-head svg {
-  width: 16px;
-  height: 16px;
-  color: #6366f1;
-}
-
-.ai-row {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.ai-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.ai-avatar svg {
-  width: 14px;
-  height: 14px;
-}
-
-.ai-bubble {
-  flex: 1;
-  background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  border-radius: 12px;
-  border-top-left-radius: 2px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
-  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.03);
-}
-
-.ai-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.ai-action {
-  flex: 1;
-  height: 28px;
-  border-radius: 8px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  background: rgba(255, 255, 255, 0.7);
-  font-family: inherit;
+.s-desc {
   font-size: 10.5px;
-  font-weight: 700;
-  color: #475569;
-  cursor: pointer;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* ── 用户评价 (Testimonial) ── */
+.testimonial-card {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 14px;
+  padding: 10px 16px;
+  position: relative;
+  text-align: left;
+}
+
+.quote-icon {
+  font-size: 36px;
+  color: rgba(99, 102, 241, 0.25);
+  font-family: Georgia, serif;
+  line-height: 1;
+  height: 20px;
+  margin-top: -8px;
+  flex-shrink: 0;
+}
+
+.testimonial-content {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 6px -2px rgba(0,0,0,0.02);
 }
 
-.ai-action:hover {
-  background: #fff;
-  border-color: #6366f1;
-  color: #4f46e5;
-  transform: translateY(-0.5px);
+.testimonial-text {
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
-.ai-action svg {
-  width: 12px;
-  height: 12px;
+.testimonial-author {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 700;
 }
 
-.ai-action:nth-child(1) svg { color: #3b82f6; }
-.ai-action:nth-child(2) svg { color: #10b981; }
-.ai-action:nth-child(3) svg { color: #f59e0b; }
-
+/* 页脚 */
 .preview-footer {
   font-size: 11px;
   color: #94a3b8;
   font-weight: 500;
-  margin-top: 6px;
+  margin-top: auto;
   flex-shrink: 0;
+  text-align: left;
 }
 
-/* 右侧注册 */
+/* ═══════════════════════════════════
+   右侧表单区
+ ═══════════════════════════════════ */
 .auth-col {
   display: flex;
   align-items: center;
@@ -902,9 +866,9 @@ const handleRegister = async () => {
   text-align: left;
 }
 
+/* 头部图标 */
 .auth-avatar-header {
-  width: 56px;
-  height: 56px;
+  width: 56px; height: 56px;
   border-radius: 50%;
   background: #eff6ff;
   display: flex;
@@ -914,10 +878,8 @@ const handleRegister = async () => {
   margin: 0 auto 16px;
   box-shadow: 0 8px 16px -8px rgba(47, 91, 255, 0.5);
 }
-
 .auth-avatar-header svg {
-  width: 26px;
-  height: 26px;
+  width: 26px; height: 26px;
 }
 
 .auth-title {
@@ -937,7 +899,7 @@ const handleRegister = async () => {
   margin-bottom: 24px;
 }
 
-/* 错误提示红框 */
+/* 错误提示 */
 .error-alert {
   display: flex;
   align-items: center;
@@ -951,13 +913,12 @@ const handleRegister = async () => {
   font-weight: 600;
   margin-bottom: 16px;
 }
-
 .error-alert svg {
-  width: 16px;
-  height: 16px;
+  width: 16px; height: 16px;
   flex-shrink: 0;
 }
 
+/* 表单 */
 .form-group {
   margin-bottom: 16px;
 }
@@ -988,11 +949,9 @@ const handleRegister = async () => {
   transition: all 0.2s ease;
   outline: none;
 }
-
 .input-wrap input::placeholder {
   color: #94a3b8;
 }
-
 .input-wrap input:focus {
   border-color: #2f5bff;
   box-shadow: 0 0 0 4px rgba(47, 91, 255, 0.08);
@@ -1000,65 +959,54 @@ const handleRegister = async () => {
 
 .field-icon {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px;
   color: #94a3b8;
   left: 12px;
   pointer-events: none;
 }
-
 .toggle-pw {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px;
   color: #94a3b8;
   right: 12px;
   cursor: pointer;
   transition: color 0.15s ease;
 }
-
 .toggle-pw:hover {
   color: #475569;
 }
 
+/* 服务协议勾选 */
 .agreement-row {
   margin: 14px 0 20px 0;
-  display: flex;
-  align-items: center;
 }
 
 .checkbox-container {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
   padding-left: 24px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
   color: #64748b;
   user-select: none;
   line-height: 16px;
+  text-align: left;
 }
 
 .checkbox-container input {
   position: absolute;
   opacity: 0;
   cursor: pointer;
-  height: 0;
-  width: 0;
+  height: 0; width: 0;
 }
 
 .checkmark {
   position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  left: 0;
-  height: 16px;
-  width: 16px;
+  top: 0; left: 0;
+  height: 16px; width: 16px;
   background-color: #fff;
   border: 1.5px solid #cbd5e1;
   border-radius: 4px;
@@ -1085,35 +1033,23 @@ const handleRegister = async () => {
 }
 
 .checkbox-container .checkmark:after {
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
+  left: 4px; top: 1px;
+  width: 4px; height: 8px;
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
-.agreement-text {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #64748b;
-  margin-left: 6px;
-  text-align: left;
-}
-
 .agreement-text a {
   color: #2f5bff;
   text-decoration: none;
-  font-weight: 700;
-  background: transparent;
-  padding: 0;
+  font-weight: 600;
 }
-
 .agreement-text a:hover {
   text-decoration: underline;
 }
 
+/* 注册按钮 */
 .btn-register {
   width: 100%;
   height: 44px;
@@ -1127,24 +1063,23 @@ const handleRegister = async () => {
   cursor: pointer;
   box-shadow: 0 10px 20px -8px rgba(47, 91, 255, 0.4);
   transition: all 0.2s ease;
-  margin-top: 14px;
   margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
 }
-
 .btn-register:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 12px 24px -6px rgba(47, 91, 255, 0.5);
   background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
 }
-
+.btn-register:active:not(:disabled) {
+  transform: translateY(1px);
+}
 .btn-register:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
+/* 去登录行 */
 .login-row {
   text-align: center;
   font-size: 13px;
@@ -1157,33 +1092,28 @@ const handleRegister = async () => {
   margin-bottom: 24px;
   position: relative;
 }
-
-.login-row::before,
-.login-row::after {
+.login-row::before, .login-row::after {
   content: '';
   flex: 1;
   height: 1px;
   background: #e2e8f0;
 }
-
-.login-row span,
-.login-row a {
+.login-row span, .login-row a {
   background: #fff;
   padding: 0 8px;
   z-index: 1;
 }
-
 .login-row a {
   color: #2f5bff;
   font-weight: 700;
   text-decoration: none;
   margin-left: -8px;
 }
-
 .login-row a:hover {
   text-decoration: underline;
 }
 
+/* 安全保证 */
 .security-tips {
   display: flex;
   align-items: center;
@@ -1193,7 +1123,6 @@ const handleRegister = async () => {
   font-size: 11px;
   font-weight: 500;
 }
-
 .security-tips svg {
   width: 12px;
   height: 12px;
@@ -1202,59 +1131,50 @@ const handleRegister = async () => {
 /* 成功提示弹窗 */
 .success-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.3s ease forwards;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
-  background: #ffffff;
-  padding: 40px;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 40px;
   text-align: center;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 320px;
   width: 90%;
-  max-width: 360px;
-  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .success-icon-wrap {
-  width: 64px;
-  height: 64px;
+  width: 56px; height: 56px;
+  background: #dcfce7;
   border-radius: 50%;
-  background: #ecfdf5;
-  color: #10b981;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  box-shadow: 0 10px 20px -8px rgba(16, 185, 129, 0.5);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  color: #22c55e;
 }
-
 .success-icon-wrap svg {
-  width: 32px;
-  height: 32px;
+  width: 26px; height: 26px;
 }
 
 .modal-content h3 {
-  font-size: 20px;
-  font-weight: 800;
-  color: #0f172a;
+  font-size: 19px;
+  font-weight: 700;
+  color: #1f2937;
   margin-bottom: 8px;
 }
-
 .modal-content p {
   font-size: 13.5px;
   color: #64748b;
-  font-weight: 500;
 }
 
 @keyframes fadeIn {
@@ -1262,15 +1182,17 @@ const handleRegister = async () => {
   to { opacity: 1; }
 }
 
-@keyframes scaleUp {
+@keyframes scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
+/* 响应式 */
 @media (max-width: 900px) {
   .page {
     grid-template-columns: 1fr;
     height: auto;
+    overflow-y: auto;
   }
   .preview {
     display: none;
