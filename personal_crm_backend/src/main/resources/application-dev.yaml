@@ -46,3 +46,10 @@ app:
     upload-dir: ${UPLOAD_DIR:./uploads}
     contact-avatar-dir: ${CONTACT_AVATAR_DIR:contact-avatar}
     user-avatar-dir: ${USER_AVATAR_DIR:user-avatar}
+
+weather:
+  api-key: ${QWEATHER_API_KEY:your_qweather_api_key_placeholder}
+  api-host: ${QWEATHER_API_HOST:nk3dnacruh.re.qweatherapi.com}
+  ip-api-url: ${IP_API_URL:http://ip-api.com/json/}
+
+

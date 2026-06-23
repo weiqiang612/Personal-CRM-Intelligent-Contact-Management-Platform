@@ -1,6 +1,6 @@
 # TASK-008: User Registration
 
-**Status**: Draft
+**Status**: Completed
 **Created**: 2026-06-23
 **Feature dir**: `docs/4-tasks/features/TASK-008-user-registration/`
 

@@ -1,7 +1,7 @@
 # TASK-008: Tasks
 
 **Spec**: `spec.md`
-**Status**: In Progress
+**Status**: Completed
 
 ## Key decisions
 - **并发安全用户ID生成**：在 `SysUserServiceImpl` 引入 `synchronized String generateUserId()`。读取数据库中最大的 `user_id`，若为空则初始化为 `U000000001`，否则截取数字部分递增，并采用 `U%09d` 格式进行补零。

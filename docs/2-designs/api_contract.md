@@ -662,6 +662,59 @@
 
 *(本期不进行这两个接口的实现，统一在查询编排层对写意图进行拦截并返回 `unsupported`)*
 
+## 10. 天气代理接口 (Weather API)
+
+### 10.1 获取天气信息
+
+- `GET /api/v1/weather`
+
+#### 查询参数：
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| address | string | 否 | 联系人的模糊地址。如果不传，后端将根据用户请求的 IP 地址自动识别其常驻城市。 |
+
+#### 响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "cityName": "杭州",
+    "currentTemp": "26",
+    "currentText": "多云",
+    "currentIcon": "101",
+    "dailyForecast": [
+      {
+        "date": "2026-06-23",
+        "textDay": "小雨",
+        "textNight": "中雨",
+        "tempMin": "20",
+        "tempMax": "26",
+        "iconDay": "305"
+      },
+      {
+        "date": "2026-06-24",
+        "textDay": "中雨",
+        "textNight": "多云",
+        "tempMin": "21",
+        "tempMax": "25",
+        "iconDay": "306"
+      },
+      {
+        "date": "2026-06-25",
+        "textDay": "多云",
+        "textNight": "晴",
+        "tempMin": "21",
+        "tempMax": "28",
+        "iconDay": "101"
+      }
+    ]
+  }
+}
+```
+
 ## 11. 当前实现状态 (Implementation Status)
 
 - 后端 Controller 仍未开始实现。

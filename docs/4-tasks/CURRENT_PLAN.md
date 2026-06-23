@@ -3,7 +3,9 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-None (TASK-008 completed, pending next feature scoping)
+`docs/4-tasks/features/TASK-009-weather-widget-integration/`
+- spec.md ✅ Ready
+- tasks.md ✅ Completed
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-008-user-registration/`
@@ -59,6 +61,9 @@ None (TASK-008 completed, pending next feature scoping)
 ### TASK-008: User Registration
 - [x] Implementation (13 tasks) Completed
 
+### TASK-009: Weather Widget Integration
+- [x] Implementation (15 tasks) Completed
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
@@ -82,6 +87,7 @@ None (TASK-008 completed, pending next feature scoping)
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-23: completed TASK-009 Weather Widget Integration (15 tasks, backend security proxy + GZIP decompression + memory cache + Vue 3 UI integration)
 - 2026-06-23: completed TASK-008 User Registration (13 tasks, frontend & backend integration and E2E verification)
 - 2026-06-22: completed TASK-007 Contact Agent Query Capability (15 tasks, frontend & backend integration, E2E multi-viewport verification)
 - 2026-06-22: completed TASK-006 Dashboard and Upload MVP (17 tasks, frontend & backend integration and E2E verification)
@@ -97,5 +103,5 @@ None (TASK-008 completed, pending next feature scoping)
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 当前活动任务已切换为 `TASK-008 User Registration`。
-- 需要优先完成后端注册接口开发放行、并发安全 ID 生成，以及前端高保真 RegisterView.vue 页面实现。
+- 已于 2026-06-23 完成 TASK-009 天气小组件接入的前后端合并与自测验收。
+- 当前暂无活动任务，等待下一阶段功能（如 Stage 5：写操作确认链路）的设计和启动。

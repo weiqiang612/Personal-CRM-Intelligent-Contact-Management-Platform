@@ -65,7 +65,15 @@
             <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack" :aria-label="backLabel">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             </a>
-            <h1 class="page-title">{{ pageTitle }}</h1>
+            <h1 class="page-title">
+              {{ pageTitle }}
+              <span v-if="route.path === '/dashboard' && weatherData" class="topbar-weather">
+                <img :src="getWeatherIconUrl(weatherData.currentIcon)" :alt="weatherData.currentText" class="topbar-weather-icon" />
+                <span class="topbar-weather-temp">{{ weatherData.currentTemp }}°C</span>
+                <span class="topbar-weather-text">{{ weatherData.currentText }}</span>
+                <span class="topbar-weather-city">{{ weatherData.cityName }}</span>
+              </span>
+            </h1>
           </div>
           <p class="page-subtitle">{{ pageSubtitle }}</p>
         </div>
@@ -133,12 +141,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { getWeather } from '@/api/weather'
+import type { WeatherData } from '@/api/weather'
 
 const route = useRoute()
 const router = useRouter()
@@ -149,6 +159,20 @@ const { user } = storeToRefs(authStore)
 
 const isCollapsed = ref<boolean>(false)
 const showDropdown = ref<boolean>(false)
+
+// 天气逻辑
+const weatherData = ref<WeatherData | null>(null)
+const loadWeather = async () => {
+  try {
+    weatherData.value = await getWeather()
+  } catch (e) {
+    console.error('Failed to load topbar weather:', e)
+  }
+}
+
+function getWeatherIconUrl(iconCode: string): string {
+  return `https://npm.elemecdn.com/qweather-icons@1.6.0/icons/${iconCode}.svg`
+}
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80'
 
@@ -312,6 +336,10 @@ const handleLogout = () => {
 const tipFeature = () => {
   ElMessage.info('通知中心属于 Phase 2 扩展范围，目前仅做占位展示')
 }
+
+onMounted(() => {
+  loadWeather()
+})
 </script>
 
 <style scoped>
@@ -363,6 +391,45 @@ const tipFeature = () => {
   margin-right: 4px;
   display: inline-block;
   vertical-align: middle;
+}
+
+.topbar-weather {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(241, 245, 249, 0.8);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  margin-left: 14px;
+  vertical-align: middle;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-sm);
+}
+
+.topbar-weather-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.topbar-weather-temp {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.topbar-weather-text {
+  color: var(--text-muted);
+}
+
+.topbar-weather-city {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 11px;
+  background: var(--color-primary-light);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
 /* 顶部过渡动画 */

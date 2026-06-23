@@ -47,86 +47,6 @@
           标签管理
         </button>
       </div>
-
-      <!-- 天气小组件 -->
-      <div class="weather-entry" ref="weatherRef">
-        <button
-          type="button"
-          class="weather-trigger"
-          :aria-expanded="weatherOpen"
-          @click="toggleWeather"
-        >
-          <span class="weather-trigger-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-              <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
-            </svg>
-          </span>
-          <span class="weather-trigger-text">
-            <span class="weather-trigger-location">杭州天气</span>
-            <span class="weather-trigger-summary">26°C · 多云</span>
-          </span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="weather-trigger-chevron">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>
-
-        <div class="weather-panel" :class="{ open: weatherOpen }">
-          <div class="weather-panel-header">
-            <div>
-              <p class="weather-panel-title">杭州天气</p>
-              <div class="weather-panel-subtitle">联系人页内查看近三天天气</div>
-            </div>
-            <span class="weather-panel-state">天气良好</span>
-          </div>
-
-          <div class="weather-list">
-            <div class="weather-day">
-              <div class="weather-day-info">
-                <span class="weather-day-label">今天</span>
-                <span class="weather-day-date">6月18日 周四</span>
-              </div>
-              <span class="weather-day-condition">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;">
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/><circle cx="12" cy="12" r="4"/>
-                </svg>
-                多云
-              </span>
-              <span class="weather-day-temp">22°C - 29°C</span>
-            </div>
-
-            <div class="weather-day">
-              <div class="weather-day-info">
-                <span class="weather-day-label">明天</span>
-                <span class="weather-day-date">6月19日 周五</span>
-              </div>
-              <span class="weather-day-condition">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;color:#3b82f6;">
-                  <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><path d="M8 16v6M12 16v6M16 16v6"/>
-                </svg>
-                阵雨
-              </span>
-              <span class="weather-day-temp">23°C - 27°C</span>
-            </div>
-
-            <div class="weather-day">
-              <div class="weather-day-info">
-                <span class="weather-day-label">后天</span>
-                <span class="weather-day-date">6月20日 周六</span>
-              </div>
-              <span class="weather-day-condition">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:4px;color:#f59e0b;">
-                  <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-                </svg>
-                晴
-              </span>
-              <span class="weather-day-temp">24°C - 31°C</span>
-            </div>
-          </div>
-
-          <div class="weather-panel-note">后续可接入真实天气 API，当前以静态高拟真渲染。</div>
-        </div>
-      </div>
     </section>
 
     <!-- 联系人数据表格 -->
@@ -333,7 +253,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getContactsApi, addToBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
@@ -345,9 +265,7 @@ const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4f
 const loading = ref<boolean>(false)
 const contacts = ref<ContactInfo[]>([])
 const total = ref<number>(0)
-const weatherOpen = ref<boolean>(false)
 const activePopconfirmId = ref<string | null>(null)
-const weatherRef = ref<HTMLElement | null>(null)
 const tagList = ref<TagInfo[]>([])
 
 const fetchTagList = async () => {
@@ -557,17 +475,6 @@ const formatPhone = (phone: string) => {
   return phone
 }
 
-// 天气卡片切换
-const toggleWeather = (event: Event) => {
-  event.stopPropagation()
-  weatherOpen.value = !weatherOpen.value
-}
-
-// 关闭天气弹窗
-const closeWeather = () => {
-  weatherOpen.value = false
-}
-
 // 侧边气泡控制
 const openBlacklistConfirm = (id: string) => {
   activePopconfirmId.value = id
@@ -589,21 +496,9 @@ const confirmToBlacklist = async (id: string) => {
   }
 }
 
-// 点击空白关闭天气
-const handleOutsideClick = (e: MouseEvent) => {
-  if (weatherRef.value && !weatherRef.value.contains(e.target as Node)) {
-    closeWeather()
-  }
-}
-
 onMounted(() => {
   fetchContactsList()
   fetchTagList()
-  document.addEventListener('click', handleOutsideClick)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleOutsideClick)
 })
 </script>
 
@@ -716,202 +611,8 @@ onUnmounted(() => {
   max-width: 320px;
 }
 
-/* ══ 天气组件专有 CSS 样式 ══ */
-.weather-entry {
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
-  margin-left: auto;
-}
-
-.weather-trigger {
-  min-width: 156px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #dbe3ee;
-  border-radius: 999px;
-  background: #fbfdff;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
-  color: var(--text-main);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.weather-trigger:hover,
-.weather-trigger:focus-visible {
-  border-color: #cfd9e6;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-  transform: translateY(-1px);
-  outline: none;
-}
-
-.weather-trigger[aria-expanded="true"] {
-  border-color: #c7d4e4;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
-}
-
-.weather-trigger-icon {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #eff6ff;
-  color: #3b82f6;
-}
-
-.weather-trigger-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.15;
-  text-align: left;
-}
-
-.weather-trigger-location {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.weather-trigger-summary {
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.weather-trigger-chevron {
-  margin-left: auto;
-  color: var(--text-muted);
-  width: 14px;
-  height: 14px;
-  transition: transform 0.2s ease;
-}
-
-.weather-trigger[aria-expanded="true"] .weather-trigger-chevron {
-  transform: rotate(180deg);
-}
-
-.weather-panel {
-  position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
-  width: 320px;
-  padding: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(12px);
-  z-index: 20;
-  display: none;
-}
-
-.weather-panel.open {
-  display: block;
-  animation: slideInDown 0.2s ease-out;
-}
-
-.weather-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.weather-panel-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.weather-panel-subtitle {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.weather-panel-state {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.weather-list {
-  display: grid;
-  gap: 10px;
-}
-
-.weather-day {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 12px;
-  align-items: center;
-  padding: 12px 14px;
-  border: 1px solid #eef2f7;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-}
-
-.weather-day-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.weather-day-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.weather-day-date {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.weather-day-condition {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-  white-space: nowrap;
-}
-
-.weather-day-temp {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-main);
-  white-space: nowrap;
-}
-
-.weather-panel-note {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-@keyframes slideInDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 </style>

@@ -146,14 +146,45 @@
                 </svg>
               </span>
             </div>
-            <div class="info-item">
+            <div class="info-item address-item" :class="{ 'has-weather': contact.address && contactWeather }">
               <span class="info-label">地址</span>
-              <span class="info-value">
-                {{ contact.address || '-' }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                </svg>
-              </span>
+              <div class="address-content-wrapper">
+                <span class="info-value address-value-row" @click="toggleWeatherForecast" :class="{ 'is-clickable': contact.address && contact.address !== '-' && contactWeather }">
+                  <template v-if="contact.address && contact.address !== '-'">
+                    <span class="address-text">{{ contact.address }}</span>
+                    <!-- 嵌入当前天气微标 -->
+                    <span v-if="contactWeather" class="weather-badge-inline" title="点击查看三天预报">
+                      <img :src="getWeatherIconUrl(contactWeather.currentIcon)" :alt="contactWeather.currentText" class="weather-badge-icon">
+                      <span class="weather-badge-temp">{{ contactWeather.currentTemp }}°C · {{ contactWeather.currentText }}</span>
+                    </span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="address-icon">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </template>
+                  <template v-else>
+                    <span class="no-address-text">
+                      未录入城市，<router-link :to="`/contacts/${contact.contactId}/edit`" class="go-to-edit-link" @click.stop>去设置</router-link>
+                    </span>
+                  </template>
+                </span>
+                
+                <!-- 近三天天气预报折叠面板 -->
+                <transition name="slide-fade">
+                  <div v-if="showWeatherForecast && contactWeather" class="weather-forecast-panel" @click.stop>
+                    <div class="forecast-title">{{ contactWeather.cityName }} 近三天天气预报</div>
+                    <div class="forecast-list">
+                      <div v-for="day in contactWeather.dailyForecast" :key="day.date" class="forecast-item">
+                        <span class="forecast-date">{{ formatForecastDate(day.date) }}</span>
+                        <div class="forecast-status">
+                          <img :src="getWeatherIconUrl(day.iconDay)" :alt="day.textDay" class="forecast-icon">
+                          <span class="forecast-text">{{ day.textDay }}</span>
+                        </div>
+                        <span class="forecast-temp-range">{{ day.tempMin }}°C ~ {{ day.tempMax }}°C</span>
+                      </div>
+                    </div>
+                  </div>
+                </transition>
+              </div>
             </div>
             <div class="info-item">
               <span class="info-label">邮编</span>
@@ -363,6 +394,8 @@ import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { getWeather } from '@/api/weather'
+import type { WeatherData } from '@/api/weather'
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
 
@@ -373,6 +406,68 @@ const loading = ref<boolean>(false)
 const contact = ref<ContactInfo | null>(null)
 const currentTab = ref<string>('pending')
 const showBlacklistConfirm = ref<boolean>(false)
+
+// 天气状态管理
+const contactWeather = ref<WeatherData | null>(null)
+const loadingWeather = ref<boolean>(false)
+const showWeatherForecast = ref<boolean>(false)
+
+const loadContactWeather = async (address: string) => {
+  if (!address || address.trim() === '' || address.trim() === '-') return
+  loadingWeather.value = true
+  try {
+    contactWeather.value = await getWeather(address)
+  } catch (error) {
+    console.error('Failed to load contact weather:', error)
+  } finally {
+    loadingWeather.value = false
+  }
+}
+
+const toggleWeatherForecast = () => {
+  if (contactWeather.value) {
+    showWeatherForecast.value = !showWeatherForecast.value
+  }
+}
+
+function getWeatherIconUrl(iconCode: string): string {
+  return `https://npm.elemecdn.com/qweather-icons@1.6.0/icons/${iconCode}.svg`
+}
+
+const formatForecastDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  try {
+    const today = new Date()
+    const target = new Date(dateStr)
+    
+    // 获取当天的年月日，比较是否同一天
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth()
+    const todayDate = today.getDate()
+    
+    const targetYear = target.getFullYear()
+    const targetMonth = target.getMonth()
+    const targetDate = target.getDate()
+    
+    if (todayYear === targetYear && todayMonth === targetMonth) {
+      if (targetDate === todayDate) return '今天'
+      if (targetDate === todayDate + 1) return '明天'
+      if (targetDate === todayDate + 2) return '后天'
+    }
+    
+    // 如果跨月或者年，计算天数差
+    const timeDiff = target.getTime() - new Date(todayYear, todayMonth, todayDate).getTime()
+    const dayDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24))
+    if (dayDiff === 0) return '今天'
+    if (dayDiff === 1) return '明天'
+    if (dayDiff === 2) return '后天'
+    
+    return `${targetMonth + 1}/${targetDate}`
+  } catch (e) {
+    return dateStr
+  }
+}
+
 
 const todos = ref<TodoInfo[]>([])
 const tagList = ref<TagInfo[]>([])
@@ -398,6 +493,9 @@ const loadContactDetail = async () => {
   try {
     const data = await getContactDetailApi(contactId.value)
     contact.value = data
+    if (data && data.address) {
+      loadContactWeather(data.address)
+    }
   } catch (error) {
     console.error('Failed to load contact detail:', error)
     ElMessage.error('无法加载该联系人详情')
@@ -1021,5 +1119,170 @@ onMounted(() => {
   padding: 40px 20px;
   color: var(--text-muted);
   font-size: 13px;
+}
+
+/* 详情页天气小组件样式 */
+.address-item {
+  position: relative;
+  align-items: flex-start !important;
+}
+
+.address-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: 1;
+}
+
+.address-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.address-value-row.is-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.address-value-row.is-clickable:hover .address-text {
+  color: var(--color-primary);
+}
+
+.address-text {
+  transition: color 0.2s;
+}
+
+.address-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+
+.weather-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(239, 246, 255, 0.9);
+  border: 1px solid rgba(191, 219, 254, 0.6);
+  font-size: 11px;
+  color: var(--color-primary);
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.weather-badge-inline:hover {
+  background: var(--color-primary-light);
+  transform: scale(1.02);
+}
+
+.weather-badge-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.no-address-text {
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.go-to-edit-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+
+.go-to-edit-link:hover {
+  color: var(--color-primary-hover);
+}
+
+/* 折叠近三天天气预报面板 */
+.weather-forecast-panel {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 0.95) 100%);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 6px 16px -8px rgba(15, 23, 42, 0.12);
+  margin-top: 4px;
+  text-align: left;
+}
+
+.forecast-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.forecast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.forecast-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.forecast-date {
+  font-weight: 600;
+  color: #475569;
+  width: 32px;
+}
+
+.forecast-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.forecast-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.forecast-text {
+  font-weight: 600;
+}
+
+.forecast-temp-range {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: #64748b;
+  width: 80px;
+  text-align: right;
+}
+
+/* 动效 slide-fade */
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-8px);
+  opacity: 0;
 }
 </style>

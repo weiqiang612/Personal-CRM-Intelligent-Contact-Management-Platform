@@ -350,8 +350,11 @@ import type { ContactInfo } from '@/api/contact'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 
 // 1. 数据定义与初始化
 const overview = ref<DashboardOverview>({
@@ -1935,5 +1938,133 @@ onBeforeUnmount(() => {
   text-align: center;
   padding-bottom: 12px;
   background: var(--bg-card);
+}
+
+/* 问候头部栏 */
+.dashboard-header {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(243, 244, 246, 0.9) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px -20px rgba(15, 23, 42, 0.2), 0 2px 6px rgba(15, 23, 42, 0.02);
+  margin-bottom: 4px;
+}
+
+.header-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.welcome-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.icon-calendar {
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+}
+
+/* 天气区域 */
+.header-weather {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.header-weather:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.weather-icon {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
+}
+
+.weather-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.weather-temp-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.weather-temp {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: var(--font-mono, monospace);
+}
+
+.weather-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.weather-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.icon-location {
+  width: 11px;
+  height: 11px;
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+  }
+  
+  .header-weather {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 </style>
