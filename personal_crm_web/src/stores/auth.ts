@@ -29,13 +29,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(params: LoginParams) {
     const data = await loginApi(params)
     token.value = data.token
-    user.value = {
-      userId: data.user.userId,
-      username: data.user.username,
-      avatarUrl: null, // 登录时暂无头像信息，随后可通过 fetchUserProfile 补充
-    }
     localStorage.setItem('token', data.token)
-    localStorage.setItem('user', JSON.stringify(user.value))
+    // 立即拉取一次完整的用户信息（包含头像）
+    await fetchUserProfile()
   }
 
   /**
