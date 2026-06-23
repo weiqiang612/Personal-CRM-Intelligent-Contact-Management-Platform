@@ -699,6 +699,11 @@ const handleRegister = async () => {
   transition: all 0.2s ease;
 }
 
+.panel-footer-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
 .panel-footer-btn:hover {
   background: rgba(255, 255, 255, 0.8);
   border-color: #2f5bff;
