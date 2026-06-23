@@ -346,7 +346,6 @@ const goToRegister = () => {
 </script>
 
 <style scoped>
-/* 引入页面特有样式（保持与 login.html 高度一致） */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 .page {
@@ -440,120 +439,125 @@ const goToRegister = () => {
 }
 
 .hero-sub {
-  font-size: clamp(0.75rem, 0.9vw, 0.88rem);
-  color: #64748b;
+  font-size: 13.5px;
+  color: #4b5563;
   font-weight: 500;
 }
 
 .cards-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  flex: 1;
   min-height: 0;
+  z-index: 10;
 }
 
 .top-cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 14px;
+  min-height: 0;
+  flex: 1;
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(219, 228, 241, 0.88);
-  border-radius: 14px;
-  box-shadow: 0 4px 20px -8px rgba(30, 50, 100, 0.1);
+  background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  padding: 12px 14px 10px;
-  overflow: hidden;
+  min-height: 0;
+  box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.04);
 }
 
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
-  flex-shrink: 0;
+  margin-bottom: 12px;
 }
 
 .panel-title {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 13.5px;
   font-weight: 700;
-  color: #334155;
+  color: #0f172a;
 }
 
 .panel-title svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   color: #2f5bff;
 }
 
 .panel-link {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #2f5bff;
   text-decoration: none;
 }
 
+.panel-link:hover {
+  text-decoration: underline;
+}
+
 .contact-list {
-  flex: 1;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .contact-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
 }
 
-.contact-item:last-of-type {
-  border-bottom: none;
+.contact-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(47, 91, 255, 0.15);
+  transform: translateY(-0.5px);
 }
 
 .contact-left {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  min-width: 0;
+  align-items: center;
+  gap: 8px;
 }
 
 .avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 4px 10px -4px rgba(15, 23, 42, 0.3);
-  background: #e2e8f0;
+  background: #f1f5f9;
+  border: 1px solid #fff;
+  box-shadow: 0 4px 10px -4px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
-.av-a { background: linear-gradient(135deg, #93c5fd, #2563eb); }
-.av-b { background: linear-gradient(135deg, #6ee7b7, #059669); }
-.av-c { background: linear-gradient(135deg, #f9a8d4, #db2777); }
-.av-d { background: linear-gradient(135deg, #fcd34d, #f97316); }
-
 .contact-info {
-  min-width: 0;
-  text-align: left;
+  line-height: 1.25;
 }
 
 .contact-name-row {
