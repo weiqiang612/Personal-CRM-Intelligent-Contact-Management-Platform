@@ -166,4 +166,72 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.data.token", notNullValue()))
                 .andExpect(jsonPath("$.data.user.username", is("loginuser")));
     }
+
+    @Test
+    public void testRegisterDefensiveValidation() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername(null);
+        request.setPassword(null);
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40001)))
+                .andExpect(jsonPath("$.message", containsString("cannot be blank")));
+    }
+
+    @Test
+    public void testConcurrentRegisterSelfHealing() throws Exception {
+        int threadCount = 4;
+        java.util.concurrent.ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+        java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(threadCount);
+        java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        String[] usernames = new String[threadCount];
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            String uniqueUsername = "concurrent_" + System.currentTimeMillis() + "_" + index;
+            usernames[index] = uniqueUsername;
+
+            executorService.execute(() -> {
+                try {
+                    RegisterRequest request = new RegisterRequest();
+                    request.setUsername(uniqueUsername);
+                    request.setPassword("securepassword123");
+
+                    mockMvc.perform(post("/api/v1/auth/register")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(request)))
+                            .andExpect(status().isOk())
+                            .andExpect(jsonPath("$.code", is(0)));
+
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executorService.shutdown();
+
+        org.junit.jupiter.api.Assertions.assertEquals(threadCount, successCount.get());
+
+        // 验证并发用户都成功落库，且其生成的 userId 在高并发竞争下也是各自独立唯一的
+        java.util.Set<String> userIds = new java.util.HashSet<>();
+        for (int i = 0; i < threadCount; i++) {
+            SysUser user = sysUserMapper.selectOne(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                            .eq(SysUser::getUsername, usernames[i])
+            );
+            assertNotNull(user);
+            assertNotNull(user.getUserId());
+            userIds.add(user.getUserId());
+        }
+        // 4个并发创建的用户的 userId 应全部不相同
+        org.junit.jupiter.api.Assertions.assertEquals(threadCount, userIds.size());
+    }
 }

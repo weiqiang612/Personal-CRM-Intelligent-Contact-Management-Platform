@@ -93,10 +93,17 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public void register(RegisterRequest registerRequest) {
+        // 1. 防御性空白校验
+        if (registerRequest == null 
+                || !org.springframework.util.StringUtils.hasText(registerRequest.getUsername())
+                || !org.springframework.util.StringUtils.hasText(registerRequest.getPassword())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username or password cannot be blank");
+        }
+
         String username = registerRequest.getUsername().trim();
         String password = registerRequest.getPassword();
 
-        // 1. 基础校验
+        // 2. 基础校验
         if (username.contains("@")) {
             String emailPattern = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
             if (!username.matches(emailPattern)) {
@@ -112,25 +119,45 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password must be at least 8 characters");
         }
 
-        // 2. 重名校验
+        // 3. 重名校验
         SysUser existingUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
         if (existingUser != null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username already exists");
         }
 
-        // 3. 生成全局唯一的业务用户ID
-        String userId = generateUserId();
+        // 4. 密码哈希预处理
+        String passwordHash = passwordEncoder.encode(password);
 
-        // 4. 构建并保存用户实体
-        SysUser sysUser = new SysUser();
-        sysUser.setUserId(userId);
-        sysUser.setUsername(username);
-        sysUser.setPasswordHash(passwordEncoder.encode(password));
-        sysUser.setStatus(0);
-        sysUser.setCreatedAt(LocalDateTime.now());
-        sysUser.setUpdatedAt(LocalDateTime.now());
+        // 5. 唯一约束拦截与重试自愈逻辑 (最大重试5次)
+        int maxRetries = 5;
+        int retryCount = 0;
+        while (retryCount < maxRetries) {
+            try {
+                String userId = generateUserId();
+                SysUser sysUser = new SysUser();
+                sysUser.setUserId(userId);
+                sysUser.setUsername(username);
+                sysUser.setPasswordHash(passwordHash);
+                sysUser.setStatus(0);
+                sysUser.setCreatedAt(LocalDateTime.now());
+                sysUser.setUpdatedAt(LocalDateTime.now());
 
-        this.save(sysUser);
+                this.save(sysUser);
+                return; // 保存成功，直接结束
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // 如果是并发下由于用户名被其他线程抢先注册成功引发的唯一键冲突
+                SysUser doubleCheckUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
+                if (doubleCheckUser != null) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username already exists");
+                }
+                
+                // 否则，说明是生成的 userId 撞车，递增重试次数并重新生成重试
+                retryCount++;
+                if (retryCount >= maxRetries) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Registration failed due to system ID conflict, please try again");
+                }
+            }
+        }
     }
 
     /**
