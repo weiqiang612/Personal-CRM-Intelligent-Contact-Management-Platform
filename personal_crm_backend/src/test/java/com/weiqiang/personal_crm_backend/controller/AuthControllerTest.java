@@ -2,7 +2,9 @@ package com.weiqiang.personal_crm_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiqiang.personal_crm_backend.entity.SysUser;
+import com.weiqiang.personal_crm_backend.entity.UserAvatar;
 import com.weiqiang.personal_crm_backend.mapper.SysUserMapper;
+import com.weiqiang.personal_crm_backend.mapper.UserAvatarMapper;
 import com.weiqiang.personal_crm_backend.model.dto.LoginRequest;
 import com.weiqiang.personal_crm_backend.model.dto.RegisterRequest;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +39,9 @@ public class AuthControllerTest {
 
     @Autowired
     private SysUserMapper sysUserMapper;
+
+    @Autowired
+    private UserAvatarMapper userAvatarMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -165,6 +171,58 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.token", notNullValue()))
                 .andExpect(jsonPath("$.data.user.username", is("loginuser")));
+    }
+
+    @Test
+    public void testGetMeShouldFallbackWhenLocalAvatarFileIsMissing() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("ethan");
+        loginRequest.setPassword("123456");
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).path("data").path("token").asText();
+
+        UserAvatar avatar = userAvatarMapper.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserAvatar>()
+                        .eq(UserAvatar::getUserId, "U000000001")
+        );
+        if (avatar == null) {
+            avatar = new UserAvatar();
+            avatar.setUserId("U000000001");
+            avatar.setPicId("UPICMISS01");
+            avatar.setFileName("missing-avatar.png");
+            avatar.setCreatedAt(java.time.LocalDateTime.now());
+            avatar.setAccessUrl("/uploads/user-avatar/missing-avatar.png");
+            avatar.setFilePath("D:\\\\project\\\\Personal CRM Intelligent Contact Management Platform\\\\personal_crm_backend\\\\uploads\\\\user-avatar\\\\missing-avatar.png");
+            userAvatarMapper.insert(avatar);
+        } else {
+            avatar.setPicId("UPICMISS01");
+            avatar.setFileName("missing-avatar.png");
+            avatar.setAccessUrl("/uploads/user-avatar/missing-avatar.png");
+            avatar.setFilePath("D:\\\\project\\\\Personal CRM Intelligent Contact Management Platform\\\\personal_crm_backend\\\\uploads\\\\user-avatar\\\\missing-avatar.png");
+            userAvatarMapper.updateById(avatar);
+        }
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.avatarUrl", nullValue()));
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                userAvatarMapper.selectOne(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserAvatar>()
+                                .eq(UserAvatar::getUserId, "U000000001")
+                )
+        );
     }
 
     @Test

@@ -2,6 +2,8 @@ package com.weiqiang.personal_crm_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weiqiang.personal_crm_backend.entity.Contact;
+import com.weiqiang.personal_crm_backend.entity.ContactAvatar;
+import com.weiqiang.personal_crm_backend.mapper.ContactAvatarMapper;
 import com.weiqiang.personal_crm_backend.mapper.ContactMapper;
 import com.weiqiang.personal_crm_backend.model.dto.ContactSaveDTO;
 import com.weiqiang.personal_crm_backend.model.dto.ContactStatusDTO;
@@ -42,6 +44,9 @@ public class ContactControllerTest {
 
     @Autowired
     private ContactMapper contactMapper;
+
+    @Autowired
+    private ContactAvatarMapper contactAvatarMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -102,6 +107,30 @@ public class ContactControllerTest {
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.name", is("Test Contact")))
                 .andExpect(jsonPath("$.data.contactId", is(testCtId)));
+    }
+
+    @Test
+    void testGetContactDetail_ShouldCleanupStaleLocalAvatar() throws Exception {
+        ContactAvatar avatar = new ContactAvatar();
+        avatar.setContactId(testCtId);
+        avatar.setPicId("PICMISS001");
+        avatar.setFileName("missing-contact.png");
+        avatar.setAccessUrl("/uploads/contact-avatar/missing-contact.png");
+        avatar.setFilePath("D:\\\\project\\\\Personal CRM Intelligent Contact Management Platform\\\\personal_crm_backend\\\\uploads\\\\contact-avatar\\\\missing-contact.png");
+        contactAvatarMapper.insert(avatar);
+
+        mockMvc.perform(get("/api/v1/contacts/" + testCtId)
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.avatarUrl", nullValue()));
+
+        org.junit.jupiter.api.Assertions.assertNull(
+                contactAvatarMapper.selectOne(
+                        new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ContactAvatar>()
+                                .eq(ContactAvatar::getContactId, testCtId)
+                )
+        );
     }
 
     @Test

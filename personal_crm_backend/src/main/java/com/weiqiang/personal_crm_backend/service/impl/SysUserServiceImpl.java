@@ -29,6 +29,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final UserAvatarMapper userAvatarMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final AvatarAccessService avatarAccessService;
 
     @Override
     public LoginVo login(LoginRequest loginRequest) {
@@ -86,7 +87,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         userMeVo.setUserId(user.getUserId());
         userMeVo.setUsername(user.getUsername());
         userMeVo.setStatus(user.getStatus());
-        userMeVo.setAvatarUrl(avatar != null ? avatar.getAccessUrl() : null);
+        userMeVo.setAvatarUrl(avatarAccessService.resolveUserAvatarUrl(avatar));
 
         return userMeVo;
     }

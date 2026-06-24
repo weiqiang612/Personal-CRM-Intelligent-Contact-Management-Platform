@@ -5,9 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.Contact;
+import com.weiqiang.personal_crm_backend.entity.ContactAvatar;
 import com.weiqiang.personal_crm_backend.entity.ContactTag;
 import com.weiqiang.personal_crm_backend.entity.Tag;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
+import com.weiqiang.personal_crm_backend.mapper.ContactAvatarMapper;
 import com.weiqiang.personal_crm_backend.mapper.ContactMapper;
 import com.weiqiang.personal_crm_backend.mapper.ContactTagMapper;
 import com.weiqiang.personal_crm_backend.mapper.TagMapper;
@@ -35,8 +37,10 @@ import java.util.stream.Collectors;
 public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> implements ContactService {
 
     private final ContactMapper contactMapper;
+    private final ContactAvatarMapper contactAvatarMapper;
     private final TagMapper tagMapper;
     private final ContactTagMapper contactTagMapper;
+    private final AvatarAccessService avatarAccessService;
 
     @Override
     public ContactListVO listContacts(ContactQueryParam param) {
@@ -283,8 +287,11 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         vo.setContactId(contact.getCtId());
         
         // 关联查询头像 URL
-        String avatarUrl = contactMapper.getAvatarUrlByContactId(contact.getCtId());
-        vo.setAvatarUrl(avatarUrl);
+        ContactAvatar avatar = contactAvatarMapper.selectOne(
+                new LambdaQueryWrapper<ContactAvatar>()
+                        .eq(ContactAvatar::getContactId, contact.getCtId())
+        );
+        vo.setAvatarUrl(avatarAccessService.resolveContactAvatarUrl(avatar));
         
         // 关联查询标签列表
         List<String> tags = contactMapper.getTagsByContactIdAndUser(contact.getCtId(), userId);
