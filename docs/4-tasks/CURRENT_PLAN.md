@@ -3,13 +3,13 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-009-weather-widget-integration/`
-- spec.md ✅ Ready
-- tasks.md ✅ Completed
+`None`
+- spec.md → N/A
+- tasks.md → N/A
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-008-user-registration/`
-- spec.md ✅ Ready
+`docs/4-tasks/features/TASK-010-agent-todo-confirmation/`
+- spec.md ✅ Completed
 - tasks.md ✅ Completed
 
 ## Stages
@@ -18,7 +18,7 @@
 - Stage 2: 搭建后端基础设施，完成统一响应、异常处理、MyBatis-Plus、JWT 鉴权和认证入口 ✅
 - Stage 3: 替换前端脚手架页面，建立 CRM 基础布局、登录页、路由、状态管理与 API 层 ✅
 - Stage 4: 按独立任务顺序实现核心业务模块：contacts -> todos -> tags -> dashboard/upload ✅
-- Stage 5: 实现 Agent 查询与写操作确认链路 (只读查询已完成)
+- Stage 5: 实现 Agent 查询与写操作确认链路 ✅
 - Stage 6: 自测、接口联调、补测试文档与验收材料 ✅
 
 ### TASK-000: Static HTML Prototype Baseline
@@ -64,6 +64,9 @@
 ### TASK-009: Weather Widget Integration
 - [x] Implementation (15 tasks) Completed
 
+### TASK-010: Contact Agent Todo Write Confirmation
+- [x] Implementation (16 tasks)
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
@@ -77,16 +80,17 @@
 ### Phase 3: 增强功能
 - TASK-007: Contact Agent 查询能力
   - 范围：自然语言查询联系人和事项、查询结果展示、Agent 日志基础留痕
-- TASK-008: Contact Agent 写操作确认链路
-  - 范围：创建事项等写操作预确认、确认执行、取消执行、操作记录完善
+- TASK-010: Contact Agent 写操作确认链路
+  - [x] 范围：创建事项预确认、确认执行、取消执行、操作记录完善
 
 ### Phase 4: 质量与交付
-- TASK-009: 测试与缺陷修复
+- TASK-011: 测试与缺陷修复
   - 范围：单元测试、接口测试、自测清单、联调缺陷修复、验收问题收敛
-- TASK-010: 交付收口
+- TASK-012: 交付收口
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-24: completed TASK-010 Contact Agent Todo Write Confirmation (16 tasks, rule-based NLP time/contact parsing + double-confirmation loop + Vue 3 layout & loading/disabled interaction E2E validation)
 - 2026-06-23: completed TASK-009 Weather Widget Integration (15 tasks, backend security proxy + GZIP decompression + memory cache + Vue 3 UI integration)
 - 2026-06-23: completed TASK-008 User Registration (13 tasks, frontend & backend integration and E2E verification)
 - 2026-06-22: completed TASK-007 Contact Agent Query Capability (15 tasks, frontend & backend integration, E2E multi-viewport verification)
@@ -103,5 +107,5 @@
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 已于 2026-06-23 完成 TASK-009 天气小组件接入的前后端合并与自测验收。
-- 当前暂无活动任务，等待下一阶段功能（如 Stage 5：写操作确认链路）的设计和启动。
+- 已于 2026-06-24 完成 TASK-010 Contact Agent Todo Write Confirmation，后端测试、前端构建与桌面/移动端 UI 验收截图已归档。
+- 当前暂无活动任务；如继续推进，下一步应补 `TASK-011` 任务包并进入质量收口阶段。

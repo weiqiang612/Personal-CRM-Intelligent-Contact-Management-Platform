@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.hamcrest.Matchers.*;
@@ -33,6 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @Rollback
 public class AgentControllerTest {
+
+    private static final DateTimeFormatter TODO_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
     private MockMvc mockMvc;
@@ -262,5 +265,190 @@ public class AgentControllerTest {
                     .andExpect(jsonPath("$.data.queryType", is("unsupported")))
                     .andExpect(jsonPath("$.data.intent", is("unsupported")));
         }
+    }
+
+    @Test
+    void testExecute_SuccessPreConfirmation() throws Exception {
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        param.setInput("明天下午三点提醒我联系张小三确认合同");
+        String expectedTodoTime = LocalDateTime.now().plusDays(1).withHour(15).withMinute(0).withSecond(0).withNano(0)
+                .format(TODO_TIME_FORMATTER);
+
+        mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(param)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.needConfirm", is(1)))
+                .andExpect(jsonPath("$.data.actionType", is("create_todo")))
+                .andExpect(jsonPath("$.data.parsedParams.contactName", is("张小三")))
+                .andExpect(jsonPath("$.data.parsedParams.todoTime", is(expectedTodoTime)))
+                .andExpect(jsonPath("$.data.parsedParams.content", is("确认合同")));
+    }
+
+    @Test
+    void testExecute_UnsupportedAction() throws Exception {
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        param.setInput("删除张小三的联系方式");
+
+        mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(param)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.needConfirm", is(0)))
+                .andExpect(jsonPath("$.data.actionType", is("unsupported")))
+                .andExpect(jsonPath("$.data.summary", containsString("仅支持“创建事项”")));
+    }
+
+    @Test
+    void testExecute_MissingContact() throws Exception {
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        param.setInput("明天下午三点提醒我确认合同");
+
+        mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(param)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.needConfirm", is(0)))
+                .andExpect(jsonPath("$.data.summary", containsString("无法识别您想为哪位联系人")));
+    }
+
+    @Test
+    void testExecute_MissingTime() throws Exception {
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        param.setInput("提醒我联系张小三确认合同");
+
+        mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(param)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.needConfirm", is(0)))
+                .andExpect(jsonPath("$.data.summary", containsString("无法识别事项提醒时间")));
+    }
+
+    @Test
+    void testExecute_MissingContent() throws Exception {
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        param.setInput("明天下午三点提醒我联系张小三");
+
+        mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(param)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.needConfirm", is(0)))
+                .andExpect(jsonPath("$.data.summary", containsString("无法识别事项内容")));
+    }
+
+    @Test
+    void testConfirm_Success() throws Exception {
+        String expectedTodoTime = LocalDateTime.now().plusDays(1).withHour(15).withMinute(0).withSecond(0).withNano(0)
+                .format(TODO_TIME_FORMATTER);
+
+        // 1. 预确认
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam execParam = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        execParam.setInput("明天下午三点提醒我联系张小三确认合同");
+
+        String responseStr = mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(execParam)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andReturn().getResponse().getContentAsString();
+
+        // 解析出 logId
+        java.util.Map<String, Object> responseMap = objectMapper.readValue(responseStr, java.util.Map.class);
+        java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) responseMap.get("data");
+        Number logIdNum = (Number) dataMap.get("logId");
+        Long logId = logIdNum.longValue();
+
+        // 2. 确认执行
+        com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam confirmParam = new com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam();
+        confirmParam.setLogId(logId);
+        confirmParam.setAction("confirm");
+
+        mockMvc.perform(post("/api/v1/agent/confirm")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(confirmParam)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.contactName", is("张小三")))
+                .andExpect(jsonPath("$.data.content", is("确认合同")))
+                .andExpect(jsonPath("$.data.status", is(0)))
+                .andExpect(jsonPath("$.data.todoTime", is(expectedTodoTime)));
+    }
+
+    @Test
+    void testConfirm_Cancel() throws Exception {
+        // 1. 预确认
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam execParam = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        execParam.setInput("明天下午三点提醒我联系张小三确认合同");
+
+        String responseStr = mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(execParam)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        java.util.Map<String, Object> responseMap = objectMapper.readValue(responseStr, java.util.Map.class);
+        java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) responseMap.get("data");
+        Number logIdNum = (Number) dataMap.get("logId");
+        Long logId = logIdNum.longValue();
+
+        // 2. 取消执行
+        com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam confirmParam = new com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam();
+        confirmParam.setLogId(logId);
+        confirmParam.setAction("cancel");
+
+        mockMvc.perform(post("/api/v1/agent/confirm")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(confirmParam)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data", nullValue()));
+    }
+
+    @Test
+    void testConfirm_HorizontalPrivilegeEscalation_Forbidden() throws Exception {
+        // 1. 预确认 (用户1)
+        com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam execParam = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+        execParam.setInput("明天下午三点提醒我联系张小三确认合同");
+
+        String responseStr = mockMvc.perform(post("/api/v1/agent/execute")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(execParam)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        java.util.Map<String, Object> responseMap = objectMapper.readValue(responseStr, java.util.Map.class);
+        java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) responseMap.get("data");
+        Number logIdNum = (Number) dataMap.get("logId");
+        Long logId = logIdNum.longValue();
+
+        // 2. 二次确认 (由用户2 otherToken 越权调用)
+        com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam confirmParam = new com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam();
+        confirmParam.setLogId(logId);
+        confirmParam.setAction("confirm");
+
+        mockMvc.perform(post("/api/v1/agent/confirm")
+                        .header("Authorization", otherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createJsonBody(confirmParam)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40301)))
+                .andExpect(jsonPath("$.message", containsString("无权操作此日志记录")));
     }
 }

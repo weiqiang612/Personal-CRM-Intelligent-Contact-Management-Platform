@@ -18,7 +18,7 @@
           </div>
           <div class="header-text">
             <h2>智能助手</h2>
-            <p>使用自然语言快速查询联系人或事项</p>
+            <p>使用自然语言快速查询联系人或事项，或创建联系事项</p>
           </div>
         </div>
         <button class="clear-chat-btn" @click="clearChat" v-if="messages.length > 0">
@@ -41,8 +41,8 @@
           </div>
           <h3 class="empty-title">您好！我是您的 CRM 智能助理</h3>
           <p class="empty-desc">
-            您可以向我提问查找您的联系人信息，或者筛选您的事项安排。
-            本期我支持查询功能，且所有数据严格按当前登录用户进行权限隔离。
+            您可以向我提问查找您的联系人信息，或者筛选/创建您的待办事项。
+            本期我支持查询与事项创建功能，且所有数据严格按当前登录用户进行权限隔离。
           </p>
           
           <div class="recommend-section">
@@ -56,7 +56,8 @@
               >
                 <div class="recommend-icon">
                   <svg v-if="index === 0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <svg v-else-if="index === 1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <div class="recommend-text">
                   <h4>{{ prompt.title }}</h4>
@@ -75,7 +76,13 @@
             :class="['message-row', msg.sender === 'user' ? 'user-row' : 'agent-row']"
           >
             <!-- 气泡 -->
-            <div class="message-bubble">
+            <div 
+              class="message-bubble"
+              :class="{
+                'msg-write-success': msg.queryType === 'write_success',
+                'msg-write-cancelled': msg.queryType === 'write_cancelled'
+              }"
+            >
               <!-- 用户消息直接渲染文本 -->
               <template v-if="msg.sender === 'user'">
                 <p class="msg-text">{{ msg.text }}</p>
@@ -83,7 +90,89 @@
 
               <!-- 智能助手渲染结构化响应 -->
               <template v-else>
-                <div class="agent-reply">
+                <!-- 预确认卡片结构 -->
+                <div v-if="msg.isConfirmCard && msg.parsedParams" class="confirm-card-wrapper">
+                  <div class="reply-header">
+                    <div class="reply-avatar-mini">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mini-bot-icon">
+                        <rect x="3" y="11" width="18" height="10" rx="2" />
+                        <path d="M12 2v6M8 8h8M9 15h.01M15 15h.01" />
+                      </svg>
+                    </div>
+                    <span class="reply-summary">{{ msg.text }}</span>
+                  </div>
+                  
+                  <div class="confirm-card-content">
+                    <div class="confirm-param-item">
+                      <span class="param-label">联系人:</span>
+                      <span class="param-value contact-value">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="param-icon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        {{ msg.parsedParams.contactName || '未识别到联系人' }}
+                      </span>
+                    </div>
+                    
+                    <div class="confirm-param-item">
+                      <span class="param-label">事项时间:</span>
+                      <span class="param-value">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="param-icon"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {{ msg.parsedParams.todoTime || '未识别到时间' }}
+                      </span>
+                    </div>
+
+                    <div class="confirm-param-item">
+                      <span class="param-label">具体内容:</span>
+                      <span class="param-value highlight-content">{{ msg.parsedParams.content || '未识别到具体内容' }}</span>
+                    </div>
+
+                    <div class="confirm-param-item">
+                      <span class="param-label">优先级:</span>
+                      <span class="param-value">
+                        <span 
+                          class="priority-badge"
+                          :class="{
+                            'priority-high': msg.parsedParams.priority === 2,
+                            'priority-medium': msg.parsedParams.priority === 1,
+                            'priority-low': msg.parsedParams.priority === 0 || msg.parsedParams.priority === undefined
+                          }"
+                        >
+                          {{ msg.parsedParams.priority === 2 ? '紧急' : (msg.parsedParams.priority === 1 ? '重要' : '普通') }}
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- 动作按钮区 -->
+                  <div class="confirm-card-actions" v-if="msg.confirmState === 'pending'">
+                    <el-button 
+                      type="primary" 
+                      @click="handleConfirm(msg)"
+                      :loading="isActionPending && activeLogId === msg.logId"
+                      :disabled="isActionPending"
+                    >
+                      确认创建
+                    </el-button>
+                    <el-button 
+                      type="default" 
+                      @click="handleCancel(msg)"
+                      :disabled="isActionPending"
+                    >
+                      取消
+                    </el-button>
+                  </div>
+                  <div class="confirm-card-status" v-else>
+                    <span v-if="msg.confirmState === 'confirmed'" class="status-text text-success">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="status-icon"><polyline points="20 6 9 17 4 12"/></svg>
+                      已确认创建
+                    </span>
+                    <span v-else-if="msg.confirmState === 'cancelled'" class="status-text text-cancelled">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="status-icon"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      操作已取消
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 原有查询/非确认卡片回复结构 -->
+                <div v-else class="agent-reply">
                   <!-- 机器人摘要说明 -->
                   <div class="reply-header">
                     <div class="reply-avatar-mini">
@@ -215,15 +304,15 @@
           <input 
             type="text" 
             v-model="inputQuery" 
-            placeholder="输入您想查找的联系人姓名、微信，或者查找事项，如“查张三的联系方式”..."
+            placeholder="输入您想查找的联系人姓名、微信，或者查找/创建事项，如“提醒我明天下午三点联系张三确认合同”..."
             @keydown.enter="sendQuery"
-            :disabled="isLoading"
+            :disabled="isLoading || hasPendingConfirm"
             class="query-input"
           />
           <div class="panel-actions">
             <button 
               class="action-btn send-btn" 
-              :disabled="isLoading || !inputQuery.trim()" 
+              :disabled="isLoading || hasPendingConfirm || !inputQuery.trim()" 
               @click="sendQuery"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="action-icon">
@@ -239,9 +328,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { queryAgent } from '@/api/agent'
+import { queryAgent, executeAgent, confirmAgent, type AgentResultItem } from '@/api/agent'
 import { ElMessage } from 'element-plus'
 import { resolveAvatarUrl } from '@/utils/avatar'
 
@@ -252,9 +341,22 @@ interface Message {
   id: string
   sender: 'user' | 'agent'
   text: string
-  queryType?: 'contact' | 'todo' | 'unsupported'
-  results?: any[]
+  queryType?: 'contact' | 'todo' | 'unsupported' | 'write_success' | 'write_cancelled'
+  results?: AgentResultItem[]
   time: Date
+  // write agent fields:
+  isConfirmCard?: boolean
+  logId?: number
+  needConfirm?: number
+  actionType?: string
+  parsedParams?: {
+    contactId?: string
+    contactName?: string
+    todoTime?: string
+    content?: string
+    priority?: number
+  }
+  confirmState?: 'pending' | 'confirmed' | 'cancelled'
 }
 
 const messages = ref<Message[]>([])
@@ -271,8 +373,28 @@ const recommendPrompts = [
   {
     title: '查询联系事项',
     content: '查张三最近的待办事项'
+  },
+  {
+    title: '创建待办事项',
+    content: '明天下午三点提醒我联系张三确认合同'
   }
 ]
+
+// 检查是否存在待确认卡片
+const hasPendingConfirm = computed(() => {
+  return messages.value.some(msg => msg.isConfirmCard && msg.confirmState === 'pending')
+})
+
+// 确认或取消操作挂起状态
+const isActionPending = ref(false)
+const activeLogId = ref<number | null>(null)
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message
+  }
+  return fallback
+}
 
 // 滚动到底部
 const scrollToBottom = async () => {
@@ -296,7 +418,7 @@ const clickRecommend = (prompt: { title: string; content: string }) => {
 // 发送查询
 const sendQuery = async () => {
   const query = inputQuery.value.trim()
-  if (!query || isLoading.value) return
+  if (!query || isLoading.value || hasPendingConfirm.value) return
 
   // 1. 添加用户消息
   const userMsgId = 'u_' + Date.now()
@@ -311,33 +433,133 @@ const sendQuery = async () => {
   isLoading.value = true
   await scrollToBottom()
 
+  // 消息流分流：用正则表达式简单判断是否是写意图
+  const isWriteIntent = /创建|添加|新建|新增|提醒/.test(query)
+
   try {
-    // 2. 调用后端接口
-    const res = await queryAgent({ input: query })
-    
-    // 3. 添加 Agent 响应消息
-    messages.value.push({
-      id: 'a_' + Date.now(),
-      sender: 'agent',
-      text: res.summary || '未收到有效摘要回复',
-      queryType: res.queryType,
-      results: res.results || [],
-      time: new Date()
-    })
-  } catch (error: any) {
-    console.error('Agent query error:', error)
-    // 失败添加报错提醒消息
+    if (isWriteIntent) {
+      // 调用 executeAgent 接口
+      const res = await executeAgent({ input: query })
+      
+      if (res.needConfirm === 1 && res.actionType === 'create_todo') {
+        // 在聊天消息列表中渲染结构化确认卡片
+        messages.value.push({
+          id: 'a_' + Date.now(),
+          sender: 'agent',
+          text: res.summary || '已为您生成待办事项预确认卡片，请核对：',
+          isConfirmCard: true,
+          logId: res.logId,
+          needConfirm: res.needConfirm,
+          actionType: res.actionType,
+          parsedParams: res.parsedParams,
+          confirmState: 'pending',
+          time: new Date()
+        })
+      } else {
+        // 如果是写意图但不需要确认 (例如信息缺失，或者不支持)
+        messages.value.push({
+          id: 'a_' + Date.now(),
+          sender: 'agent',
+          text: res.summary || '写操作处理完毕',
+          queryType: 'unsupported',
+          results: [],
+          time: new Date()
+        })
+      }
+    } else {
+      // 2. 调用后端查询接口
+      const res = await queryAgent({ input: query })
+      
+      // 3. 添加 Agent 响应消息
+      messages.value.push({
+        id: 'a_' + Date.now(),
+        sender: 'agent',
+        text: res.summary || '未收到有效摘要回复',
+        queryType: res.queryType,
+        results: res.results || [],
+        time: new Date()
+      })
+    }
+  } catch (error: unknown) {
+    const message = getErrorMessage(error, '操作失败，请检查网络或登录状态。')
+    console.error('Agent process error:', error)
     messages.value.push({
       id: 'a_err_' + Date.now(),
       sender: 'agent',
-      text: error.message || '查询失败，请检查网络或登录状态。',
+      text: message,
       queryType: 'unsupported',
       results: [],
       time: new Date()
     })
-    ElMessage.error(error.message || '助手处理异常')
+    ElMessage.error(message)
   } finally {
     isLoading.value = false
+    await scrollToBottom()
+  }
+}
+
+// 确认创建待办事项
+const handleConfirm = async (msg: Message) => {
+  if (isActionPending.value || !msg.logId) return
+  isActionPending.value = true
+  activeLogId.value = msg.logId
+  try {
+    const res = await confirmAgent({
+      logId: msg.logId,
+      action: 'confirm'
+    })
+    ElMessage.success('成功确认创建待办事项！')
+    
+    // 更新当前消息状态为已确认
+    msg.confirmState = 'confirmed'
+    
+    // 聊天中紧接展示一条执行成功的绿色提示气泡
+    messages.value.push({
+      id: 'a_success_' + Date.now(),
+      sender: 'agent',
+      text: `已为您成功创建待办事项！\n事项内容：${res?.content || msg.parsedParams?.content || ''}\n时间：${res?.todoTime || msg.parsedParams?.todoTime || ''}`,
+      queryType: 'write_success',
+      time: new Date()
+    })
+  } catch (error: unknown) {
+    console.error('Confirm agent error:', error)
+    ElMessage.error(getErrorMessage(error, '确认创建失败'))
+  } finally {
+    isActionPending.value = false
+    activeLogId.value = null
+    await scrollToBottom()
+  }
+}
+
+// 取消创建待办事项
+const handleCancel = async (msg: Message) => {
+  if (isActionPending.value || !msg.logId) return
+  isActionPending.value = true
+  activeLogId.value = msg.logId
+  try {
+    await confirmAgent({
+      logId: msg.logId,
+      action: 'cancel'
+    })
+    ElMessage.info('已取消事项创建。')
+    
+    // 更新当前消息状态为已取消
+    msg.confirmState = 'cancelled'
+    
+    // 聊天流追加一条助手灰色提示
+    messages.value.push({
+      id: 'a_cancel_' + Date.now(),
+      sender: 'agent',
+      text: '已取消本次事项创建。',
+      queryType: 'write_cancelled',
+      time: new Date()
+    })
+  } catch (error: unknown) {
+    console.error('Cancel agent error:', error)
+    ElMessage.error(getErrorMessage(error, '取消失败'))
+  } finally {
+    isActionPending.value = false
+    activeLogId.value = null
     await scrollToBottom()
   }
 }
@@ -571,7 +793,7 @@ const formatTime = (date: Date) => {
 
 .recommend-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -1128,5 +1350,152 @@ const formatTime = (date: Date) => {
   .input-panel {
     padding: 12px 16px 16px;
   }
+
+  .confirm-param-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .param-label {
+    width: auto;
+  }
+  
+  .confirm-card-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .confirm-card-actions .el-button {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+}
+
+/* 确认卡片样式 */
+.confirm-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.confirm-card-content {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.confirm-param-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.param-label {
+  color: #64748b;
+  font-weight: 500;
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.param-value {
+  color: #1e293b;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  word-break: break-all;
+}
+
+.param-icon {
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+}
+
+.contact-value {
+  color: #6366f1;
+}
+
+.highlight-content {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.confirm-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.confirm-card-status {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.status-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.text-success {
+  color: #10b981;
+}
+
+.text-cancelled {
+  color: #94a3b8;
+}
+
+/* 绿色执行成功提示气泡 */
+.msg-write-success {
+  background-color: #f0fdf4 !important;
+  border-color: #bbf7d0 !important;
+  color: #166534 !important;
+}
+
+.msg-write-success .reply-summary {
+  color: #15803d !important;
+}
+
+.msg-write-success .mini-bot-icon {
+  color: #166534 !important;
+}
+
+.msg-write-success .reply-avatar-mini {
+  background-color: #dcfce7 !important;
+}
+
+/* 灰色已取消提示气泡 */
+.msg-write-cancelled {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+.msg-write-cancelled .reply-summary {
+  color: #475569 !important;
+}
+
+.msg-write-cancelled .mini-bot-icon {
+  color: #64748b !important;
+}
+
+.msg-write-cancelled .reply-avatar-mini {
+  background-color: #f1f5f9 !important;
 }
 </style>

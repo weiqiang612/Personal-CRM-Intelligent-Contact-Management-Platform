@@ -655,12 +655,141 @@
 }
 ```
 
-### 9.2 自然语言写操作与二次确认接口（后续 Phase 3 预留）
+### 9.2 自然语言写操作与二次确认接口
 
-- `POST /api/v1/agent/execute` (写意图预处理)
-- `POST /api/v1/agent/confirm` (二次确认提交)
+#### 9.2.1 写操作预处理接口 (意图解析与预确认)
 
-*(本期不进行这两个接口的实现，统一在查询编排层对写意图进行拦截并返回 `unsupported`)*
+- `POST /api/v1/agent/execute`
+
+请求体：
+
+```json
+{
+  "input": "明天下午三点提醒我联系张三确认合同"
+}
+```
+
+响应体（成功解析，生成预确认卡片）：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "logId": 45,
+    "needConfirm": 1,
+    "actionType": "create_todo",
+    "summary": "已为您生成待办事项预确认卡片，请核对：在 2026-06-25 15:00:00 提醒联系 张三 确认合同。",
+    "parsedParams": {
+      "contactId": "C000000001",
+      "contactName": "张三",
+      "todoTime": "2026-06-25 15:00:00",
+      "content": "确认合同",
+      "priority": 1
+    }
+  }
+}
+```
+
+响应体（信息缺失，无法进入确认阶段）：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "logId": 46,
+    "needConfirm": 0,
+    "actionType": "create_todo",
+    "summary": "抱歉，无法识别您想为哪位联系人创建事项，请输入包含联系人姓名的指令，例如：“明天下午三点提醒我联系张三确认合同”",
+    "parsedParams": {
+      "todoTime": "2026-06-25 15:00:00",
+      "content": "确认合同",
+      "priority": 1
+    }
+  }
+}
+```
+
+响应体（非本期支持的写操作，如拉黑或删除）：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "logId": 47,
+    "needConfirm": 0,
+    "actionType": "unsupported",
+    "summary": "抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。",
+    "parsedParams": {}
+  }
+}
+```
+
+#### 9.2.2 写操作二次确认接口 (执行或取消)
+
+- `POST /api/v1/agent/confirm`
+
+请求体：
+
+```json
+{
+  "logId": 45,
+  "action": "confirm"
+}
+```
+
+或者：
+
+```json
+{
+  "logId": 45,
+  "action": "cancel"
+}
+```
+
+确认创建成功响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "matterId": "T000000002",
+    "contactId": "C000000001",
+    "contactName": "张三",
+    "todoTime": "2026-06-25 15:00:00",
+    "content": "确认合同",
+    "status": 0,
+    "priority": 1,
+    "overdue": false,
+    "completedAt": null,
+    "cancelledAt": null,
+    "createdAt": "2026-06-24 10:00:00"
+  }
+}
+```
+
+取消创建成功响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+异常情况错误响应（如 logId 越权或已被处理过）：
+
+```json
+{
+  "code": 40301,
+  "message": "无权操作此日志记录",
+  "data": null
+}
+```
 
 ## 10. 天气代理接口 (Weather API)
 

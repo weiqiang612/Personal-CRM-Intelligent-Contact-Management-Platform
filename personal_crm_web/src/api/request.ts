@@ -1,7 +1,6 @@
 import axios from 'axios'
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
-import router from '@/router'
 
 // 全局重定向防抖标记
 let isRedirecting = false

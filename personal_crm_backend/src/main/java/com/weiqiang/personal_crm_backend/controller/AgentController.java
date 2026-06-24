@@ -3,6 +3,9 @@ package com.weiqiang.personal_crm_backend.controller;
 import com.weiqiang.personal_crm_backend.common.Result;
 import com.weiqiang.personal_crm_backend.model.dto.AgentQueryParam;
 import com.weiqiang.personal_crm_backend.model.vo.AgentQueryResponseVO;
+import com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam;
+import com.weiqiang.personal_crm_backend.model.vo.AgentExecuteResponseVO;
+import com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam;
 import com.weiqiang.personal_crm_backend.service.AgentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +30,24 @@ public class AgentController {
     @PostMapping("/query")
     public Result<AgentQueryResponseVO> query(@Validated @RequestBody AgentQueryParam param) {
         AgentQueryResponseVO response = agentService.query(param);
+        return Result.success(response);
+    }
+
+    /**
+     * Agent 自然语言写操作预处理
+     */
+    @PostMapping("/execute")
+    public Result<AgentExecuteResponseVO> execute(@Validated @RequestBody AgentExecuteParam param) {
+        AgentExecuteResponseVO response = agentService.execute(param);
+        return Result.success(response);
+    }
+
+    /**
+     * Agent 写操作二次确认
+     */
+    @PostMapping("/confirm")
+    public Result<Object> confirm(@Validated @RequestBody AgentConfirmParam param) {
+        Object response = agentService.confirm(param);
         return Result.success(response);
     }
 }
