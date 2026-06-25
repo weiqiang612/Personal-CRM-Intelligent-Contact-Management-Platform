@@ -113,37 +113,56 @@
             <div class="info-item">
               <span class="info-label">手机号</span>
               <span class="info-value">
-                {{ formatPhone(contact.phone) }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                </svg>
+                <span v-if="contact.phone" style="display: inline-flex; align-items: center; gap: 8px;">
+                  <a :href="`tel:${contact.phone}`" class="contact-link" title="拨打电话">
+                    {{ formatPhone(contact.phone) }}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                  </a>
+                  <a :href="`sms:${contact.phone}`" class="contact-link" @click="handleSmsClick(contact.phone)" title="发送短信" style="padding: 2px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#0ea5e9;">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </a>
+                </span>
+                <span v-else>-</span>
               </span>
             </div>
             <div class="info-item">
               <span class="info-label">邮箱</span>
               <span class="info-value">
-                {{ contact.email || '-' }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-                </svg>
+                <a v-if="contact.email" :href="`mailto:${contact.email}`" class="contact-link" @click="handleEmailClickOnlyCopy(contact.email)" title="拉起邮箱并发送邮件">
+                  {{ contact.email }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                </a>
+                <span v-else>-</span>
               </span>
             </div>
             <div class="info-item">
               <span class="info-label">微信</span>
               <span class="info-value">
-                {{ contact.wechat || '-' }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#07c160;">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                </svg>
+                <a v-if="contact.wechat && contact.wechat !== '-'" href="weixin://" class="contact-link" style="color: #07c160;" @click="handleWechatClick(contact.wechat)" title="复制微信号并拉起微信">
+                  {{ contact.wechat }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#07c160;">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-7.6-4.7 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                  </svg>
+                </a>
+                <span v-else>-</span>
               </span>
             </div>
             <div class="info-item">
               <span class="info-label">QQ</span>
               <span class="info-value">
-                {{ contact.qq || '-' }}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#2563eb;">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
-                </svg>
+                <a v-if="contact.qq && contact.qq !== '-'" :href="`tencent://Message/?Uin=${contact.qq}&websiteName=qzone.qq.com&Menu=yes`" class="contact-link" style="color: #2563eb;" @click="handleQqClick(contact.qq)" title="拉起 QQ 发起临时会话">
+                  {{ contact.qq }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#2563eb;">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+                  </svg>
+                </a>
+                <span v-else>-</span>
               </span>
             </div>
             <div class="info-item address-item" :class="{ 'has-weather': contact.address && contactWeather }">
@@ -612,6 +631,57 @@ const executeRestore = async () => {
 
 const goBack = () => {
   router.push('/contacts')
+}
+
+const handleEmailClickOnlyCopy = (email: string) => {
+  if (!email) return
+  copyTextToClipboard(email).then(() => {
+    ElMessage.success('已自动复制邮箱，正在为您拉起邮件应用...')
+  })
+}
+
+const handleWechatClick = (wechat: string) => {
+  if (!wechat) return
+  copyTextToClipboard(wechat).then(() => {
+    ElMessage.success('微信号已复制到剪贴板，正在为您打开微信...')
+  })
+}
+
+const handleQqClick = (qq: string) => {
+  if (!qq) return
+  copyTextToClipboard(qq).then(() => {
+    ElMessage.success('QQ号已复制到剪贴板，正在发起 QQ 临时会话...')
+  })
+}
+
+const handleSmsClick = (phone: string) => {
+  if (!phone) return
+  copyTextToClipboard(phone).then(() => {
+    ElMessage.success('手机号已复制到剪贴板，正在为您拉起短信应用...')
+  })
+}
+
+const copyTextToClipboard = (text: string) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text)
+  } else {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const input = document.createElement('input')
+        input.value = text
+        input.style.position = 'fixed'
+        input.style.opacity = '0'
+        document.body.appendChild(input)
+        input.select()
+        const success = document.execCommand('copy')
+        document.body.removeChild(input)
+        if (success) resolve()
+        else reject(new Error('Copy failed'))
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
 }
 
 function getAvatarUrl(url: string | null): string {

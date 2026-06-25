@@ -67,7 +67,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in contacts" :key="row.contactId">
+            <tr v-for="row in contacts" :key="row.contactId" @click="handleRowClick($event, row.contactId)">
               <td style="padding-left: 24px;">
                 <img :src="row.avatarUrl || defaultAvatar" :alt="row.name" class="avatar-round">
               </td>
@@ -75,8 +75,18 @@
                 <router-link :to="`/contacts/${row.contactId}`" class="avatar-name">{{ row.name }}</router-link>
               </td>
               <td>{{ formatGender(row.gender) }}</td>
-              <td>{{ formatPhone(row.phone) }}</td>
-              <td>{{ row.email || '-' }}</td>
+              <td>
+                <a v-if="row.phone" :href="`tel:${row.phone}`" class="contact-link" @click.stop>
+                  {{ formatPhone(row.phone) }}
+                </a>
+                <span v-else>-</span>
+              </td>
+              <td>
+                <a v-if="row.email" :href="`mailto:${row.email}`" class="contact-link" @click.stop="handleEmailClickOnlyCopy(row.email)">
+                  {{ row.email }}
+                </a>
+                <span v-else>-</span>
+              </td>
               <td>
                 <template v-if="row.tags && row.tags.length > 0">
                   <span
@@ -254,13 +264,59 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getContactsApi, addToBlacklistApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
 import { getTagsApi, createTagApi, updateTagApi, deleteTagApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
 
+const router = useRouter()
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
+
+const handleRowClick = (event: MouseEvent, contactId: string) => {
+  const target = event.target as HTMLElement
+  // 若点击的是 A 链接、BUTTON 按钮，或在操作容器内，不进行行级跳转
+  if (
+    target.tagName === 'A' || 
+    target.tagName === 'BUTTON' || 
+    target.closest('.action-cell-right') || 
+    target.closest('.popconfirm-overlay')
+  ) {
+    return
+  }
+  router.push(`/contacts/${contactId}`)
+}
+
+const handleEmailClickOnlyCopy = (email: string) => {
+  if (!email) return
+  copyTextToClipboard(email).then(() => {
+    ElMessage.success('已自动复制邮箱，正在为您拉起邮件应用...')
+  })
+}
+
+const copyTextToClipboard = (text: string) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text)
+  } else {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const input = document.createElement('input')
+        input.value = text
+        input.style.position = 'fixed'
+        input.style.opacity = '0'
+        document.body.appendChild(input)
+        input.select()
+        const success = document.execCommand('copy')
+        document.body.removeChild(input)
+        if (success) resolve()
+        else reject(new Error('Copy failed'))
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
+}
 
 const loading = ref<boolean>(false)
 const contacts = ref<ContactInfo[]>([])
@@ -614,5 +670,14 @@ onMounted(() => {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.custom-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-table tbody tr:hover td {
+  background-color: rgba(99, 102, 241, 0.05) !important;
 }
 </style>

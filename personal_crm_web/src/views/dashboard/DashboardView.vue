@@ -103,7 +103,7 @@
                 <div class="card-name">{{ contact.name }}</div>
                 <div class="card-company">{{ contact.address || '个人客户' }}</div>
                 <div class="card-actions">
-                  <a :href="`mailto:${contact.email || ''}`" class="contact-action-btn" @click.stop v-if="contact.email">
+                  <a :href="`mailto:${contact.email || ''}`" class="contact-action-btn" @click.stop="handleEmailClickOnlyCopy(contact.email)" v-if="contact.email">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                   </a>
                   <a :href="`tel:${contact.phone || ''}`" class="contact-action-btn" @click.stop v-if="contact.phone">
@@ -398,6 +398,36 @@ function formatTodoTime(timeStr: string): string {
 // 优先级翻译与样式类
 function getPriorityName(p: number): string {
   return p === 2 ? '高' : p === 1 ? '中' : '低'
+}
+
+const handleEmailClickOnlyCopy = (email: string) => {
+  if (!email) return
+  copyTextToClipboard(email).then(() => {
+    ElMessage.success('已自动复制邮箱，正在为您拉起邮件应用...')
+  })
+}
+
+const copyTextToClipboard = (text: string) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text)
+  } else {
+    return new Promise<void>((resolve, reject) => {
+      try {
+        const input = document.createElement('input')
+        input.value = text
+        input.style.position = 'fixed'
+        input.style.opacity = '0'
+        document.body.appendChild(input)
+        input.select()
+        const success = document.execCommand('copy')
+        document.body.removeChild(input)
+        if (success) resolve()
+        else reject(new Error('Copy failed'))
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
 }
 
 function getPriorityClass(p: number): string {

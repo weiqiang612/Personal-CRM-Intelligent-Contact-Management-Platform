@@ -1101,3 +1101,29 @@ button {
   background-color: #f0fdf4;
   border-color: #a7f3d0;
 }
+
+/* 联系人快捷拨号与发信超链接 */
+.contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+  cursor: pointer;
+}
+
+.contact-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.contact-link svg {
+  transition: transform var(--transition-fast);
+}
+
+.contact-link:hover svg {
+  transform: scale(1.1);
+}
+
