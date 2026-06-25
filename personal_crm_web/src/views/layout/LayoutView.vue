@@ -33,10 +33,6 @@
       </div>
 
       <div class="sidebar-footer">
-        <div class="upgrade-card">
-          <h4 class="upgrade-card-title">升级到 Pro 专业版</h4>
-          <p class="upgrade-card-desc">解锁更多智能分析与多端同步功能</p>
-        </div>
 
         <router-link to="/settings" class="user-profile-bar">
           <div class="user-avatar-container">

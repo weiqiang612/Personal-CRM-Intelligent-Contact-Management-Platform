@@ -322,32 +322,9 @@ button {
   border-color: var(--color-primary);
 }
 
-.upgrade-card {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  position: relative;
-  overflow: hidden;
-  transition: all var(--transition-fast);
-}
 
-.sidebar.collapsed .upgrade-card {
-  display: none;
-}
 
-.upgrade-card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-primary);
-  margin-bottom: 4px;
-}
 
-.upgrade-card-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
 
 .user-profile-bar {
   display: flex;
