@@ -189,7 +189,7 @@
                     <!-- 联系人列表渲染 -->
                     <div v-if="msg.queryType === 'contact'" class="contact-results-grid">
                       <div 
-                        v-for="contact in msg.results" 
+                        v-for="contact in getContactResults(msg.results)" 
                         :key="contact.contactId" 
                         class="contact-result-card"
                         @click="goToContactDetail(contact.contactId)"
@@ -224,16 +224,14 @@
                             <span class="detail-val email-val">{{ contact.email }}</span>
                           </div>
                         </div>
-                        <div class="contact-card-notes" v-if="contact.notes">
-                          <p class="notes-text"><strong>备注:</strong> {{ contact.notes }}</p>
-                        </div>
+
                       </div>
                     </div>
 
                     <!-- 待办事项列表渲染 -->
                     <div v-else-if="msg.queryType === 'todo'" class="todo-results-list">
                       <div 
-                        v-for="todo in msg.results" 
+                        v-for="todo in getTodoResults(msg.results)" 
                         :key="todo.matterId" 
                         class="todo-result-item"
                       >
@@ -331,8 +329,18 @@
 import { ref, nextTick, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { queryAgent, executeAgent, confirmAgent, type AgentResultItem } from '@/api/agent'
+import type { ContactInfo } from '@/api/contact'
+import type { TodoInfo } from '@/types/todo'
 import { ElMessage } from 'element-plus'
 import { resolveAvatarUrl } from '@/utils/avatar'
+
+const getTodoResults = (results?: AgentResultItem[]) => {
+  return (results || []) as TodoInfo[]
+}
+
+const getContactResults = (results?: AgentResultItem[]) => {
+  return (results || []) as ContactInfo[]
+}
 
 const router = useRouter()
 
@@ -360,6 +368,7 @@ interface Message {
 }
 
 const messages = ref<Message[]>([])
+const currentSessionId = ref<string | null>(null)
 const inputQuery = ref('')
 const isLoading = ref(false)
 const chatAreaRef = ref<HTMLDivElement | null>(null)
@@ -407,6 +416,7 @@ const scrollToBottom = async () => {
 // 清空聊天
 const clearChat = () => {
   messages.value = []
+  currentSessionId.value = null
 }
 
 // 推荐问题点击
@@ -433,52 +443,65 @@ const sendQuery = async () => {
   isLoading.value = true
   await scrollToBottom()
 
-  // 消息流分流：用正则表达式简单判断是否是写意图
-  const isWriteIntent = /创建|添加|新建|新增|提醒/.test(query)
-
   try {
-    if (isWriteIntent) {
-      // 调用 executeAgent 接口
-      const res = await executeAgent({ input: query })
-      
-      if (res.needConfirm === 1 && res.actionType === 'create_todo') {
-        // 在聊天消息列表中渲染结构化确认卡片
-        messages.value.push({
-          id: 'a_' + Date.now(),
-          sender: 'agent',
-          text: res.summary || '已为您生成待办事项预确认卡片，请核对：',
-          isConfirmCard: true,
-          logId: res.logId,
-          needConfirm: res.needConfirm,
-          actionType: res.actionType,
-          parsedParams: res.parsedParams,
-          confirmState: 'pending',
-          time: new Date()
-        })
-      } else {
-        // 如果是写意图但不需要确认 (例如信息缺失，或者不支持)
-        messages.value.push({
-          id: 'a_' + Date.now(),
-          sender: 'agent',
-          text: res.summary || '写操作处理完毕',
-          queryType: 'unsupported',
-          results: [],
-          time: new Date()
-        })
-      }
-    } else {
-      // 2. 调用后端查询接口
-      const res = await queryAgent({ input: query })
-      
-      // 3. 添加 Agent 响应消息
+    // 统一调用后端写预处理/智能交互端点，传入 sessionId
+    const res = await executeAgent({
+      input: query,
+      sessionId: currentSessionId.value || undefined
+    })
+
+    // 缓存返回的会话标识以实现后续多轮会话
+    if (res.sessionId) {
+      currentSessionId.value = res.sessionId
+    }
+
+    if (res.isClarifying) {
+      // 需要澄清：在聊天中追加助手的澄清追问提示
       messages.value.push({
         id: 'a_' + Date.now(),
         sender: 'agent',
-        text: res.summary || '未收到有效摘要回复',
-        queryType: res.queryType,
+        text: res.summary || '请补充缺失的信息。',
+        time: new Date()
+      })
+    } else if (res.needConfirm === 1 && res.actionType === 'create_todo') {
+      // 槽位已齐全：在聊天流中渲染待确认卡片
+      messages.value.push({
+        id: 'a_' + Date.now(),
+        sender: 'agent',
+        text: res.summary || '已为您生成待办事项预确认卡片，请核对：',
+        isConfirmCard: true,
+        logId: res.logId,
+        needConfirm: res.needConfirm,
+        actionType: res.actionType,
+        parsedParams: res.parsedParams,
+        confirmState: 'pending',
+        time: new Date()
+      })
+      // 槽位齐全进入确认气泡后，将当前的 sessionId 清空
+      currentSessionId.value = null
+    } else if (res.actionType === 'query_contact' || res.actionType === 'query_todo') {
+      // 查询意图：展示返回的查询结果列表
+      messages.value.push({
+        id: 'a_' + Date.now(),
+        sender: 'agent',
+        text: res.summary || '查询成功。',
+        queryType: res.actionType === 'query_contact' ? 'contact' : 'todo',
         results: res.results || [],
         time: new Date()
       })
+      // 查询属于单轮，清空会话
+      currentSessionId.value = null
+    } else {
+      // 不支持的写操作或其它兜底行为
+      messages.value.push({
+        id: 'a_' + Date.now(),
+        sender: 'agent',
+        text: res.summary || '抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。',
+        queryType: 'unsupported',
+        results: [],
+        time: new Date()
+      })
+      currentSessionId.value = null
     }
   } catch (error: unknown) {
     const message = getErrorMessage(error, '操作失败，请检查网络或登录状态。')
@@ -492,6 +515,7 @@ const sendQuery = async () => {
       time: new Date()
     })
     ElMessage.error(message)
+    currentSessionId.value = null
   } finally {
     isLoading.value = false
     await scrollToBottom()
@@ -521,6 +545,7 @@ const handleConfirm = async (msg: Message) => {
       queryType: 'write_success',
       time: new Date()
     })
+    currentSessionId.value = null
   } catch (error: unknown) {
     console.error('Confirm agent error:', error)
     ElMessage.error(getErrorMessage(error, '确认创建失败'))
@@ -554,6 +579,7 @@ const handleCancel = async (msg: Message) => {
       queryType: 'write_cancelled',
       time: new Date()
     })
+    currentSessionId.value = null
   } catch (error: unknown) {
     console.error('Cancel agent error:', error)
     ElMessage.error(getErrorMessage(error, '取消失败'))
@@ -563,6 +589,7 @@ const handleCancel = async (msg: Message) => {
     await scrollToBottom()
   }
 }
+
 
 // 头像相对路径拼装
 function getAvatarUrl(url: string | null): string {

@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Agent 模块控制器集成测试类
  */
-@SpringBootTest
+@SpringBootTest(properties = "spring.ai.openai.api-key=mock-key")
 @AutoConfigureMockMvc
 @Transactional
 @Rollback

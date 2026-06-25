@@ -113,19 +113,12 @@
             <div class="info-item">
               <span class="info-label">手机号</span>
               <span class="info-value">
-                <span v-if="contact.phone" style="display: inline-flex; align-items: center; gap: 8px;">
-                  <a :href="`tel:${contact.phone}`" class="contact-link" title="拨打电话">
-                    {{ formatPhone(contact.phone) }}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                  </a>
-                  <a :href="`sms:${contact.phone}`" class="contact-link" @click="handleSmsClick(contact.phone)" title="发送短信" style="padding: 2px;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#0ea5e9;">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                  </a>
-                </span>
+                <a v-if="contact.phone" :href="`tel:${contact.phone}`" class="contact-link" title="拨打电话">
+                  {{ formatPhone(contact.phone) }}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--color-primary);">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                </a>
                 <span v-else>-</span>
               </span>
             </div>
@@ -654,12 +647,6 @@ const handleQqClick = (qq: string) => {
   })
 }
 
-const handleSmsClick = (phone: string) => {
-  if (!phone) return
-  copyTextToClipboard(phone).then(() => {
-    ElMessage.success('手机号已复制到剪贴板，正在为您拉起短信应用...')
-  })
-}
 
 const copyTextToClipboard = (text: string) => {
   if (navigator.clipboard && navigator.clipboard.writeText) {
