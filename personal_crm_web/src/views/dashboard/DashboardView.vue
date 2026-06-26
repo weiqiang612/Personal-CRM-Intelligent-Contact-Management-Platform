@@ -248,7 +248,7 @@
           <div class="bubble-content">
             <div class="bubble-text" style="white-space: pre-wrap;">{{ msg.content }}</div>
             
-            <!-- AI 事项识别卡片 -->
+            <!-- AI 事项识别卡片（旧静态） -->
             <div v-if="msg.structuredCard" class="structured-card">
               <div class="structured-card-title">识别结果</div>
               
@@ -261,9 +261,7 @@
               <div class="structured-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
                 <span class="structured-label">时间：</span>
-                <span class="structured-value">
-                  {{ msg.structuredCard.timeStr }}
-                </span>
+                <span class="structured-value">{{ msg.structuredCard.timeStr }}</span>
               </div>
               
               <div class="structured-row">
@@ -283,20 +281,6 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-success); width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
                   执行成功！
                 </div>
-                <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">
-                  事项已成功创建并绑定。<br>
-                  流水号: <strong>{{ msg.structuredCard.opCode }}</strong>
-                </p>
-              </div>
-
-              <div v-else-if="msg.structuredCard.status === 'modified'" style="margin-top: 12px;">
-                <div style="color: var(--color-primary); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-primary); width:14px;height:14px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  正在编辑事项...
-                </div>
-                <p style="font-size:10px;color:var(--text-muted);margin-top:4px;">
-                  请在下方输入栏中直接对识别出的信息进行修正或补充。
-                </p>
               </div>
 
               <div v-else-if="msg.structuredCard.status === 'cancelled'" style="margin-top: 12px;">
@@ -344,11 +328,29 @@
               </div>
             </div>
 
-            <!-- 用户气泡的已读标示 -->
-            <div v-if="msg.sender === 'user'" class="bubble-meta">
-              <span class="bubble-time">{{ msg.time }}</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="read-icon" style="width:12px;height:12px;"><polyline points="20 6 9 17 4 12"/><polyline points="22 10 12 20 9 17"/></svg>
+            <!-- 联系人查询结果卡片 -->
+            <div v-if="msg.queryType === 'contact' && msg.results && msg.results.length > 0" class="contact-results-list">
+              <div
+                v-for="contact in msg.results"
+                :key="contact.contactId"
+                class="drawer-contact-card"
+                @click="goToContactDetail(contact.contactId)"
+              >
+                <img :src="getAvatarUrl(contact.avatarUrl)" :alt="contact.name" class="drawer-contact-avatar" />
+                <div class="drawer-contact-info">
+                  <div class="drawer-contact-name">{{ contact.name }}</div>
+                  <div class="drawer-contact-sub" v-if="contact.phone">{{ contact.phone }}</div>
+                  <div class="drawer-contact-sub" v-else-if="contact.wechat">{{ contact.wechat }}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="drawer-contact-arrow"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
             </div>
+          </div>
+
+          <!-- 时间戳（气泡外，用户靠右带对勾，助手靠左） -->
+          <div v-if="msg.time" class="bubble-timestamp" :class="msg.sender">
+            <span>{{ msg.time }}</span>
+            <svg v-if="msg.sender === 'user'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="read-icon"><polyline points="20 6 9 17 4 12"/><polyline points="22 10 12 20 9 17"/></svg>
           </div>
         </div>
 
@@ -856,6 +858,9 @@ interface ChatMessage {
     todoTime?: string
     content?: string
   }
+  // 查询结果
+  queryType?: 'contact' | 'todo'
+  results?: ContactInfo[]
   // 兼容旧静态卡片（保留用于 template 渲染）
   structuredCard?: {
     contactName: string
@@ -973,6 +978,15 @@ async function sendDrawerUserMessage() {
         logId: res.logId,
         parsedParams: res.parsedParams,
         confirmState: 'pending'
+      })
+    } else if ((res.actionType === 'query_contact' || res.actionType === 'query_todo') && res.results && res.results.length > 0) {
+      chatMessages.value.push({
+        id: `msg-ai-${Date.now()}`,
+        sender: 'assistant',
+        content: res.summary || '查询成功。',
+        time: timeStr,
+        queryType: res.actionType === 'query_contact' ? 'contact' : 'todo',
+        results: res.actionType === 'query_contact' ? (res.results as ContactInfo[]) : undefined
       })
     } else {
       chatMessages.value.push({
@@ -2008,7 +2022,7 @@ onBeforeUnmount(() => {
 
 /* 输入区域 */
 .chat-input-area {
-  padding: 16px;
+  padding: 12px 16px 6px 16px;
   border-top: 1px solid var(--border-color);
   background: var(--bg-card);
 }
@@ -2079,7 +2093,7 @@ onBeforeUnmount(() => {
   font-size: 9.5px;
   color: #94a3b8;
   text-align: center;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
   background: var(--bg-card);
 }
 
@@ -2215,15 +2229,15 @@ onBeforeUnmount(() => {
 .typing-indicator {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 10px 14px;
-  min-height: 36px;
+  gap: 4px;
+  padding: 6px 10px;
+  min-height: unset;
 }
 
 .typing-indicator span {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background-color: #9ca3af;
   animation: typing-bounce 1.2s infinite ease-in-out;
@@ -2239,7 +2253,7 @@ onBeforeUnmount(() => {
 
 @keyframes typing-bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-  30% { transform: translateY(-6px); opacity: 1; }
+  30% { transform: translateY(-4px); opacity: 1; }
 }
 
 @keyframes spin {
@@ -2266,5 +2280,104 @@ onBeforeUnmount(() => {
   background: #f9fafb;
   color: #9ca3af;
   cursor: not-allowed;
+}
+
+/* ===== Contact query card styles in Agent Chat ===== */
+.contact-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.drawer-contact-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.drawer-contact-card:hover {
+  border-color: #3b82f6;
+  background-color: #f8fafc;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.drawer-contact-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #f1f5f9;
+}
+
+.drawer-contact-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.drawer-contact-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawer-contact-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawer-contact-arrow {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.drawer-contact-card:hover .drawer-contact-arrow {
+  transform: translateX(2px);
+  color: #3b82f6;
+}
+
+/* ===== Out-of-bubble timestamp styles ===== */
+.bubble-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #8b9bb4;
+  margin-top: 4px;
+}
+
+.bubble-timestamp.user {
+  align-self: flex-end;
+  justify-content: flex-end;
+  margin-right: 4px;
+}
+
+.bubble-timestamp.assistant {
+  align-self: flex-start;
+  justify-content: flex-start;
+  margin-left: 4px;
+}
+
+.bubble-timestamp .read-icon {
+  width: 12px;
+  height: 12px;
+  color: #3b82f6;
 }
 </style>
