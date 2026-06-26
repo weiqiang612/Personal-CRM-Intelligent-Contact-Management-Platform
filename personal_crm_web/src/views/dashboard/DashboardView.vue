@@ -351,19 +351,30 @@
             </div>
           </div>
         </div>
+
+        <!-- AI 打字中气泡 -->
+        <div v-if="drawerIsLoading" class="message-bubble-wrapper assistant">
+          <div class="bubble-content">
+            <div class="typing-indicator">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="chat-input-area">
-        <div class="chat-input-card">
+        <div class="chat-input-card" :class="{ 'input-disabled': drawerIsLoading }">
           <textarea
             v-model="drawerInputText"
             placeholder="告诉我你想做什么..."
+            :disabled="drawerIsLoading"
             @keydown.enter.prevent="sendDrawerUserMessage"
           ></textarea>
           <div class="chat-input-card-bottom">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="clip-icon"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-            <button class="chat-send-btn-circle" @click="sendDrawerUserMessage">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <button class="chat-send-btn-circle" :class="{ loading: drawerIsLoading }" :disabled="drawerIsLoading" @click="sendDrawerUserMessage">
+              <svg v-if="!drawerIsLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
             </button>
           </div>
         </div>
@@ -2198,5 +2209,62 @@ onBeforeUnmount(() => {
     width: 100%;
     justify-content: flex-start;
   }
+}
+
+/* ===== Agent 加载动画 ===== */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 14px;
+  min-height: 36px;
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #9ca3af;
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin-icon {
+  animation: spin 0.9s linear infinite;
+  width: 16px;
+  height: 16px;
+}
+
+.chat-send-btn-circle.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.chat-send-btn-circle:disabled {
+  cursor: not-allowed;
+}
+
+.chat-input-card.input-disabled textarea {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 </style>
