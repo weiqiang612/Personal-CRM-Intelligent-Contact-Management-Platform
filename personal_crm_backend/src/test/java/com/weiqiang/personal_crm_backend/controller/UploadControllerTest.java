@@ -175,7 +175,7 @@ public class UploadControllerTest {
 
     @Test
     void testAvatarOverwriteAndDeletePhysicalFile() throws Exception {
-        Path tempFile = Files.createTempFile("old_avatar", ".png");
+        Path tempFile = Files.createTempFile(TEST_UPLOAD_DIR, "old_avatar", ".png");
         Files.write(tempFile, "old content".getBytes());
         assertTrue(Files.exists(tempFile));
 

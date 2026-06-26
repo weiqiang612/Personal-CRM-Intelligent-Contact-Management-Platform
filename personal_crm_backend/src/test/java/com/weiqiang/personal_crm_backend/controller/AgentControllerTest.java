@@ -52,6 +52,9 @@ public class AgentControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.weiqiang.personal_crm_backend.security.AgentSessionManager agentSessionManager;
+
     private String token;
     private String otherToken;
     private String testCtId;
@@ -451,4 +454,38 @@ public class AgentControllerTest {
                 .andExpect(jsonPath("$.code", is(40301)))
                 .andExpect(jsonPath("$.message", containsString("无权操作此日志记录")));
     }
+
+    @Test
+    void testExecute_SlidingWindowMemoryAndCompaction_Success() throws Exception {
+        String sessionId = null;
+        // 循环发送 21 次请求（使用同一个 sessionId）
+        for (int i = 0; i < 21; i++) {
+            com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam param = new com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam();
+            param.setInput("帮我查一下张小三" + i);
+            param.setSessionId(sessionId);
+
+            String responseStr = mockMvc.perform(post("/api/v1/agent/execute")
+                            .header("Authorization", token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(createJsonBody(param)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.code", is(0)))
+                    .andReturn().getResponse().getContentAsString();
+
+            java.util.Map<String, Object> responseMap = objectMapper.readValue(responseStr, java.util.Map.class);
+            java.util.Map<String, Object> dataMap = (java.util.Map<String, Object>) responseMap.get("data");
+            sessionId = (String) dataMap.get("sessionId");
+        }
+
+        // 从 agentSessionManager 取出当前会话状态，校验其消息数量与 historySummary
+        com.weiqiang.personal_crm_backend.model.dto.AgentSessionState sessionState = 
+                agentSessionManager.getSession(sessionId, "U000000001");
+        
+        org.junit.jupiter.api.Assertions.assertNotNull(sessionState);
+        org.junit.jupiter.api.Assertions.assertNotNull(sessionState.getHistorySummary());
+        org.junit.jupiter.api.Assertions.assertTrue(sessionState.getHistorySummary().contains("先前对话讨论了以下内容"));
+        // 21 次交互产生的非 system 消息如果不截断会有 42 条。由于触发了 1 次或多次滑窗截断（每次截断 10 条），消息数应该被截断了。
+        org.junit.jupiter.api.Assertions.assertTrue(sessionState.getMessages().size() < 40);
+    }
 }
+

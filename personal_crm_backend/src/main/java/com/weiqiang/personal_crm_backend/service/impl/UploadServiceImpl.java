@@ -215,8 +215,13 @@ public class UploadServiceImpl implements UploadService {
     private void deletePhysicalFile(String filePath) {
         if (filePath != null) {
             try {
-                Path path = Paths.get(filePath);
-                Files.deleteIfExists(path);
+                Path path = Paths.get(filePath).toAbsolutePath().normalize();
+                Path activeUploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+                if (path.startsWith(activeUploadPath)) {
+                    Files.deleteIfExists(path);
+                } else {
+                    log.warn("Prevented deletion of file outside active upload directory: {}", filePath);
+                }
             } catch (IOException e) {
                 log.warn("Failed to delete physical file: " + filePath, e);
             }

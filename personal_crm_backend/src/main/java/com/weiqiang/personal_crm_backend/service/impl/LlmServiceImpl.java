@@ -38,8 +38,25 @@ public class LlmServiceImpl implements LlmService {
  
     @Override
     public String chat(List<OpenAiMessage> messages) {
+        // 检查是否是历史对话摘要请求
+        boolean isSummaryRequest = false;
+        for (OpenAiMessage msg : messages) {
+            if ("system".equals(msg.getRole()) && msg.getContent() != null && 
+                    msg.getContent().contains("会话历史记录摘要助手")) {
+                isSummaryRequest = true;
+                break;
+            }
+        }
+
+        if (isSummaryRequest) {
+            if ("mock-key".equals(apiKey) || apiKey.trim().isEmpty() || apiKey.startsWith("${")) {
+                return mockSummaryResponse(messages);
+            }
+        }
+
         // 如果未配置真实的密钥，使用本地逻辑进行模拟解析，保障离线与评测时的稳定运行
         if ("mock-key".equals(apiKey) || apiKey.trim().isEmpty() || apiKey.startsWith("${")) {
+
             log.warn("OpenAI API Key is not configured. Falling back to local rule-based parsing.");
             return mockResponse(messages);
         }
@@ -64,6 +81,28 @@ public class LlmServiceImpl implements LlmService {
             log.error("Failed to call OpenAI service via Spring AI ChatClient, error: {}. Falling back to Mock.", e.getMessage());
             return mockResponse(messages);
         }
+    }
+
+    /**
+     * 模拟会话历史摘要回复，提取 user/assistant 消息，返回 140 字内的内容
+     */
+    private String mockSummaryResponse(List<OpenAiMessage> messages) {
+        StringBuilder sb = new StringBuilder("先前对话讨论了以下内容：");
+        boolean first = true;
+        for (OpenAiMessage msg : messages) {
+            if ("user".equals(msg.getRole()) || "assistant".equals(msg.getRole())) {
+                if (!first) {
+                    sb.append("、");
+                }
+                sb.append(msg.getContent());
+                first = false;
+            }
+        }
+        String summary = sb.toString();
+        if (summary.length() > 140) {
+            summary = summary.substring(0, 140) + "...";
+        }
+        return summary;
     }
 
     /**

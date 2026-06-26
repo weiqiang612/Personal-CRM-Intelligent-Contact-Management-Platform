@@ -31,6 +31,9 @@
             <if test="query.endTime != null and query.endTime != ''">
                 AND t.todo_time &lt;= #{query.endTime}
             </if>
+            <if test="query.keyword != null and query.keyword != ''">
+                AND t.content LIKE CONCAT('%', #{query.keyword}, '%')
+            </if>
         </where>
         ORDER BY 
         <choose>

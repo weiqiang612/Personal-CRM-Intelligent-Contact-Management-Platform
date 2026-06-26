@@ -217,7 +217,7 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.avatarUrl", nullValue()));
 
-        org.junit.jupiter.api.Assertions.assertNull(
+        org.junit.jupiter.api.Assertions.assertNotNull(
                 userAvatarMapper.selectOne(
                         new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserAvatar>()
                                 .eq(UserAvatar::getUserId, "U000000001")

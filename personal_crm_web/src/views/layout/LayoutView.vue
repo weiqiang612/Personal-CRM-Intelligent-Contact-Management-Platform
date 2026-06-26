@@ -126,8 +126,63 @@
           <!-- 搜索框 -->
           <div class="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" placeholder="快捷检索联系人或事项..." />
+            <input
+              ref="searchInputRef"
+              type="text"
+              v-model="searchVal"
+              placeholder="快捷检索联系人或事项..."
+              @focus="showSearchDropdown = true; loadRecentlyViewed()"
+              @blur="handleSearchBlur"
+              @input="handleSearchInput"
+              @keydown.down.prevent="moveSearchSelection(1)"
+              @keydown.up.prevent="moveSearchSelection(-1)"
+              @keydown.enter.prevent="selectActiveSearchItem"
+              @keydown.esc="showSearchDropdown = false"
+            />
             <span class="shortcut-tag">⌘K</span>
+
+            <!-- 极轻量原位联想下拉框 -->
+            <Transition name="dropdown-slide">
+              <div v-if="showSearchDropdown" class="search-dropdown-box">
+                <!-- 搜索中... -->
+                <div v-if="searchLoading" class="dropdown-loading">
+                  <div class="spinner-sm"></div>
+                  <span>检索中...</span>
+                </div>
+
+                <template v-else-if="flatSearchItems.length > 0">
+                  <div v-for="group in groupedSearchItems" :key="group.title" class="dropdown-group">
+                    <div class="dropdown-group-header">{{ group.title }}</div>
+                    <div class="dropdown-group-list">
+                      <div
+                        v-for="item in group.items"
+                        :key="item.id"
+                        :class="['dropdown-item-row', { active: flatSearchItems[selectedSearchIndex]?.id === item.id }]"
+                        @mouseenter="selectedSearchIndex = flatSearchItems.findIndex(x => x.id === item.id)"
+                        @mousedown="executeSearchItem(item)"
+                      >
+                        <span class="item-row-icon" v-html="item.iconSvg"></span>
+                        <div class="item-row-info">
+                          <span class="item-row-title">{{ item.title }}</span>
+                          <span v-if="item.subtitle" class="item-row-subtitle">{{ item.subtitle }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+
+                <!-- 空状态 -->
+                <div v-else class="dropdown-empty">
+                  <span>未找到匹配结果</span>
+                </div>
+
+                <!-- 友情提示指南 -->
+                <div class="dropdown-tips">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <span>支持通过姓名、拼音或电话检索联系人，亦可搜索事项内容。支持使用 ↑ ↓ 键与回车操作。</span>
+                </div>
+              </div>
+            </Transition>
           </div>
 
           <!-- 通知铃铛 -->
@@ -171,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
@@ -180,6 +235,10 @@ import { resolveAvatarUrl } from '@/utils/avatar'
 import { getWeatherIconUrl } from '@/utils/weather-icons'
 import { getWeather } from '@/api/weather'
 import type { WeatherData } from '@/api/weather'
+import { getContactsApi } from '@/api/contact'
+import { getTodos } from '@/api/todo'
+import type { ContactInfo } from '@/api/contact'
+import type { TodoInfo } from '@/types/todo'
 
 const route = useRoute()
 const router = useRouter()
@@ -190,6 +249,193 @@ const { user } = storeToRefs(authStore)
 
 const isCollapsed = ref<boolean>(false)
 const showDropdown = ref<boolean>(false)
+
+// 搜索栏联想状态
+const searchVal = ref('')
+const showSearchDropdown = ref(false)
+const searchLoading = ref(false)
+const selectedSearchIndex = ref(0)
+const searchInputRef = ref<HTMLInputElement | null>(null)
+
+const matchedContacts = ref<ContactInfo[]>([])
+const matchedTodos = ref<TodoInfo[]>([])
+
+// 最近查看联系人状态与加载方法
+const recentlyViewed = ref<Array<{ id: any; name: string }>>([])
+const loadRecentlyViewed = () => {
+  try {
+    const stored = localStorage.getItem('recently_viewed_contacts')
+    if (stored) {
+      recentlyViewed.value = JSON.parse(stored)
+    } else {
+      recentlyViewed.value = []
+    }
+  } catch (e) {
+    console.error('Failed to parse recently viewed contacts:', e)
+    recentlyViewed.value = []
+  }
+}
+
+// 转换最近查看联系人为下拉项
+const mappedRecentlyViewed = computed(() => {
+  return recentlyViewed.value.map(c => ({
+    id: `recent-${c.id}`,
+    title: c.name,
+    subtitle: '最近查看的联系人',
+    action: () => router.push(`/contacts/${c.id}`),
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+  }))
+})
+
+// 转换联系人为下拉项
+const mappedContacts = computed(() => {
+  return matchedContacts.value.map(c => ({
+    id: `contact-${c.contactId}`,
+    title: c.name,
+    subtitle: `电话: ${c.phone || '-'}`,
+    action: () => router.push(`/contacts/${c.contactId}`),
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+  }))
+})
+
+// 转换事项为下拉项
+const mappedTodos = computed(() => {
+  return matchedTodos.value.map(t => ({
+    id: `todo-${t.matterId}`,
+    title: t.content,
+    subtitle: `日程: ${t.todoTime.substring(0, 10)}`,
+    action: () => router.push(`/todos?keyword=${encodeURIComponent(t.content)}`),
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>'
+  }))
+})
+
+// 静态常用操作（精简版），在搜索框为空且处于激活态时展示
+const staticCommands = [
+  {
+    id: 'cmd-contact-new',
+    title: '新建联系人',
+    subtitle: '录入新的人脉、生日与关系分类标签',
+    action: () => router.push('/contacts/new'),
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>'
+  },
+  {
+    id: 'cmd-todo-new',
+    title: '新增事项提醒',
+    subtitle: '新建与特定联系人关联的日程提醒',
+    action: () => router.push('/todos/new'),
+    iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"/><line x1="12" y1="14" x2="12" y2="20"></line><line x1="9" y1="17" x2="15" y2="17"/></svg>'
+  }
+]
+
+// 扁平结果列表
+const flatSearchItems = computed(() => {
+  if (!searchVal.value.trim()) {
+    return [...mappedRecentlyViewed.value, ...staticCommands]
+  }
+  return [...mappedContacts.value, ...mappedTodos.value]
+})
+
+// 分组结果列表
+const groupedSearchItems = computed(() => {
+  if (!searchVal.value.trim()) {
+    const groups = []
+    if (mappedRecentlyViewed.value.length > 0) {
+      groups.push({ title: '最近查看', items: mappedRecentlyViewed.value })
+    }
+    groups.push({ title: '常用操作', items: staticCommands })
+    return groups
+  }
+
+  const groups = []
+  if (mappedContacts.value.length > 0) {
+    groups.push({ title: '联系人', items: mappedContacts.value })
+  }
+  if (mappedTodos.value.length > 0) {
+    groups.push({ title: '日程事项', items: mappedTodos.value })
+  }
+  return groups
+})
+
+watch(flatSearchItems, () => {
+  selectedSearchIndex.value = 0
+})
+
+// 监听输入，进行防抖查询
+let searchTimer: number | null = null
+const handleSearchInput = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  selectedSearchIndex.value = 0
+  
+  const kw = searchVal.value.trim()
+  if (!kw) {
+    matchedContacts.value = []
+    matchedTodos.value = []
+    searchLoading.value = false
+    return
+  }
+
+  searchLoading.value = true
+  searchTimer = window.setTimeout(async () => {
+    try {
+      const [contactsRes, todosRes] = await Promise.all([
+        getContactsApi({ keyword: kw, pageSize: 5 }),
+        getTodos({ keyword: kw, pageSize: 5 })
+      ])
+      matchedContacts.value = contactsRes.list || []
+      matchedTodos.value = todosRes.list || []
+    } catch (e) {
+      console.error('Dropdown search error:', e)
+    } finally {
+      searchLoading.value = false
+    }
+  }, 250)
+}
+
+// 延迟收起下拉框以确保点击/mousedown事件能正常触发
+const handleSearchBlur = () => {
+  setTimeout(() => {
+    showSearchDropdown.value = false
+  }, 200)
+}
+
+// 键盘操作
+const moveSearchSelection = (dir: number) => {
+  const len = flatSearchItems.value.length
+  if (len === 0) return
+  selectedSearchIndex.value = (selectedSearchIndex.value + dir + len) % len
+}
+
+const selectActiveSearchItem = () => {
+  const item = flatSearchItems.value[selectedSearchIndex.value]
+  if (item) {
+    executeSearchItem(item)
+  }
+}
+
+const executeSearchItem = (item: any) => {
+  item.action()
+  showSearchDropdown.value = false
+  searchVal.value = ''
+}
+
+// 监听全局 ⌘K / Ctrl+K 聚焦到顶部搜索框
+const handleGlobalKeydown = (e: KeyboardEvent) => {
+  const isK = e.key === 'k' || e.key === 'K'
+  const isMetaOrCtrl = e.metaKey || e.ctrlKey
+  if (isK && isMetaOrCtrl) {
+    e.preventDefault()
+    searchInputRef.value?.focus()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeydown)
+  loadRecentlyViewed()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
 
 // 天气逻辑
 const weatherData = ref<WeatherData | null>(null)
@@ -673,6 +919,195 @@ watch(
 .fade-transform-leave-to {
   opacity: 0;
   transform: translateY(8px);
+}
+
+/* 下拉联想容器 */
+.search-dropdown-box {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transform-origin: top;
+}
+
+/* 检索中提示 */
+.dropdown-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.spinner-sm {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(99, 102, 241, 0.15);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 分组样式 */
+.dropdown-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-group-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(241, 245, 249, 0.6);
+  margin-bottom: 2px;
+}
+
+.dropdown-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 单行记录样式 */
+.dropdown-item-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  gap: 10px;
+}
+
+.dropdown-item-row.active {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border-color: rgba(99, 102, 241, 0.1);
+  box-shadow: var(--shadow-sm);
+}
+
+.item-row-icon {
+  width: 24px;
+  height: 24px;
+  background: rgba(241, 245, 249, 0.8);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item-row.active .item-row-icon {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.search-dropdown-box :deep(svg) {
+  position: static !important;
+  transform: none !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: inherit !important;
+  pointer-events: none !important;
+}
+
+.item-row-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  gap: 8px;
+}
+
+.item-row-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-item-row.active .item-row-title {
+  color: var(--color-primary);
+}
+
+.item-row-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 空状态 */
+.dropdown-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* 下拉动画 */
+.dropdown-slide-enter-active,
+.dropdown-slide-leave-active {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.dropdown-slide-enter-from,
+.dropdown-slide-leave-to {
+  transform: scaleY(0.95);
+  opacity: 0;
+}
+
+/* 友情检索提示 */
+.dropdown-tips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px 2px;
+  background: transparent;
+  border-radius: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: normal;
+  border: none;
+  border-top: 1px dashed rgba(226, 232, 240, 0.8);
+  margin-top: 4px;
+}
+
+.dropdown-tips :deep(svg),
+.dropdown-tips svg {
+  width: 12px !important;
+  height: 12px !important;
+  color: var(--text-light) !important;
+  flex-shrink: 0;
 }
 </style>
 

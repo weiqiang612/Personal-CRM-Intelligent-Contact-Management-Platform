@@ -502,8 +502,21 @@ const loadContactDetail = async () => {
   try {
     const data = await getContactDetailApi(contactId.value)
     contact.value = data
-    if (data && data.address) {
-      loadContactWeather(data.address)
+    if (data) {
+      if (data.address) {
+        loadContactWeather(data.address)
+      }
+      // 保存至最近查看联系人列表 (localStorage)，用于搜索框空值时快捷展示
+      try {
+        const listJson = localStorage.getItem('recently_viewed_contacts')
+        let list = listJson ? JSON.parse(listJson) : []
+        list = list.filter((c: any) => c.id !== data.contactId)
+        list.unshift({ id: data.contactId, name: data.name })
+        if (list.length > 4) list.pop()
+        localStorage.setItem('recently_viewed_contacts', JSON.stringify(list))
+      } catch (e) {
+        console.error('Failed to save recently viewed contact:', e)
+      }
     }
   } catch (error) {
     console.error('Failed to load contact detail:', error)

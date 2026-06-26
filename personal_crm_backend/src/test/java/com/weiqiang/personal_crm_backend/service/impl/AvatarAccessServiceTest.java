@@ -35,7 +35,7 @@ class AvatarAccessServiceTest {
     Path tempDir;
 
     @Test
-    void resolveUserAvatarUrl_WhenLocalFileMissing_ShouldReturnNullAndDeleteStaleRecord() {
+    void resolveUserAvatarUrl_WhenLocalFileMissing_ShouldReturnNullAndKeepRecord() {
         UserAvatar avatar = new UserAvatar();
         avatar.setId(10L);
         avatar.setUserId("U000000001");
@@ -45,11 +45,11 @@ class AvatarAccessServiceTest {
         String avatarUrl = avatarAccessService.resolveUserAvatarUrl(avatar);
 
         assertNull(avatarUrl);
-        verify(userAvatarMapper).deleteById(10L);
+        verify(userAvatarMapper, never()).deleteById(10L);
     }
 
     @Test
-    void resolveContactAvatarUrl_WhenLocalFileMissing_ShouldReturnNullAndDeleteStaleRecord() {
+    void resolveContactAvatarUrl_WhenLocalFileMissing_ShouldReturnNullAndKeepRecord() {
         ContactAvatar avatar = new ContactAvatar();
         avatar.setId(20L);
         avatar.setContactId("C000000001");
@@ -59,7 +59,7 @@ class AvatarAccessServiceTest {
         String avatarUrl = avatarAccessService.resolveContactAvatarUrl(avatar);
 
         assertNull(avatarUrl);
-        verify(contactAvatarMapper).deleteById(20L);
+        verify(contactAvatarMapper, never()).deleteById(20L);
     }
 
     @Test

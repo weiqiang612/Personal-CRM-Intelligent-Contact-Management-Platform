@@ -51,4 +51,9 @@ public class TodoQuery implements Serializable {
      * 排序顺序 (可选, asc 或 desc)
      */
     private String sortOrder;
+
+    /**
+     * 模糊搜索关键字 (可选, 事项内容)
+     */
+    private String keyword;
 }

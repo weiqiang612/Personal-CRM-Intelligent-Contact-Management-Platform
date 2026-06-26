@@ -150,14 +150,43 @@ public class AgentServiceImpl implements AgentService {
         List<OpenAiMessage> messages = sessionState.getMessages();
         if (messages.isEmpty()) {
             // 第一轮会话，写入 System Prompt
-            messages.add(new OpenAiMessage("system", buildSystemPrompt(contactNames)));
+            messages.add(new OpenAiMessage("system", buildSystemPrompt(contactNames, sessionState.getHistorySummary())));
         } else {
             // 已有会话，更新第一条 system 的时间等动态参数，保持计算基准准确
-            messages.set(0, new OpenAiMessage("system", buildSystemPrompt(contactNames)));
+            messages.set(0, new OpenAiMessage("system", buildSystemPrompt(contactNames, sessionState.getHistorySummary())));
         }
         
         // 追入用户最新一轮输入
         messages.add(new OpenAiMessage("user", input));
+
+        // 滑动窗口判断：非 system 消息数量大于 20
+        if (messages.size() - 1 > 20) {
+            try {
+                // 提取最老 10 条对话消息 (索引 1 到 10)
+                List<OpenAiMessage> toSummarize = new ArrayList<>(messages.subList(1, 11));
+                
+                List<OpenAiMessage> summaryMessages = new ArrayList<>();
+                String summarySystemPrompt = "你是一个会话历史记录摘要助手。请对以下历史对话内容进行精简的摘要，总结先前讨论的联系人、待办或查询等关键信息，字数控制在 150 字以内。";
+                if (sessionState.getHistorySummary() != null && !sessionState.getHistorySummary().trim().isEmpty()) {
+                    summarySystemPrompt += "\n已有的历史摘要为：" + sessionState.getHistorySummary() + "\n请将新对话的内容与旧摘要合并后输出一个新的摘要。";
+                }
+                summaryMessages.add(new OpenAiMessage("system", summarySystemPrompt));
+                summaryMessages.addAll(toSummarize);
+                
+                String newSummary = llmService.chat(summaryMessages);
+                if (newSummary != null && !newSummary.trim().isEmpty()) {
+                    sessionState.setHistorySummary(newSummary.trim());
+                }
+                
+                // 执行截断，从 messages 列表中移除这 10 条消息
+                messages.subList(1, 11).clear();
+                
+                // 截断后重新更新第 0 条 system 消息
+                messages.set(0, new OpenAiMessage("system", buildSystemPrompt(contactNames, sessionState.getHistorySummary())));
+            } catch (Exception e) {
+                log.error("Failed to generate conversation history summary", e);
+            }
+        }
 
         // 4. 发送大模型调用
         String chatResult = llmService.chat(messages);
@@ -210,8 +239,7 @@ public class AgentServiceImpl implements AgentService {
                         "未查找到匹配的联系人信息" : 
                         "已查找到包含关键字 '" + keyword + "' 的联系人信息，共 " + listVO.getList().size() + " 条");
 
-                // 单轮查询直接清空会话
-                agentSessionManager.removeSession(currentSessionId);
+                // 不在这里物理销毁会话，统一在方法尾部清理槽位
                 auditLog(userId, input, intent, accumulatedParams, 0, 1, response.getSummary());
 
             } else if ("query_todo".equals(intent)) {
@@ -263,8 +291,7 @@ public class AgentServiceImpl implements AgentService {
                             "已查找到您的 " + listVO.getList().size() + " 条" + statusName + "事项");
                 }
 
-                // 结束会话
-                agentSessionManager.removeSession(currentSessionId);
+                // 不在这里物理销毁会话，统一在方法尾部清理槽位
                 auditLog(userId, input, intent, accumulatedParams, 0, 1, response.getSummary());
 
             } else if ("create_todo".equals(intent)) {
@@ -367,9 +394,7 @@ public class AgentServiceImpl implements AgentService {
                     String formattedSummary = "已为您生成待办事项预确认卡片，请核对：在 " + todoTimeStr + " 提醒联系 " + matchedContactName + " " + content + "。";
                     response.setSummary(formattedSummary);
 
-                    // 销毁内存会话
-                    agentSessionManager.removeSession(currentSessionId);
-
+                    // 不在这里物理销毁会话，统一在方法尾部清理槽位
                     // 写入预确认 pending 操作审计日志 (needConfirm = 1, status = 0)
                     AgentOperationLog operationLog = auditLog(userId, input, intent, accumulatedParams, 1, 0, formattedSummary);
                     response.setLogId(operationLog.getId());
@@ -382,7 +407,6 @@ public class AgentServiceImpl implements AgentService {
                 response.setSummary(summary != null && !summary.isEmpty() ? 
                         summary : "抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。");
 
-                agentSessionManager.removeSession(currentSessionId);
                 auditLog(userId, input, "unsupported", accumulatedParams, 0, 1, response.getSummary());
             }
 
@@ -393,8 +417,22 @@ public class AgentServiceImpl implements AgentService {
             response.setActionType("unsupported");
             response.setSummary("智能助手无法解析当前指令，请重试。");
 
-            agentSessionManager.removeSession(currentSessionId);
             auditLog(userId, input, "unsupported", new HashMap<>(), 0, 1, response.getSummary());
+        }
+
+        // 自动把助手回复加入历史
+        if (response.getSummary() != null && !response.getSummary().isEmpty()) {
+            List<OpenAiMessage> list = sessionState.getMessages();
+            if (list.isEmpty() || !"assistant".equals(list.get(list.size() - 1).getRole())) {
+                list.add(new OpenAiMessage("assistant", response.getSummary()));
+            }
+        }
+
+        // 统一清理本轮已结束意图的 Session 槽位参数，避免引用副作用
+        if ("query_contact".equals(response.getActionType()) 
+                || "query_todo".equals(response.getActionType()) 
+                || ("create_todo".equals(response.getActionType()) && Integer.valueOf(1).equals(response.getNeedConfirm()))) {
+            sessionState.setAccumulatedParams(new java.util.HashMap<>());
         }
 
         return response;
@@ -549,50 +587,61 @@ public class AgentServiceImpl implements AgentService {
     /**
      * 构造系统 Prompt
      */
-    private String buildSystemPrompt(List<String> contactNames) {
+    private String buildSystemPrompt(List<String> contactNames, String historySummary) {
         LocalDateTime now = LocalDateTime.now();
         String dayOfWeekCn = getDayOfWeekCn(now.getDayOfWeek());
         String candidates = contactNames.isEmpty() ? "（暂无联系人）" : String.join(", ", contactNames);
 
-        return "你是一个个人 CRM 系统的智能助手（Contact Agent）。你的任务是根据用户输入的自然语言，理解其意图并提取出结构化的参数。\n\n" +
-                "用户可能会进行以下三类操作：\n" +
-                "1. 查询联系人（query_contact）：用户想要查询联系人的信息。\n" +
-                "   - 提取参数：keyword (String，模糊查询的关键字，通常是名字、电话、标签等)\n" +
-                "2. 查询事项/待办（query_todo）：用户想要查询待办事项。\n" +
-                "   - 提取参数：\n" +
-                "     - contactName (String，关联的联系人姓名，若未提及则为空)\n" +
-                "     - status (Integer，事项状态。0: 待完成, 1: 已取消, 2: 已完成。默认为 0)\n" +
-                "3. 创建事项/待办（create_todo）：用户想要创建新的待办事项。这是一个写操作。\n" +
-                "   - 必须提取的关键槽位（字段）：\n" +
-                "     - contactName (String，关联的联系人姓名)\n" +
-                "     - todoTime (String，提醒时间，格式必须是 \"yyyy-MM-dd HH:mm:ss\")\n" +
-                "     - content (String，具体事项内容)\n" +
-                "     - priority (Integer，优先级。0: 普通, 1: 重要, 2: 紧急。若未提及默认为 1)\n" +
-                "   - 注意：如果用户输入中缺少任何一个关键槽位（contactName, todoTime, content），你需要将其列入 `missingFields` 列表中，并将 `isClarifying` 设为 true，并在 `summary` 中以友好、礼貌的中文向用户提出澄清问题（比如询问缺失的信息）。如果所有关键槽位都已齐全，`isClarifying` 设为 false，`missingFields` 为空数组。\n" +
-                "4. 不支持的操作（unsupported）：如删除、修改、拉黑、恢复联系人等写操作，或者与 CRM系统无关的输入。\n" +
-                "   - 响应中 `isClarifying` 为 false，`summary` 给出友好的不支持提示，如：“抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。”\n\n" +
-                "【上下文信息】\n" +
-                "当前系统时间：" + now.format(TODO_TIME_FORMATTER) + " (" + dayOfWeekCn + ") （你的所有相对时间解析，如“明天下午三点”、“下周一”，都应该基于这个基准时间计算。计算时请注意星期和日期）\n" +
-                "当前用户的联系人候选名单：" + candidates + " （当用户提及某个名字时，尽量与这个名单里的名字做匹配，或者提取该名字。如果拼写或谐音相似，也可以在 summary 里引导澄清）\n\n" +
-                "【约束条件】\n" +
-                "- 你必须只返回符合以下 JSON 格式的字符串，绝对不要包含任何 markdown 标记（如 ```json）。\n" +
-                "- JSON 结构：\n" +
-                "{\n" +
-                "  \"intent\": \"query_contact\" | \"query_todo\" | \"create_todo\" | \"unsupported\",\n" +
-                "  \"queryType\": \"contact\" | \"todo\" | \"unsupported\",\n" +
-                "  \"summary\": \"回复文本\",\n" +
-                "  \"isClarifying\": true | false,\n" +
-                "  \"missingFields\": [\"contactName\", \"todoTime\", \"content\"],\n" +
-                "  \"parsedParams\": {\n" +
-                "     \"keyword\": \"\",\n" +
-                "     \"contactName\": \"\",\n" +
-                "     \"status\": 0,\n" +
-                "     \"todoTime\": \"\",\n" +
-                "     \"content\": \"\",\n" +
-                "     \"priority\": 1\n" +
-                "  }\n" +
-                "}";
+        StringBuilder sb = new StringBuilder();
+        if (historySummary != null && !historySummary.trim().isEmpty()) {
+            sb.append("【先前对话的历史摘要】\n")
+              .append(historySummary)
+              .append("\n\n");
+        }
+
+        sb.append("你是一个个人 CRM 系统的智能助手（Contact Agent）。你的任务是根据用户输入的自然语言，理解其意图并提取出结构化的参数。\n\n")
+          .append("用户可能会进行以下三类操作：\n")
+          .append("1. 查询联系人（query_contact）：用户想要查询联系人的信息。\n")
+          .append("   - 提取参数：keyword (String，模糊查询的关键字，通常是名字、电话、标签等)\n")
+          .append("2. 查询事项/待办（query_todo）：用户想要查询待办事项。\n")
+          .append("   - 提取参数：\n")
+          .append("     - contactName (String，关联的联系人姓名，若未提及则为空)\n")
+          .append("     - status (Integer，事项状态。0: 待完成, 1: 已取消, 2: 已完成。默认为 0)\n")
+          .append("3. 创建事项/待办（create_todo）：用户想要创建新的待办事项。这是一个写操作。\n")
+          .append("   - 必须提取的关键槽位（字段）：\n")
+          .append("     - contactName (String，关联的联系人姓名)\n")
+          .append("     - todoTime (String，提醒时间，格式必须是 \"yyyy-MM-dd HH:mm:ss\")\n")
+          .append("     - content (String，具体事项内容)\n")
+          .append("     - priority (Integer，优先级。0: 普通, 1: 重要, 2: 紧急。若未提及默认为 1)\n")
+          .append("   - 注意：如果用户输入中缺少任何一个关键槽位（contactName, todoTime, content），你需要将其列入 `missingFields` 列表中，并将 `isClarifying` 设为 true，并在 `summary` 中以友好、礼貌的中文向用户提出澄清问题（比如询问缺失的信息）。如果所有关键槽位都已齐全，`isClarifying` 设为 false，`missingFields` 为空数组。\n")
+          .append("4. 不支持的操作（unsupported）：如删除、修改、拉黑、恢复联系人等写操作，或者与 CRM系统无关的输入。\n")
+          .append("   - 注意：如果是日常问候（如“你好”）或简单的身份/记忆闲聊（如询问“我叫什么”、“你是谁”等），你可以结合先前的对话历史在 `summary` 中进行自然、简短的应答并引导其使用 CRM，但意图仍然归类为 `unsupported`，不进行其他业务处理。\n")
+          .append("   - 对于其他不支持的写请求，“summary”给出不支持的提示，如：“抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。”\n\n")
+          .append("【上下文信息】\n")
+          .append("当前系统时间：").append(now.format(TODO_TIME_FORMATTER)).append(" (").append(dayOfWeekCn).append(") （你的所有相对时间解析，如“明天下午三点”、“下周一”，都应该基于这个基准时间计算。计算时请注意星期和日期）\n")
+          .append("当前用户的联系人候选名单：").append(candidates).append(" （当用户提及某个名字时，尽量与这个名单里的名字做匹配，或者提取该名字。如果拼写或谐音相似，也可以在 summary 里引导澄清）\n\n")
+          .append("【约束条件】\n")
+          .append("- 你必须只返回符合以下 JSON 格式的字符串，绝对不要包含任何 markdown 标记（如 ```json）。\n")
+          .append("- JSON 结构：\n")
+          .append("{\n")
+          .append("  \"intent\": \"query_contact\" | \"query_todo\" | \"create_todo\" | \"unsupported\",\n")
+          .append("  \"queryType\": \"contact\" | \"todo\" | \"unsupported\",\n")
+          .append("  \"summary\": \"回复文本\",\n")
+          .append("  \"isClarifying\": true | false,\n")
+          .append("  \"missingFields\": [\"contactName\", \"todoTime\", \"content\"],\n")
+          .append("  \"parsedParams\": {\n")
+          .append("     \"keyword\": \"\",\n" )
+          .append("     \"contactName\": \"\",\n")
+          .append("     \"status\": 0,\n")
+          .append("     \"todoTime\": \"\",\n")
+          .append("     \"content\": \"\",\n")
+          .append("     \"priority\": 1\n")
+          .append("  }\n")
+          .append("}");
+
+        return sb.toString();
     }
+
 
     private String getDayOfWeekCn(DayOfWeek d) {
         switch (d) {

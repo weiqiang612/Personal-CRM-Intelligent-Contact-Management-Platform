@@ -246,7 +246,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
@@ -374,6 +374,10 @@ const fetchTodos = async () => {
       params.contactId = filterParams.contactId
     }
 
+    if (keywordInput.value.trim()) {
+      params.keyword = keywordInput.value.trim()
+    }
+
     const res = await getTodos(params)
     todos.value = res.list
     total.value = res.total
@@ -482,11 +486,6 @@ const handleTabClick = (tab: string) => {
 const filteredTodos = computed(() => {
   let list = todos.value
 
-  if (keywordInput.value.trim()) {
-    const kw = keywordInput.value.toLowerCase()
-    list = list.filter(item => item.content && item.content.toLowerCase().includes(kw))
-  }
-
   if (filterParams.priority !== '') {
     const p = Number(filterParams.priority)
     list = list.filter(item => item.priority === p)
@@ -560,8 +559,14 @@ const resetFilters = () => {
   fetchTabCounts()
 }
 
+let searchTimer: number | null = null
 const handleSearchInput = () => {
-  // 依靠 filteredTodos 前端过滤
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(() => {
+    queryParams.page = 1
+    fetchTodos()
+    fetchTabCounts()
+  }, 300)
 }
 
 // 完成事项
@@ -619,9 +624,12 @@ const handlePageSizeChange = () => {
 }
 
 onMounted(async () => {
-  // 读取 URL 参数以实现联系人联动筛选
+  // 读取 URL 参数以实现联系人与内容联动筛选
   if (route.query.contactId) {
     filterParams.contactId = route.query.contactId as string
+  }
+  if (route.query.keyword) {
+    keywordInput.value = route.query.keyword as string
   }
 
   try {
@@ -634,6 +642,24 @@ onMounted(async () => {
   fetchTodos()
   fetchTabCounts()
 })
+
+// 监听路由 query 参数变化，以便从全局检索跳转时能实时更新列表
+watch(
+  () => route.query,
+  (query) => {
+    if (query.contactId !== undefined) {
+      filterParams.contactId = (query.contactId as string) || ''
+    }
+    if (query.keyword !== undefined) {
+      keywordInput.value = (query.keyword as string) || ''
+    } else {
+      keywordInput.value = ''
+    }
+    queryParams.page = 1
+    fetchTodos()
+    fetchTabCounts()
+  }
+)
 </script>
 
 <style scoped>

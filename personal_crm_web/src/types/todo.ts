@@ -27,6 +27,7 @@ export interface TodoParams {
   endTime?: string // yyyy-MM-dd HH:mm:ss
   sortBy?: string // 排序字段：todoTime, createdAt, completedAt, cancelledAt
   sortOrder?: string // asc 或 desc
+  keyword?: string // 模糊检索词
 }
 
 /**

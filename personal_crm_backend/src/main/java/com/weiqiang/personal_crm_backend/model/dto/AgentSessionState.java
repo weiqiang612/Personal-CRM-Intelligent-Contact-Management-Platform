@@ -40,4 +40,10 @@ public class AgentSessionState implements Serializable {
      * 最近一次访问时间戳 (用于过期清理)
      */
     private long lastAccessTime;
+
+    /**
+     * 历史对话摘要
+     */
+    private String historySummary;
 }
+

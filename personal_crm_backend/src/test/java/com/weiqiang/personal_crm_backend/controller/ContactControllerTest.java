@@ -110,7 +110,7 @@ public class ContactControllerTest {
     }
 
     @Test
-    void testGetContactDetail_ShouldCleanupStaleLocalAvatar() throws Exception {
+    void testGetContactDetail_ShouldFallbackWhenLocalAvatarIsMissing() throws Exception {
         ContactAvatar avatar = new ContactAvatar();
         avatar.setContactId(testCtId);
         avatar.setPicId("PICMISS001");
@@ -125,7 +125,7 @@ public class ContactControllerTest {
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.avatarUrl", nullValue()));
 
-        org.junit.jupiter.api.Assertions.assertNull(
+        org.junit.jupiter.api.Assertions.assertNotNull(
                 contactAvatarMapper.selectOne(
                         new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ContactAvatar>()
                                 .eq(ContactAvatar::getContactId, testCtId)

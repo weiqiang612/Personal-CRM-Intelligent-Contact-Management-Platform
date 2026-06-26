@@ -73,8 +73,7 @@ public class AvatarAccessService {
         }
 
         if (!StringUtils.hasText(filePath)) {
-            log.warn("Skip stale {} without file path, ownerId={}, recordId={}", avatarType, ownerId, recordId);
-            staleRecordCleanup.run();
+            log.warn("Stale {} detected: empty file path, ownerId={}, recordId={}", avatarType, ownerId, recordId);
             return null;
         }
 
@@ -83,8 +82,7 @@ public class AvatarAccessService {
             return accessUrl;
         }
 
-        log.warn("Delete stale {} record, ownerId={}, recordId={}, filePath={}", avatarType, ownerId, recordId, avatarPath);
-        staleRecordCleanup.run();
+        log.warn("Stale {} detected: file not found on disk, ownerId={}, recordId={}, filePath={}. Keeping database record.", avatarType, ownerId, recordId, avatarPath);
         return null;
     }
 }
