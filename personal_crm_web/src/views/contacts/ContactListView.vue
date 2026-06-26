@@ -143,6 +143,54 @@
           </tbody>
         </table>
 
+        <!-- 移动端自适应卡片列表 (Card List Flow) -->
+        <div class="mobile-card-list" v-if="contacts.length > 0">
+          <div 
+            v-for="row in contacts" 
+            :key="row.contactId" 
+            class="mobile-contact-card"
+            @click="handleRowClick($event, row.contactId)"
+          >
+            <div class="card-avatar-wrap">
+              <img :src="row.avatarUrl || defaultAvatar" :alt="row.name" class="mobile-card-avatar">
+            </div>
+            <div class="card-details">
+              <div class="card-name-row">
+                <router-link :to="`/contacts/${row.contactId}`" class="card-contact-name" @click.stop>{{ row.name }}</router-link>
+                <span class="card-contact-gender">{{ formatGender(row.gender) }}</span>
+              </div>
+              <div class="card-meta-line" v-if="row.phone">
+                <a :href="`tel:${row.phone}`" class="card-meta-link" @click.stop>
+                  📞 {{ formatPhone(row.phone) }}
+                </a>
+              </div>
+              <div class="card-tags-row" v-if="row.tags && row.tags.length > 0">
+                <span
+                  v-for="t in row.tags"
+                  :key="t"
+                  class="badge"
+                  :style="{
+                    backgroundColor: getTagColor(t) + '15',
+                    color: getTagColor(t),
+                    borderColor: getTagColor(t) + '30',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: '8px'
+                  }"
+                >
+                  {{ t }}
+                </span>
+              </div>
+            </div>
+            <div class="card-actions-column">
+              <router-link :to="`/contacts/${row.contactId}/edit`" class="btn btn-secondary btn-xs" @click.stop>编辑</router-link>
+              <button class="btn btn-danger-outline btn-xs" @click.stop="confirmToBlacklist(row.contactId)">拉黑</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 空数据状态 -->
         <div class="empty-state-container" v-else-if="!loading">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
@@ -679,5 +727,186 @@ onMounted(() => {
 
 .custom-table tbody tr:hover td {
   background-color: rgba(99, 102, 241, 0.05) !important;
+}
+
+/* ===== 移动端响应式覆盖 ===== */
+.mobile-card-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 隐藏 PC 原生 Table */
+  .custom-table {
+    display: none !important;
+  }
+  
+  /* 隐藏 PC 端卡片头尾多余内边距 */
+  .table-container {
+    padding: 0 !important;
+  }
+  
+  .contacts-page-wrapper {
+    padding: 12px !important;
+    gap: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .card {
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .filter-bar {
+    padding: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .filter-left {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .filter-left .search-box {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  .filter-left .select-control {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 排序选项内容较长，在小屏下独占一行 */
+  .filter-left .select-control:nth-of-type(3) {
+    flex: 1 1 100% !important;
+  }
+
+  .filter-left .btn-icon {
+    flex: 0 0 36px !important;
+    padding: 0 !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .filter-left .btn:not(.btn-icon) {
+    flex: 1 1 calc(100% - 44px) !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 开启卡片流式列表 */
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 !important; /* 统一使用外层 .card 的 padding 避免过度嵌套挤压 */
+  }
+  
+  .mobile-contact-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .mobile-contact-card:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.01);
+  }
+  
+  .card-avatar-wrap {
+    flex-shrink: 0;
+  }
+  
+  .mobile-card-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .card-details {
+    flex: 1;
+    min-width: 0;
+    margin-left: 12px;
+    margin-right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .card-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .card-contact-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none;
+  }
+  
+  .card-contact-gender {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .card-meta-line {
+    font-size: 11px;
+  }
+  
+  .card-meta-link {
+    color: #475569;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .card-tags-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+  }
+  
+  .card-actions-column {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  
+  /* 超小尺寸的紧凑型按钮 */
+  .btn-xs {
+    padding: 4px 10px !important;
+    font-size: 10px !important;
+    min-height: 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    text-align: center;
+  }
 }
 </style>

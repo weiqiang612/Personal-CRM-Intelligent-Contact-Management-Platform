@@ -1358,4 +1358,111 @@ onMounted(() => {
   transform: translateY(-8px);
   opacity: 0;
 }
+
+@media (max-width: 768px) {
+  /* 头部大卡片折叠 */
+  .detail-header-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
+  
+  .detail-header-left {
+    gap: 14px !important;
+  }
+  
+  .detail-header-avatar {
+    width: 64px !important;
+    height: 64px !important;
+  }
+  
+  .detail-header-avatar-placeholder {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 22px !important;
+  }
+  
+  .detail-header-info h3 {
+    font-size: 18px !important;
+  }
+  
+  /* 操作按钮组 Grid 2x2 */
+  .detail-header-actions {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+  
+  .detail-header-actions .btn {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 8px 6px !important;
+    font-size: 12.5px !important;
+    height: 38px !important;
+    line-height: 1.2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: unset !important;
+  }
+
+  .detail-header-actions .popconfirm-container {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .detail-header-actions .popconfirm-container .btn {
+    width: 100% !important;
+  }
+
+  /* 基础资料防溢出 */
+  .info-item {
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .info-value {
+    word-break: break-all !important;
+    text-align: right !important;
+    display: inline-block !important;
+  }
+  
+  /* 事项卡片重排（垂直流） */
+  .todo-item-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+  
+  .todo-item-right {
+    padding-left: 0 !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    margin-top: 6px !important;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 10px !important;
+  }
+
+  .todo-action-group {
+    gap: 6px !important;
+  }
+
+  .todo-action-btn {
+    min-width: 60px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+    border-radius: 8px !important;
+  }
+  
+  /* 气泡二次确认框修正 */
+  .popconfirm-overlay {
+    width: 260px !important;
+    right: -10px !important;
+  }
+}
 </style>

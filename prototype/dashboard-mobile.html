@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Personal CRM - 移动端响应式原型</title>
+  <style>
+    :root {
+      --primary-color: #3b82f6;
+      --primary-light: #eff6ff;
+      --success-color: #10b981;
+      --success-light: #ecfdf5;
+      --warning-color: #f59e0b;
+      --warning-light: #fef3c7;
+      --danger-color: #ef4444;
+      --danger-light: #fef2f2;
+      --purple-color: #8b5cf6;
+      --purple-light: #f5f3ff;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --border-color: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* iPhone 设备外框模拟器（仅在 PC 上显示） */
+    .device-container {
+      width: 393px;
+      height: 852px;
+      background-color: #000000;
+      border-radius: 50px;
+      padding: 12px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4), 0 0 0 4px #27272a;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    /* 灵动岛 (Dynamic Island) */
+    .dynamic-island {
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 30px;
+      background-color: #000000;
+      border-radius: 20px;
+      z-index: 100;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+
+    /* 手机屏幕区域 */
+    .phone-screen {
+      flex: 1;
+      background-color: var(--bg-color);
+      border-radius: 38px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+    }
+
+    /* 自适应：如果是移动端浏览器（屏幕宽度小于等于 480px），则隐藏手机外壳，直接全屏 */
+    @media (max-width: 480px) {
+      body {
+        background-color: var(--bg-color);
+      }
+      .device-container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        background-color: transparent;
+      }
+      .phone-screen {
+        border-radius: 0;
+      }
+      .dynamic-island {
+        display: none;
+      }
+      .status-bar {
+        padding-top: env(safe-area-inset-top, 20px) !important;
+        height: calc(env(safe-area-inset-top, 20px) + 24px) !important;
+      }
+      .app-view {
+        padding-bottom: env(safe-area-inset-bottom, 16px) !important;
+      }
+      .tabbar {
+        padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+        height: calc(env(safe-area-inset-bottom, 8px) + 56px) !important;
+      }
+    }
+
+    /* 模拟状态栏 (Status Bar) */
+    .status-bar {
+      height: 48px;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #000000;
+      z-index: 90;
+      background-color: var(--bg-color);
+      user-select: none;
+    }
+
+    .status-bar .right-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    /* === 四个主 Tab 视图容器 === */
+    .app-view {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px 80px;
+      display: none;
+      scroll-behavior: smooth;
+    }
+
+    .app-view.active {
+      display: block;
+    }
+
+    /* 隐藏滚动条 */
+    .app-view::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* 顶部标题栏 */
+    .header-section {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-left .logo {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+    }
+
+    .header-left .greeting-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .greeting-row .weather-icon {
+      font-size: 16px;
+      animation: spin-slow 12s linear infinite;
+    }
+
+    .greeting-row .greeting-text {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+
+    @keyframes spin-slow {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .header-right .user-avatar-wrap {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .user-avatar-wrap .avatar-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      object-fit: cover;
+    }
+
+    .user-avatar-wrap .online-indicator {
+      position: absolute;
+      bottom: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      background-color: var(--success-color);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+    }
+
+    /* === 数据统计卡片 (Stats Cards) === */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background-color: var(--card-bg);
+      border-radius: 18px;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+      border: 1px solid rgba(241, 245, 249, 0.6);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    .stat-card:active {
+      transform: scale(0.95);
+    }
+
+    .stat-card .icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .stat-card.primary .icon-box { background-color: var(--primary-light); color: var(--primary-color); }
+    .stat-card.danger .icon-box { background-color: var(--danger-light); color: var(--danger-color); }
+    .stat-card.success .icon-box { background-color: var(--success-light); color: var(--success-color); }
+    .stat-card.purple .icon-box { background-color: var(--purple-light); color: var(--purple-color); }
+
+    .stat-card .stat-label {
+      font-size: 10px;
+      color: var(--text-sub);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .stat-card .stat-val {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .stat-card.primary .stat-val { color: var(--primary-color); }
+    .stat-card.danger .stat-val { color: var(--danger-color); }
+    .stat-card.success .stat-val { color: var(--success-color); }
+    .stat-card.purple .stat-val { color: var(--purple-color); }
+
+    /* === 面板结构布局 === */
+    .panel-section {
+      margin-bottom: 22px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .panel-header .title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-header .more-link {
+      font-size: 12px;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+
+    /* === 重要联系人（水平滑动卡片） === */
+    .contacts-scroll-wrapper {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 4px 4px 12px;
+      margin: 0 -4px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+
+    .contacts-scroll-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+
+    .contact-slide-card {
+      flex: 0 0 108px;
+      scroll-snap-align: start;
+      background-color: var(--card-bg);
+      border-radius: 20px;
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+      border: 1px solid rgba(241, 245, 249, 0.8);
+      transition: transform 0.2s ease;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .contact-slide-card:active {
+      transform: scale(0.95);
+    }
+
+    .contact-slide-card .avatar-ring {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      padding: 2px;
+      border: 1.5px solid #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .contact-slide-card .avatar-ring img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .contact-slide-card .c-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 2px;
+      width: 100%;
+    }
+
+    .contact-slide-card .c-desc {
+      font-size: 10px;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .contact-slide-card .tag-badge {
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .tag-badge.core { background-color: var(--primary-light); color: var(--primary-color); }
+    .tag-badge.partner { background-color: var(--success-light); color: var(--success-color); }
+    .tag-badge.investor { background-color: var(--warning-light); color: var(--warning-color); }
+    .tag-badge.important { background-color: var(--purple-light); color: var(--purple-color); }
+
+    .contact-slide-card .action-row {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .action-row .btn-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: var(--bg-color);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    /* === 今日事项 (垂直列表) === */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-item {
+      background-color: var(--card-bg);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+      border: 1px solid rgba(241, 245, 249, 0.8);
+      transition: all 0.2s ease;
+    }
+
+    .task-item.completed {
+      opacity: 0.65;
+    }
+
+    .task-item .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid #cbd5e1;
+      margin-top: 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .task-item.completed .custom-checkbox {
+      background-color: var(--success-color);
+      border-color: var(--success-color);
+    }
+
+    .custom-checkbox svg {
+      width: 12px;
+      height: 12px;
+      color: #ffffff;
+      display: none;
+    }
+
+    .task-item.completed .custom-checkbox svg {
+      display: block;
+    }
+
+    .task-item .task-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-main .task-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .task-item.completed .task-text {
+      text-decoration: line-through;
+      color: var(--text-sub);
+    }
+
+    .task-main .task-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .task-meta-row .ref-avatar {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .task-meta-row .ref-name {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+
+    .task-item .task-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .task-right .task-time {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-weight: 600;
+    }
+
+    .task-right .badge-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .task-right .badge-pill {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .badge-pill.priority-high { background-color: var(--danger-light); color: var(--danger-color); }
+    .badge-pill.priority-mid { background-color: var(--warning-light); color: var(--warning-color); }
+    .badge-pill.status-pending { background-color: var(--primary-light); color: var(--primary-color); }
+
+    /* === 数据分析统计图表 (Charts Area for Mobile) === */
+    .mobile-charts-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .mobile-chart-card {
+      background-color: var(--card-bg);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+      border: 1px solid rgba(241, 245, 249, 0.8);
+    }
+
+    .mobile-chart-card .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .mobile-chart-card .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .mobile-chart-card .chart-subtitle {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .chart-container-mock {
+      width: 100%;
+      height: 180px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* === Tab 页面: 智能助手 (沉浸式聊天页) === */
+    .agent-view-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: #f1f5f9;
+      position: relative;
+    }
+
+    .agent-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+      background-color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .agent-header .agent-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .agent-header .agent-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .agent-header .clear-chat {
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: var(--danger-color);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .agent-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .agent-messages::-webkit-scrollbar {
+      display: none;
+    }
+
+    .agent-msg-bubble {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .agent-msg-bubble.assistant {
+      background-color: #ffffff;
+      color: var(--text-main);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    .agent-msg-bubble.user {
+      background-color: var(--primary-color);
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .agent-input-panel {
+      padding: 10px 14px;
+      background-color: #ffffff;
+      border-top: 1px solid rgba(226, 232, 240, 0.8);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .agent-input-panel input {
+      flex: 1;
+      height: 40px;
+      border-radius: 20px;
+      border: 1px solid #cbd5e1;
+      padding: 0 16px;
+      font-size: 13px;
+      outline: none;
+      background-color: #f8fafc;
+    }
+
+    .agent-input-panel input:focus {
+      border-color: var(--primary-color);
+      background-color: #ffffff;
+    }
+
+    .agent-input-panel .send-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      border: none;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .agent-input-panel .send-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* === Tab 页面: 联系人与事项列表卡片流 (Table 转 Card List) === */
+    .list-view-header {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .list-view-header input {
+      flex: 1;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(226,232,240,0.8);
+      padding: 0 12px;
+      font-size: 12px;
+      background-color: #ffffff;
+      outline: none;
+    }
+
+    .list-view-header .add-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .card-list-flow {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flow-card-item {
+      background-color: var(--card-bg);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(241, 245, 249, 0.8);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+    }
+
+    .flow-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .flow-card-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #e2e8f0;
+    }
+
+    .flow-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .flow-card-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .flow-card-meta {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .flow-card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    /* === 底栏导航 TabBar === */
+    .tabbar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background-color: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(226, 232, 240, 0.8);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 85;
+      padding-bottom: 4px;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #94a3b8;
+      cursor: pointer;
+      width: 25%;
+      border: none;
+      background: none;
+    }
+
+    .tab-item.active {
+      color: var(--primary-color);
+    }
+
+    .tab-item svg {
+      width: 20px;
+      height: 20px;
+      margin-bottom: 3px;
+    }
+
+    .tab-item span {
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .home-indicator {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 130px;
+      height: 5px;
+      background-color: #000000;
+      border-radius: 10px;
+      z-index: 87;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- iPhone 15 外壳模拟器 -->
+  <div class="device-container">
+    <div class="dynamic-island"></div>
+    
+    <!-- 内部屏幕 -->
+    <div class="phone-screen">
+      
+      <!-- 顶部状态栏 -->
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="right-icons">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor">
+            <rect x="0" y="8" width="3" height="3" rx="0.5"/>
+            <rect x="4" y="6" width="3" height="5" rx="0.5"/>
+            <rect x="8" y="4" width="3" height="7" rx="0.5"/>
+            <rect x="12" y="1.5" width="3" height="9.5" rx="0.5"/>
+          </svg>
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor">
+            <path d="M7.5 11C8.2 11 8.8 10.4 8.8 9.7C8.8 9 8.2 8.4 7.5 8.4C6.8 8.4 6.2 9 6.2 9.7C6.2 10.4 6.8 11 7.5 11Z"/>
+            <path d="M7.5 6.2C9.4 6.2 11.2 5.5 12.6 4.1L13.8 5.3C12.1 7 9.9 7.9 7.5 7.9C5.1 7.9 2.9 7 1.2 5.3L2.4 4.1C3.8 5.5 5.6 6.2 7.5 6.2Z"/>
+            <path d="M7.5 3C9.9 3 12.2 2.1 13.9 0.4L15 1.6C12.9 3.7 10.3 4.8 7.5 4.8C4.7 4.8 2.1 3.7 0 1.6L1.1 0.4C2.8 2.1 5.1 3 7.5 3Z"/>
+          </svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="currentColor">
+            <rect x="0.5" y="0.5" width="18" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+            <rect x="2.5" y="2.5" width="11" height="6" rx="1.5"/>
+            <path d="M20 3.5C20.5 3.5 21 4 21 4.5V6.5C21 7 20.5 7.5 20 7.5V3.5Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ==================== VIEW 1: 工作台 ==================== -->
+      <div class="app-view active" id="view-workspace">
+        <header class="header-section">
+          <div class="header-left">
+            <div class="logo">Personal CRM</div>
+            <div class="greeting-row">
+              <span class="weather-icon">☀️</span>
+              <span class="greeting-text">下午好，Ethan</span>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="user-avatar-wrap">
+              <img class="avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=120" alt="Avatar">
+              <span class="online-indicator"></span>
+            </div>
+          </div>
+        </header>
+
+        <!-- 数据网格 -->
+        <section class="stats-container">
+          <div class="stat-card primary">
+            <div class="icon-box">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4m-7 8 2 2 4-4"/>
+              </svg>
+            </div>
+            <span class="stat-label">今日事项</span>
+            <span class="stat-val">5</span>
+          </div>
+
+          <div class="stat-card danger">
+            <div class="icon-box">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+              </svg>
+            </div>
+            <span class="stat-label">逾期事项</span>
+            <span class="stat-val">2</span>
+          </div>
+
+          <div class="stat-card success">
+            <div class="icon-box">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+              </svg>
+            </div>
+            <span class="stat-label">待完成</span>
+            <span class="stat-val">18</span>
+          </div>
+
+          <div class="stat-card purple">
+            <div class="icon-box">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <span class="stat-label">联系人</span>
+            <span class="stat-val">128</span>
+          </div>
+        </section>
+
+        <!-- 重要联系人 -->
+        <section class="panel-section">
+          <div class="panel-header">
+            <h3 class="title">
+              <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="color:var(--primary-color)">
+                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+              </svg>
+              重要联系人
+            </h3>
+            <a href="#" class="more-link" onclick="switchView('view-contacts', 1)">查看全部 &rsaquo;</a>
+          </div>
+
+          <div class="contacts-scroll-wrapper">
+            <div class="contact-slide-card">
+              <div class="avatar-ring">
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=120" alt="张伟">
+              </div>
+              <div class="c-name">张伟</div>
+              <div class="c-desc">Acme CEO</div>
+              <span class="tag-badge core">核心客户</span>
+              <div class="action-row">
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('拨打张伟电话: 138-0000-1111')">📞</button>
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('发送邮件给张伟')">✉️</button>
+              </div>
+            </div>
+
+            <div class="contact-slide-card">
+              <div class="avatar-ring">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120" alt="李娜">
+              </div>
+              <div class="c-name">李娜</div>
+              <div class="c-desc">星云科技 合伙人</div>
+              <span class="tag-badge partner">合作伙伴</span>
+              <div class="action-row">
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('拨打李娜电话')">📞</button>
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('邮件')">✉️</button>
+              </div>
+            </div>
+
+            <div class="contact-slide-card">
+              <div class="avatar-ring">
+                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=120" alt="王磊">
+              </div>
+              <div class="c-name">王磊</div>
+              <div class="c-desc">极客资本 投资人</div>
+              <span class="tag-badge investor">投资人</span>
+              <div class="action-row">
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('拨打王磊电话')">📞</button>
+                <button class="btn-circle" onclick="event.stopPropagation(); alert('邮件')">✉️</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 今日事项 -->
+        <section class="panel-section">
+          <div class="panel-header">
+            <h3 class="title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="color:var(--success-color)">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/>
+              </svg>
+              今日事项
+            </h3>
+            <a href="#" class="more-link" onclick="switchView('view-todos', 2)">查看全部 &rsaquo;</a>
+          </div>
+
+          <div class="task-list">
+            <div class="task-item" id="task-1">
+              <div class="custom-checkbox" onclick="toggleTask('task-1')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="task-main">
+                <div class="task-text">与张伟沟通 Q2 合作方案细节</div>
+                <div class="task-meta-row">
+                  <img class="ref-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" alt="张伟">
+                  <span class="ref-name">张伟</span>
+                </div>
+              </div>
+              <div class="task-right">
+                <span class="task-time">10:00</span>
+                <div class="badge-group">
+                  <span class="badge-pill priority-high">高优先级</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="task-item" id="task-2">
+              <div class="custom-checkbox" onclick="toggleTask('task-2')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="task-main">
+                <div class="task-text">跟进星云科技合同签署进度</div>
+                <div class="task-meta-row">
+                  <img class="ref-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=60" alt="李娜">
+                  <span class="ref-name">李娜</span>
+                </div>
+              </div>
+              <div class="task-right">
+                <span class="task-time">11:30</span>
+                <div class="badge-group">
+                  <span class="badge-pill priority-mid">中优先级</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 新增：移动端统计图表平铺排版展示 -->
+        <section class="panel-section">
+          <div class="panel-header">
+            <h3 class="title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" style="color:var(--purple-color)">
+                <path d="M18 20V10M12 20V4M6 20v-6"/>
+              </svg>
+              数据分析 (图表移动端排版)
+            </h3>
+          </div>
+
+          <div class="mobile-charts-section">
+            <!-- 图表 1: 折线图 -->
+            <div class="mobile-chart-card">
+              <div class="chart-header">
+                <div class="chart-title">新增联系人趋势</div>
+                <div class="chart-subtitle">最近六个月</div>
+              </div>
+              <div class="chart-container-mock">
+                <!-- 高保真渐变 SVG 模拟折线图，实现 100% 宽度自适应与 180px 压缩高度 -->
+                <svg width="100%" height="100%" viewBox="0 0 320 160" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="line-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25" />
+                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <!-- 网格线 -->
+                  <line x1="0" y1="30" x2="320" y2="30" stroke="#f1f5f9" stroke-width="1" />
+                  <line x1="0" y1="70" x2="320" y2="70" stroke="#f1f5f9" stroke-width="1" />
+                  <line x1="0" y1="110" x2="320" y2="110" stroke="#f1f5f9" stroke-width="1" />
+                  <line x1="0" y1="140" x2="320" y2="140" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2 2" />
+                  
+                  <!-- 填充区域 -->
+                  <path d="M0,140 L10,120 L72,80 L134,110 L196,40 L258,65 L320,25 L320,140 Z" fill="url(#line-grad)" />
+                  <!-- 折线 -->
+                  <path d="M0,120 Q36,95 72,80 T134,110 T196,40 T258,65 T320,25" fill="none" stroke="#3b82f6" stroke-width="2.5" />
+                  
+                  <!-- 数据点 -->
+                  <circle cx="72" cy="80" r="4" fill="#ffffff" stroke="#3b82f6" stroke-width="2" />
+                  <circle cx="196" cy="40" r="4" fill="#ffffff" stroke="#3b82f6" stroke-width="2" />
+                  <circle cx="320" cy="25" r="4" fill="#ffffff" stroke="#3b82f6" stroke-width="2" />
+
+                  <!-- 文字标签 -->
+                  <text x="72" y="70" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="700">18人</text>
+                  <text x="196" y="30" font-size="9" fill="#3b82f6" text-anchor="middle" font-weight="700">32人</text>
+                </svg>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:10px; color:#94a3b8; font-weight:600;">
+                <span>1月</span><span>2月</span><span>3月</span><span>4月</span><span>5月</span><span>6月</span>
+              </div>
+            </div>
+
+            <!-- 图表 2: 饼图/环形图 -->
+            <div class="mobile-chart-card">
+              <div class="chart-header">
+                <div class="chart-title">联系人性别分布</div>
+                <div class="chart-subtitle">类型构成比例</div>
+              </div>
+              <div class="chart-container-mock" style="align-items: center; gap: 24px;">
+                <!-- 高保真环形比例图 -->
+                <svg width="120" height="120" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="12" />
+                  <!-- 蓝色段 (男 60%) - 40 * 2 * PI = 251.2, 60% = 150.72 -->
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" stroke-width="12" 
+                          stroke-dasharray="150.7 251.2" stroke-dashoffset="0" transform="rotate(-90 50 50)" stroke-linecap="round" />
+                  <!-- 橙色段 (女 30%) - 30% = 75.36 -->
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12" 
+                          stroke-dasharray="75.3 251.2" stroke-dashoffset="-150.7" transform="rotate(-90 50 50)" stroke-linecap="round" />
+                  <!-- 紫色段 (未知 10%) - 10% = 25.12 -->
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" stroke-width="12" 
+                          stroke-dasharray="25.2 251.2" stroke-dashoffset="-226.0" transform="rotate(-90 50 50)" stroke-linecap="round" />
+                  <circle cx="50" cy="50" r="28" fill="#ffffff" />
+                  <text x="50" y="55" font-size="10" font-weight="700" fill="#1e293b" text-anchor="middle">总计128</text>
+                </svg>
+                
+                <!-- 图例说明 -->
+                <div style="display:flex; flex-direction:column; gap:8px; font-size:11px; color:#475569; font-weight:600;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background-color:#3b82f6;"></span>
+                    <span>男 (60% / 77人)</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background-color:#f59e0b;"></span>
+                    <span>女 (30% / 38人)</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="width:8px; height:8px; border-radius:50%; background-color:#8b5cf6;"></span>
+                    <span>未知 (10% / 13人)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+
+      <!-- ==================== VIEW 2: 联系人 (Table 转 Card List 适配) ==================== -->
+      <div class="app-view" id="view-contacts">
+        <header class="header-section">
+          <div class="header-left">
+            <div class="logo" style="font-size: 20px;">联系人中心</div>
+            <div class="greeting-row">
+              <span class="greeting-text">您共有 128 位人脉联系人</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="list-view-header">
+          <input type="text" placeholder="🔍 快速检索联系人姓名/标签...">
+          <button class="add-btn" onclick="alert('添加联系人')">添加</button>
+        </div>
+
+        <div class="card-list-flow">
+          <div class="flow-card-item" onclick="alert('查看张伟')">
+            <div class="flow-card-left">
+              <img class="flow-card-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=120" alt="张伟">
+              <div class="flow-card-info">
+                <span class="flow-card-name">张伟</span>
+                <span class="flow-card-meta">Acme CEO | 138-0000-1111</span>
+              </div>
+            </div>
+            <div class="flow-card-right">
+              <span class="tag-badge core" style="margin: 0;">核心客户</span>
+            </div>
+          </div>
+
+          <div class="flow-card-item" onclick="alert('查看李娜')">
+            <div class="flow-card-left">
+              <img class="flow-card-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120" alt="李娜">
+              <div class="flow-card-info">
+                <span class="flow-card-name">李娜</span>
+                <span class="flow-card-meta">星云科技 合伙人 | 139-1111-2222</span>
+              </div>
+            </div>
+            <div class="flow-card-right">
+              <span class="tag-badge partner" style="margin: 0;">合作伙伴</span>
+            </div>
+          </div>
+
+          <div class="flow-card-item" onclick="alert('查看王磊')">
+            <div class="flow-card-left">
+              <img class="flow-card-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=120" alt="王磊">
+              <div class="flow-card-info">
+                <span class="flow-card-name">王磊</span>
+                <span class="flow-card-meta">极客资本 投资人 | 136-2222-3333</span>
+              </div>
+            </div>
+            <div class="flow-card-right">
+              <span class="tag-badge investor" style="margin: 0;">投资人</span>
+            </div>
+          </div>
+
+          <div class="flow-card-item" onclick="alert('查看陈敏')">
+            <div class="flow-card-left">
+              <img class="flow-card-avatar" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=120" alt="陈敏">
+              <div class="flow-card-info">
+                <span class="flow-card-name">陈敏</span>
+                <span class="flow-card-meta">Marketing 负责人 | 135-3333-4444</span>
+              </div>
+            </div>
+            <div class="flow-card-right">
+              <span class="tag-badge important" style="margin: 0;">重要客户</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ==================== VIEW 3: 事项列表 (Table 转 Card List 适配) ==================== -->
+      <div class="app-view" id="view-todos">
+        <header class="header-section">
+          <div class="header-left">
+            <div class="logo" style="font-size: 20px;">日程事项</div>
+            <div class="greeting-row">
+              <span class="greeting-text">今天共 5 项事项待办，2 项逾期</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="list-view-header">
+          <input type="text" placeholder="🔍 检索待办内容、标签或联系人...">
+        </div>
+
+        <div class="task-list">
+          <div class="task-item" id="todo-p-1">
+            <div class="custom-checkbox" onclick="toggleTask('todo-p-1')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="task-main">
+              <div class="task-text">与张伟沟通 Q2 合作方案细节</div>
+              <div class="task-meta-row">
+                <img class="ref-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=60" alt="张伟">
+                <span class="ref-name">关联人：张伟 (Acme)</span>
+              </div>
+            </div>
+            <div class="task-right">
+              <span class="task-time" style="color:var(--danger-color)">今日 10:00</span>
+              <span class="badge-pill priority-high">高优先级</span>
+            </div>
+          </div>
+
+          <div class="task-item" id="todo-p-2">
+            <div class="custom-checkbox" onclick="toggleTask('todo-p-2')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="task-main">
+              <div class="task-text">跟进星云科技合同签署进度</div>
+              <div class="task-meta-row">
+                <img class="ref-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=60" alt="李娜">
+                <span class="ref-name">关联人：李娜 (星云)</span>
+              </div>
+            </div>
+            <div class="task-right">
+              <span class="task-time">今日 11:30</span>
+              <span class="badge-pill priority-mid">中优先级</span>
+            </div>
+          </div>
+
+          <div class="task-item" id="todo-p-3">
+            <div class="custom-checkbox" onclick="toggleTask('todo-p-3')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="task-main">
+              <div class="task-text">准备极客资本投资人沟通材料</div>
+              <div class="task-meta-row">
+                <img class="ref-avatar" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=60" alt="王磊">
+                <span class="ref-name">关联人：王磊 (极客)</span>
+              </div>
+            </div>
+            <div class="task-right">
+              <span class="task-time">今日 14:00</span>
+              <span class="badge-pill priority-high">高优先级</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ==================== VIEW 4: 智能助手 (全屏聊天自适应页面) ==================== -->
+      <div class="app-view" id="view-agent" style="padding: 0; background-color: #f1f5f9;">
+        <div class="agent-view-container">
+          <div class="agent-header">
+            <div class="agent-title-row">
+              <span style="font-size:18px;">✨</span>
+              <span class="agent-title">Contact Agent 智能助手</span>
+            </div>
+            <button class="clear-chat" onclick="clearMessages()">清空</button>
+          </div>
+          
+          <div class="agent-messages" id="agentViewMessages">
+            <div class="agent-msg-bubble assistant">
+              下午好，Ethan！我是您的 Contact Agent。在移动端上，我已经适配为了全屏对话模式。
+              <br><br>
+              您可以像发微信一样问我：
+              <br>• <i>“今天张伟的日程”</i>
+              <br>• <i>“给李娜建一个明天下午签合同的待办”</i>
+            </div>
+          </div>
+          
+          <div class="agent-input-panel">
+            <input type="text" id="agentViewInput" placeholder="向智能助手发送自然语言指令..." onkeydown="handleAgentInputKey(event)">
+            <button class="send-btn" onclick="sendAgentMessage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 底部固定导航栏 TabBar -->
+      <div class="tabbar">
+        <button class="tab-item active" id="tab-workspace" onclick="switchView('view-workspace', 0)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>工作台</span>
+        </button>
+        <button class="tab-item" id="tab-contacts" onclick="switchView('view-contacts', 1)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>联系人</span>
+        </button>
+        <button class="tab-item" id="tab-todos" onclick="switchView('view-todos', 2)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>事项</span>
+        </button>
+        <button class="tab-item" id="tab-agent" onclick="switchView('view-agent', 3)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+          <span>智能助手</span>
+        </button>
+      </div>
+
+      <!-- 虚拟的底部手势指示条 -->
+      <div class="home-indicator"></div>
+
+    </div>
+  </div>
+
+  <script>
+    // Tab 视图切换
+    function switchView(viewId, tabIndex) {
+      // 1. 隐藏所有 View 容器
+      document.querySelectorAll('.app-view').forEach(view => {
+        view.classList.remove('active');
+      });
+      // 2. 激活指定的 View
+      const activeView = document.getElementById(viewId);
+      if (activeView) {
+        activeView.classList.add('active');
+      }
+
+      // 3. 更新 TabBar 按钮状态
+      document.querySelectorAll('.tab-item').forEach((tab, index) => {
+        if (index === tabIndex) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      
+      // 4. 重置滚动位置
+      if (activeView) {
+        activeView.scrollTop = 0;
+      }
+      
+      // 自动聚焦聊天框
+      if (viewId === 'view-agent') {
+        setTimeout(() => {
+          document.getElementById('agentViewInput').focus();
+        }, 150);
+      }
+    }
+
+    // 事项打勾完成交互
+    function toggleTask(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.toggle('completed');
+      }
+    }
+
+    // 智能助手页面消息发送逻辑
+    function sendAgentMessage() {
+      const input = document.getElementById('agentViewInput');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      appendAgentMessage(text, 'user');
+      input.value = '';
+      
+      setTimeout(() => {
+        let reply = "收到您的请求。在与真实的后端 LLM 会话联动时，我会自动提取语句中的时间并结合您的联系人数据进行智能判定。";
+        const cleanText = text.toLowerCase();
+        
+        if (cleanText.includes('张伟')) {
+          reply = "🔍 **自动查询成功**：张伟今天有一项任务：『与张伟沟通 Q2 合作方案细节』，安排在上午 **10:00** 进行。";
+        } else if (cleanText.includes('李娜') && (cleanText.includes('建') || cleanText.includes('日程') || cleanText.includes('待办'))) {
+          reply = "✍️ **解析并生成确认卡片**：\n发现创建待办意图。已为您匹配人脉『李娜』，解析时间为『明天下午』。请在下方选择操作：\n\n• [确认创建]\n• [取消]";
+        } else if (cleanText.includes('李娜')) {
+          reply = "🔍 **查找到联系人**：李娜 (星云科技 合伙人)，电话为 139-1111-2222，今日暂无待办。";
+        }
+        
+        appendAgentMessage(reply, 'assistant');
+      }, 700);
+    }
+
+    function handleAgentInputKey(e) {
+      if (e.key === 'Enter') {
+        sendAgentMessage();
+      }
+    }
+
+    function appendAgentMessage(text, sender) {
+      const container = document.getElementById('agentViewMessages');
+      const bubble = document.createElement('div');
+      bubble.className = 'agent-msg-bubble ' + sender;
+      // 换行支持与粗体替换
+      bubble.innerHTML = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearMessages() {
+      const container = document.getElementById('agentViewMessages');
+      container.innerHTML = `
+        <div class="agent-msg-bubble assistant">
+          对话已清空。您可以随时向我提问。
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

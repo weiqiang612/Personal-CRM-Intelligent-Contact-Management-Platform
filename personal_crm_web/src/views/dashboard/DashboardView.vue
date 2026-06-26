@@ -3,7 +3,7 @@
     <!-- 四个摘要卡 -->
     <section class="stats-grid">
       <!-- 联系人总数 -->
-      <div class="card stat-card">
+      <div class="card stat-card stat-primary">
         <div class="stat-icon primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         </div>
@@ -18,7 +18,7 @@
       </div>
 
       <!-- 今日事项 -->
-      <div class="card stat-card">
+      <div class="card stat-card stat-success">
         <div class="stat-icon success">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:22px;height:22px;"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4m-7 8 2 2 4-4"/></svg>
         </div>
@@ -33,7 +33,7 @@
       </div>
 
       <!-- 逾期事项 -->
-      <div class="card stat-card">
+      <div class="card stat-card stat-danger">
         <div class="stat-icon danger">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </div>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- 待完成 -->
-      <div class="card stat-card">
+      <div class="card stat-card stat-warning">
         <div class="stat-icon warning">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </div>
@@ -213,7 +213,14 @@
     </section>
 
     <!-- 悬浮 Contact Agent 按钮 -->
-    <button class="floating-agent-btn" :class="{ hidden: isDrawerOpen }" @click="toggleAgentDrawer" title="智能助手">
+    <button
+      class="floating-agent-btn"
+      :class="{ hidden: isDrawerOpen }"
+      @click="toggleAgentDrawer"
+      @mousedown="handleDragStart"
+      @touchstart="handleDragStart"
+      title="智能助手"
+    >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:22px;height:22px;"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>
     </button>
 
@@ -404,6 +411,14 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 智能助手悬浮窗拖拽相关逻辑
+let isDragging = false
+let dragMoved = false
+let startX = 0
+let startY = 0
+let initialLeft = 0
+let initialTop = 0
 
 
 // 1. 数据定义与初始化
@@ -916,7 +931,78 @@ const startResize = (event: MouseEvent) => {
   window.addEventListener('mouseup', handleMouseUp)
 }
 
+// 智能助手悬浮窗拖动开始
+function handleDragStart(e: MouseEvent | TouchEvent) {
+  // 只有鼠标左键按下或触摸时才触发
+  if ('button' in e && e.button !== 0) return
+
+  const btn = e.currentTarget as HTMLElement
+  dragMoved = false
+  isDragging = true
+
+  const clientX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
+  const clientY = 'touches' in e ? (e.touches[0]?.clientY ?? 0) : e.clientY
+
+  startX = clientX
+  startY = clientY
+
+  const rect = btn.getBoundingClientRect()
+  initialLeft = rect.left
+  initialTop = rect.top
+
+  btn.style.transition = 'none'
+  btn.style.right = 'auto'
+  btn.style.bottom = 'auto'
+  btn.style.left = `${initialLeft}px`
+  btn.style.top = `${initialTop}px`
+
+  const onDragMove = (moveEvent: MouseEvent | TouchEvent) => {
+    if (!isDragging) return
+    const currentX = 'touches' in moveEvent ? (moveEvent.touches[0]?.clientX ?? 0) : moveEvent.clientX
+    const currentY = 'touches' in moveEvent ? (moveEvent.touches[0]?.clientY ?? 0) : moveEvent.clientY
+
+    const deltaX = currentX - startX
+    const deltaY = currentY - startY
+
+    if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+      dragMoved = true
+    }
+
+    let newLeft = initialLeft + deltaX
+    let newTop = initialTop + deltaY
+
+    const maxLeft = window.innerWidth - rect.width
+    const maxTop = window.innerHeight - rect.height
+
+    if (newLeft < 0) newLeft = 0
+    if (newLeft > maxLeft) newLeft = maxLeft
+    if (newTop < 0) newTop = 0
+    if (newTop > maxTop) newTop = maxTop
+
+    btn.style.left = `${newLeft}px`
+    btn.style.top = `${newTop}px`
+  }
+
+  const onDragEnd = () => {
+    isDragging = false
+    btn.style.transition = 'opacity 0.3s, transform 0.3s'
+    window.removeEventListener('mousemove', onDragMove)
+    window.removeEventListener('touchmove', onDragMove)
+    window.removeEventListener('mouseup', onDragEnd)
+    window.removeEventListener('touchend', onDragEnd)
+  }
+
+  window.addEventListener('mousemove', onDragMove, { passive: false })
+  window.addEventListener('touchmove', onDragMove, { passive: false })
+  window.addEventListener('mouseup', onDragEnd)
+  window.addEventListener('touchend', onDragEnd)
+}
+
 function toggleAgentDrawer() {
+  if (dragMoved) {
+    dragMoved = false
+    return
+  }
   isDrawerOpen.value = !isDrawerOpen.value
   setTimeout(() => {
     handleResize()
@@ -2379,5 +2465,268 @@ onBeforeUnmount(() => {
   width: 12px;
   height: 12px;
   color: #3b82f6;
+}
+
+/* ===== 移动端响应式覆盖样式 ===== */
+@media (max-width: 768px) {
+  .contacts-panel,
+  .todos-panel {
+    min-width: 0 !important;
+    min-height: auto !important;
+  }
+
+  .panel-card {
+    min-height: auto !important;
+  }
+  
+  .dashboard-container {
+    padding: 12px !important;
+    overflow-x: hidden;
+    gap: 16px !important;
+  }
+  
+  /* 4个摘要卡：在小屏下以 4 列平铺展示，字号微调 */
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+  
+  .stat-card {
+    padding: 12px 4px !important;
+    border-radius: 14px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-height: 85px !important;
+  }
+  
+  .stat-icon {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 12px !important;
+    margin-bottom: 0px !important;
+  }
+  
+  .stat-icon :deep(svg),
+  .stat-icon svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  .stat-info {
+    text-align: center !important;
+    align-items: center !important;
+  }
+  
+  .stat-label {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+    white-space: nowrap;
+    font-weight: 500 !important;
+    color: #64748b !important;
+  }
+  
+  .stat-value {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+  }
+
+  /* 彩色数字样式 */
+  .stat-primary .stat-value {
+    color: var(--color-primary) !important;
+  }
+  .stat-success .stat-value {
+    color: var(--color-success) !important;
+  }
+  .stat-danger .stat-value {
+    color: #ef4444 !important;
+  }
+  .stat-warning .stat-value {
+    color: #8b5cf6 !important;
+  }
+  
+  .stat-change {
+    display: none !important; /* 小小卡片装不下较昨日字样，隐藏 */
+  }
+
+  /* 智能助手按钮移动端初始位置避开底栏 */
+  .floating-agent-btn {
+    bottom: 80px !important;
+    right: 16px !important;
+  }
+  
+  /* 中部大栏目在小屏下改为纵向流式堆叠 */
+  .dashboard-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  /* 重要联系人横栏滑动适配 */
+  .carousel-container {
+    overflow: visible !important;
+  }
+  
+  .carousel-track {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    width: 100% !important;
+    gap: 10px !important;
+    padding-bottom: 8px !important;
+    transform: none !important; /* 禁用轮播图的JS定位动画，交由原生手势滚动 */
+  }
+  
+  /* 隐藏轮播指示点和控制按钮 */
+  .carousel-indicators,
+  .carousel-btn {
+    display: none !important;
+  }
+  
+  .carousel-page {
+    display: flex !important;
+    flex-shrink: 0 !important;
+    width: auto !important;
+    gap: 10px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: static !important;
+    transform: none !important;
+  }
+  
+  .contact-card {
+    flex: 0 0 106px !important;
+    scroll-snap-align: start !important;
+    border-radius: 16px !important;
+    padding: 12px 6px !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin: 0 !important;
+  }
+  
+  .card-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .card-name {
+    font-size: 12px !important;
+  }
+  
+  .card-company {
+    font-size: 9px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .contact-card .badge {
+    font-size: 8px !important;
+    padding: 1px 6px !important;
+    margin-bottom: 6px !important;
+  }
+  
+  .contact-action-btn {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  
+  .contact-action-btn svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+  
+  /* 待办事项美化微调 */
+  .todos-panel {
+    padding: 16px 12px !important;
+  }
+  
+  .todo-item {
+    padding: 12px 8px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+  }
+  
+  .todo-item .task-text {
+    font-size: 13px !important;
+  }
+  
+  .todo-item .ref-name {
+    font-size: 10px !important;
+  }
+  
+  .todo-item .task-time {
+    font-size: 10px !important;
+  }
+  
+  /* 图表区域适配：由并排改为纵向堆叠，等比压缩高度 */
+  .charts-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .chart-card {
+    padding: 16px 12px !important;
+    border-radius: 16px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  #genderChart,
+  #trendChart {
+    height: 180px !important; /* 图表高度压缩至 180px */
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Agent 抽屉移动端 BottomSheet 改造 */
+  .agent-drawer {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    height: 80vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border-color) !important;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.12) !important;
+    transform: translateY(100%) !important; /* 初始在底部不可见 */
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    z-index: 1000 !important;
+  }
+
+  .agent-drawer.open {
+    transform: translateY(0) !important; /* 打开时滑上 */
+  }
+
+  .agent-drawer-resizer {
+    display: none !important; /* 小屏下禁用并隐藏拉伸条 */
+  }
+
+  .chat-header {
+    position: relative !important;
+    padding-top: 22px !important; /* 留出顶部手势条空间 */
+    background: var(--bg-card) !important;
+  }
+
+  /* 移动端专属拖拽手势指示条 */
+  .chat-header::before {
+    content: "" !important;
+    position: absolute !important;
+    top: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 38px !important;
+    height: 5px !important;
+    background-color: #cbd5e1 !important;
+    border-radius: 3px !important;
+  }
+
+  .chat-input-area {
+    padding-bottom: env(safe-area-inset-bottom, 16px) !important;
+  }
 }
 </style>

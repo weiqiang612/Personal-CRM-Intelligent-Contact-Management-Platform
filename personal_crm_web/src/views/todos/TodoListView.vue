@@ -204,6 +204,73 @@
           </tbody>
         </table>
 
+        <!-- 移动端自适应卡片列表 -->
+        <div class="mobile-todo-list" v-if="filteredTodos.length > 0">
+          <div
+            v-for="row in filteredTodos"
+            :key="row.matterId"
+            class="mobile-todo-card"
+            :style="{ opacity: row.status !== 0 ? 0.75 : 1 }"
+          >
+            <div class="card-left-check">
+              <input
+                type="checkbox"
+                :checked="row.status === 2"
+                :disabled="row.status !== 0"
+                class="todo-card-checkbox"
+                @change="triggerCompleteViaCheckbox(row)"
+              >
+            </div>
+            
+            <div class="card-todo-details">
+              <div class="todo-title-row">
+                <strong v-if="row.status === 0" class="todo-title">{{ row.content }}</strong>
+                <span v-else style="text-decoration: line-through; color: var(--text-muted);" class="todo-title">{{ row.content }}</span>
+                <span :class="['badge', getPriorityClass(row.priority)]" style="margin-left: 6px; font-size: 10px; padding: 2px 6px;">
+                  {{ formatPriority(row.priority) }}
+                </span>
+              </div>
+              
+              <div class="todo-meta-row">
+                <router-link :to="`/contacts/${row.contactId}`" class="avatar-group" style="display:inline-flex; align-items:center;">
+                  <span class="avatar-round-text" style="width:18px;height:18px;line-height:18px;font-size:10px;background-color:var(--color-primary-light);color:var(--color-primary);border-radius:50%;text-align:center;display:inline-block;margin-right:4px;font-weight:600;">
+                    {{ (row.contactName || '联').substring(0, 1) }}
+                  </span>
+                  <span style="font-size:11px;color:var(--text-main);">{{ row.contactName || '未关联' }}</span>
+                </router-link>
+                <span class="todo-time-badge">
+                  ⏱️ {{ formatTime(row.todoTime) }}
+                </span>
+                <span v-if="isOverdue(row)" class="badge badge-todo-overdue" style="font-size: 10px; padding: 2px 6px;">已逾期</span>
+              </div>
+            </div>
+            
+            <div class="card-todo-actions">
+              <el-popconfirm
+                title="确认要将该事项标记为完成吗？"
+                confirm-button-text="确认"
+                cancel-button-text="取消"
+                @confirm="handleComplete(row.matterId)"
+              >
+                <template #reference>
+                  <button class="btn btn-primary btn-xs" :disabled="row.status !== 0">完成</button>
+                </template>
+              </el-popconfirm>
+
+              <el-popconfirm
+                title="确认要取消该事项吗？"
+                confirm-button-text="确认"
+                cancel-button-text="取消"
+                @confirm="handleCancel(row.matterId)"
+              >
+                <template #reference>
+                  <button class="btn btn-secondary btn-xs" :disabled="row.status !== 0">取消</button>
+                </template>
+              </el-popconfirm>
+            </div>
+          </div>
+        </div>
+
         <!-- 空数据状态 -->
         <div class="empty-state-container" v-else-if="!loading">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="empty-icon">
@@ -837,5 +904,174 @@ watch(
 
 .filter-bar {
   margin-bottom: 20px;
+}
+
+/* ===== 移动端响应式覆盖 ===== */
+.mobile-todo-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 隐藏原生的 PC Table */
+  .custom-table {
+    display: none !important;
+  }
+  
+  .table-container {
+    padding: 0 !important;
+  }
+  
+  /* 开启移动端卡片列表流 */
+  .mobile-todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .mobile-todo-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: 10px 0 !important;
+  }
+  
+  .card-left-check {
+    flex-shrink: 0;
+    margin-right: 8px !important;
+    display: flex;
+    align-items: center;
+    margin-top: 2px !important;
+  }
+  
+  .todo-card-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  
+  .card-todo-details {
+    flex: 1;
+    min-width: 0;
+    margin-right: 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .todo-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  .todo-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    word-break: break-all;
+  }
+  
+  .todo-meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .todo-time-badge {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .card-todo-actions {
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin-top: 6px !important;
+    padding-top: 10px !important;
+    border-top: 1px dashed rgba(226, 232, 240, 0.8) !important;
+    flex-shrink: 0;
+    display: flex;
+  }
+  
+  /* 紧凑型按钮 */
+  .btn-xs {
+    padding: 4px 10px !important;
+    font-size: 10px !important;
+    min-height: 24px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    text-align: center;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px !important;
+  }
+  
+  .filter-left {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  
+  .filter-left .search-box {
+    grid-column: span 2 !important;
+    width: 100% !important;
+  }
+  
+  .filter-left .select-control {
+    width: 100% !important;
+    margin-right: 0 !important;
+  }
+  
+  .filter-left .btn-icon {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  .filter-right {
+    width: 100%;
+  }
+  
+  .filter-right .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* tab-bar 移动端优化 */
+  .todo-tabs-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    padding: 8px 4px !important;
+    gap: 8px !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .todo-tabs-bar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .todo-tab {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+  }
 }
 </style>

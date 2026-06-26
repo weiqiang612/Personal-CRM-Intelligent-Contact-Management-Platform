@@ -56,8 +56,9 @@
     <main class="main-content main-wrapper">
       <!-- 顶栏 -->
       <header class="topbar">
-        <div class="topbar-left">
-          <div class="page-title-group">
+        <!-- PC端顶栏包裹层 -->
+        <div class="pc-topbar-wrapper">
+          <div class="topbar-left">
             <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack" :aria-label="backLabel">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
             </a>
@@ -104,8 +105,8 @@
                 </div>
               </el-popover>
             </h1>
+            <p class="page-subtitle">{{ pageSubtitle }}</p>
           </div>
-          <p class="page-subtitle">{{ pageSubtitle }}</p>
         </div>
 
         <div v-if="!showBackButton && route.path !== '/settings'" class="topbar-right">
@@ -254,6 +255,74 @@
           </div>
           </template>
         </div>
+
+        <!-- 移动端自适应顶栏包裹层 -->
+        <div class="mobile-topbar-wrapper">
+          <div class="mobile-topbar-left">
+            <div class="mobile-brand-title">Personal CRM</div>
+            <div class="mobile-greeting-row" v-if="route.path === '/dashboard'">
+              <span class="mobile-weather-icon" style="display: inline-block;">☀️</span>
+              <span class="mobile-greeting-text">{{ greeting }}，{{ user?.username ? (user.username.charAt(0).toUpperCase() + user.username.slice(1)) : 'Ethan' }}</span>
+            </div>
+            <div class="mobile-page-title" v-else>
+              {{ pageTitle }}
+            </div>
+          </div>
+          <div class="mobile-topbar-right">
+            <!-- 移动端通知提醒铃铛 -->
+            <div class="mobile-notification-wrap">
+              <button class="mobile-bell-btn" type="button" @click.stop="toggleNotifications" aria-label="通知中心">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mobile-bell-icon"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                <span v-if="unreadCount > 0" class="mobile-bell-badge">{{ unreadCount }}</span>
+              </button>
+              
+              <!-- 移动端遮罩层 -->
+              <div class="notification-backdrop" :class="{ show: showNotifications }" @click="showNotifications = false"></div>
+              
+              <!-- 消息通知下拉浮窗 / 移动端抽屉 -->
+              <div class="notification-dropdown" :class="{ show: showNotifications }">
+                <div class="notification-header">
+                  <span class="notification-header-title">通知提醒 ({{ unreadCount }})</span>
+                  <button v-if="unreadCount > 0" class="notification-clear-all" @click="markAllAsRead">全部已读</button>
+                </div>
+                
+                <div class="notification-list-wrapper">
+                  <div v-if="unreadNotifications.length === 0" class="notification-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <span>暂无新通知</span>
+                  </div>
+                  <div v-else class="notification-list">
+                    <div 
+                      v-for="item in unreadNotifications" 
+                      :key="item.id" 
+                      class="notification-item"
+                      :class="item.type"
+                      @click="handleNotificationClick(item)"
+                    >
+                      <div class="notification-item-icon">
+                        <span v-if="item.type === 'birthday'">🎂</span>
+                        <span v-else-if="item.type === 'overdue'">⚠️</span>
+                        <span v-else>📅</span>
+                      </div>
+                      <div class="notification-item-body">
+                        <div class="notification-item-title">{{ item.title }}</div>
+                        <div class="notification-item-content">{{ item.content }}</div>
+                        <div class="notification-item-time">{{ item.time }}</div>
+                      </div>
+                      <button class="notification-item-action" @click.stop="markAsRead(item.id)" title="标记已读">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="20 6 9 17 4 12"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 用户头像快捷跳转 -->
+            <router-link to="/settings" class="mobile-avatar-link">
+              <img class="mobile-user-avatar" :src="avatarSrc || defaultAvatar" alt="Avatar">
+            </router-link>
+          </div>
+        </div>
       </header>
 
       <!-- 核心页面视图 -->
@@ -265,6 +334,37 @@
         </router-view>
       </div>
     </main>
+
+    <!-- 移动端底栏导航 TabBar -->
+    <nav class="mobile-tabbar">
+      <router-link to="/dashboard" class="tab-item" :class="{ active: route.path === '/dashboard' }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>工作台</span>
+      </router-link>
+      <router-link to="/contacts" class="tab-item" :class="{ active: route.path.startsWith('/contacts') }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span>联系人</span>
+      </router-link>
+      <router-link to="/todos" class="tab-item" :class="{ active: route.path.startsWith('/todos') }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>事项</span>
+      </router-link>
+      <router-link to="/agent" class="tab-item" :class="{ active: route.path === '/agent' }">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+        <span>智能助手</span>
+      </router-link>
+    </nav>
+
+    <!-- 虚拟的底部手势指示条 -->
+    <div class="home-indicator"></div>
   </div>
 </template>
 
@@ -644,10 +744,22 @@ const getFormattedToday = () => {
   return `${year}年${month}月${day}日${weekday}`
 }
 
+// 动态时间打招呼
+const greeting = computed(() => {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 12) {
+    return '上午好'
+  } else if (hour >= 12 && hour < 18) {
+    return '下午好'
+  } else {
+    return '晚上好'
+  }
+})
+
 // 动态大标题
 const pageTitle = computed(() => {
   if (route.path === '/dashboard') {
-    return `下午好，${user.value?.username || 'Ethan'}`
+    return `${greeting.value}，${user.value?.username || 'Ethan'}`
   }
   const routeTitle = (route.meta.title as string) || '工作台'
   if (route.path === '/contacts') {
@@ -786,7 +898,7 @@ const handleDocumentClick = (e: MouseEvent) => {
   if (!target.closest('.user-dropdown')) {
     showDropdown.value = false
   }
-  if (!target.closest('.notification-container')) {
+  if (!target.closest('.notification-container') && !target.closest('.mobile-notification-wrap')) {
     showNotifications.value = false
   }
 }
@@ -1300,6 +1412,245 @@ watch(
   height: 12px !important;
   color: var(--text-light) !important;
   flex-shrink: 0;
+}
+
+/* ===== 移动端响应式覆盖与布局设计 ===== */
+.pc-topbar-wrapper {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-topbar-wrapper {
+  display: none;
+}
+
+.mobile-tabbar {
+  display: none;
+}
+
+.home-indicator {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* 隐藏 PC 侧边栏和顶栏包装层 */
+  .sidebar {
+    display: none !important;
+  }
+  
+  .pc-topbar-wrapper {
+    display: none !important;
+  }
+
+  .topbar {
+    padding: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    background: #ffffff !important;
+    border: none !important;
+  }
+  
+  .topbar-right {
+    display: none !important;
+  }
+  
+  /* 调整主工作区，去除侧边栏左外边距，充满屏幕 */
+  .main-content {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  /* 开启移动端专属头部 */
+  .mobile-topbar-wrapper {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    height: 56px;
+    padding: 0 16px;
+    background-color: #ffffff;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    flex-shrink: 0;
+  }
+  
+  .mobile-topbar-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-start;
+  }
+  
+  .mobile-brand-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+  }
+  
+  .mobile-greeting-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .mobile-weather-icon {
+    font-size: 13px;
+  }
+  
+  .mobile-greeting-text {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .mobile-page-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  
+  .mobile-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  /* 移动端顶栏通知铃铛 */
+  .mobile-notification-wrap {
+    position: relative;
+  }
+  
+  .mobile-bell-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  
+  .mobile-bell-btn:active {
+    background-color: #f1f5f9;
+  }
+  
+  .mobile-bell-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .mobile-bell-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background-color: #ef4444;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #ffffff;
+  }
+  
+  .mobile-avatar-link {
+    display: flex;
+    align-items: center;
+  }
+  
+  .mobile-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+  }
+  
+  /* 移动端内容区域高度与滚动修正，防止底栏遮挡内容 */
+  .content-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 !important;
+    margin-bottom: 60px; /* 留出底部 TabBar 的高度 */
+  }
+
+  /* 开启移动端底栏 TabBar 导航 */
+  .mobile-tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 990;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    text-decoration: none;
+    width: 25%;
+    height: 100%;
+    gap: 3px;
+    transition: color 0.2s ease;
+  }
+  
+  .tab-item.active {
+    color: #3b82f6;
+  }
+  
+  .tab-item svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2.2;
+    transition: transform 0.2s ease;
+  }
+  
+  .tab-item.active svg {
+    transform: translateY(-1px);
+  }
+  
+  .tab-item span {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  
+  /* 虚拟的 iOS 底部指示条 */
+  .home-indicator {
+    display: block;
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    background-color: #000000;
+    border-radius: 10px;
+    z-index: 995;
+    pointer-events: none;
+  }
 }
 </style>
 

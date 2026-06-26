@@ -1809,4 +1809,117 @@ const formatTime = (date: Date) => {
     margin-left: 0 !important;
   }
 }
+
+/* ===== 移动窄屏专属覆盖 (max-width: 768px) ===== */
+@media (max-width: 768px) {
+  .agent-container {
+    height: calc(100vh - 60px) !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  
+  .glow-bg {
+    display: none !important;
+  }
+  
+  .agent-workbench {
+    width: 100% !important;
+    height: 100% !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  
+  .agent-sidebar {
+    display: none !important; /* 彻底隐藏侧边栏能力和动作，仅展示右侧聊天 */
+  }
+  
+  .agent-chat-panel {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: auto !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+  
+  .chat-header {
+    padding: 12px 16px !important;
+    background: #ffffff !important;
+  }
+  
+  .chat-area {
+    padding: 10px 12px !important;
+    background: #f8fafc !important; /* 聊天背景带微灰，气泡显眼 */
+  }
+  
+  .welcome-section {
+    padding: 12px !important;
+    border-radius: 12px !important;
+    margin: 10px 0 !important;
+  }
+  
+  .welcome-title-group h2 {
+    font-size: 14px !important;
+  }
+  
+  .welcome-subtitle {
+    font-size: 11px !important;
+  }
+  
+  .capsules-wrapper {
+    gap: 6px !important;
+  }
+  
+  .prompt-capsule {
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    border-radius: 14px !important;
+  }
+  
+  .message-row {
+    max-width: 92% !important;
+  }
+  
+  .message-bubble {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    border-radius: 12px !important;
+  }
+  
+  .user-row .message-bubble {
+    border-bottom-right-radius: 2px !important;
+  }
+  
+  .agent-row .message-bubble {
+    border-bottom-left-radius: 2px !important;
+  }
+  
+  .input-panel {
+    padding: 8px 10px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #f1f5f9 !important;
+  }
+  
+  .input-panel-glass {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 20px !important;
+    padding: 4px 4px 4px 12px !important;
+    box-shadow: none !important;
+    background: #f8fafc !important;
+  }
+  
+  .query-input {
+    font-size: 13px !important;
+  }
+  
+  .send-btn {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    border-radius: 16px !important;
+    min-height: 28px !important;
+  }
+}
 </style>
