@@ -246,7 +246,7 @@
           :class="msg.sender"
         >
           <div class="bubble-content">
-            <div class="bubble-text" v-html="msg.content"></div>
+            <div class="bubble-text" style="white-space: pre-wrap;">{{ msg.content }}</div>
             
             <!-- AI 事项识别卡片 -->
             <div v-if="msg.structuredCard" class="structured-card">
@@ -275,7 +275,6 @@
               <!-- 卡片状态变更 -->
               <div v-if="!msg.structuredCard.status || msg.structuredCard.status === 'pending'" class="structured-card-actions">
                 <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
-                <button class="btn-modify" @click="modifyDrawerExecution(msg)">修改</button>
                 <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
               </div>
 
@@ -304,6 +303,43 @@
                 <div style="color: var(--text-muted); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--text-muted); width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                   操作已取消
+                </div>
+              </div>
+            </div>
+
+            <!-- 真实 API 写操作确认卡片 -->
+            <div v-if="msg.isConfirmCard" class="structured-card">
+              <div class="structured-card-title">待办事项预确认</div>
+              <div v-if="msg.parsedParams?.contactName" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span class="structured-label">联系人：</span>
+                <span class="structured-value">{{ msg.parsedParams.contactName }}</span>
+              </div>
+              <div v-if="msg.parsedParams?.todoTime" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                <span class="structured-label">时间：</span>
+                <span class="structured-value">{{ msg.parsedParams.todoTime }}</span>
+              </div>
+              <div v-if="msg.parsedParams?.content" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span class="structured-label">内容：</span>
+                <span class="structured-value">{{ msg.parsedParams.content }}</span>
+              </div>
+
+              <div v-if="msg.confirmState === 'pending'" class="structured-card-actions">
+                <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
+                <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
+              </div>
+              <div v-else-if="msg.confirmState === 'confirmed'" style="margin-top:12px;">
+                <div style="color:var(--color-success);font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                  已创建
+                </div>
+              </div>
+              <div v-else-if="msg.confirmState === 'cancelled'" style="margin-top:12px;">
+                <div style="color:var(--text-muted);font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  已取消
                 </div>
               </div>
             </div>
@@ -350,6 +386,7 @@ import type { ContactInfo } from '@/api/contact'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { executeAgent, confirmAgent } from '@/api/agent'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -799,6 +836,16 @@ interface ChatMessage {
   sender: 'user' | 'assistant'
   content: string
   time: string
+  // 写操作确认卡字段
+  isConfirmCard?: boolean
+  logId?: number
+  confirmState?: 'pending' | 'confirmed' | 'cancelled'
+  parsedParams?: {
+    contactName?: string
+    todoTime?: string
+    content?: string
+  }
+  // 兼容旧静态卡片（保留用于 template 渲染）
   structuredCard?: {
     contactName: string
     timeStr: string
@@ -813,12 +860,14 @@ const isResizing = ref<boolean>(false)
 const drawerWidth = ref<number>(360)
 const drawerInputText = ref<string>('')
 const chatContainerRef = ref<HTMLDivElement | null>(null)
+const drawerSessionId = ref<string | null>(null)
+const drawerIsLoading = ref<boolean>(false)
 
 const chatMessages = ref<ChatMessage[]>([
   {
     id: 'msg-init',
     sender: 'assistant',
-    content: '👋 你好，我是你的智能联系人助手。你可以告诉我你想创建的事项，我会帮你识别并创建。',
+    content: '👋 你好，我是你的智能联系人助手。\n我可以帮你查找联系人、查询或创建待办事项，用自然语言告诉我就好。',
     time: ''
   }
 ])
@@ -858,9 +907,9 @@ function toggleAgentDrawer() {
   }, 300)
 }
 
-function sendDrawerUserMessage() {
+async function sendDrawerUserMessage() {
   const text = drawerInputText.value.trim()
-  if (!text) return
+  if (!text || drawerIsLoading.value) return
   drawerInputText.value = ''
 
   const now = new Date()
@@ -872,62 +921,115 @@ function sendDrawerUserMessage() {
     content: text,
     time: timeStr
   })
-
   scrollToBottom()
 
-  setTimeout(() => {
-    let replyContent = ''
-    let structuredCard = undefined
-
-    if (text.includes('张雨薇')) {
-      replyContent = '好的，已为您识别到以下信息：'
-      structuredCard = {
-        contactName: '张雨薇',
-        timeStr: '2026-06-17 09:00',
-        todoContent: '联系张雨薇确认合作事宜',
-        status: 'pending' as const
-      }
-    } else {
-      replyContent = '收到！我是一个静态演示的 Contact Agent 抽屉助手，您可以发送包含“张雨薇”的内容来体验写操作确认卡片交互。'
-    }
-
+  // 有待确认卡片时阻止继续发送
+  const hasPending = chatMessages.value.some(m => m.isConfirmCard && m.confirmState === 'pending')
+  if (hasPending) {
     chatMessages.value.push({
       id: `msg-ai-${Date.now()}`,
       sender: 'assistant',
-      content: replyContent,
-      time: timeStr,
-      structuredCard
+      content: '请先处理上方待确认的操作卡片，再继续输入。',
+      time: timeStr
+    })
+    scrollToBottom()
+    return
+  }
+
+  drawerIsLoading.value = true
+  try {
+    const res = await executeAgent({
+      input: text,
+      sessionId: drawerSessionId.value || undefined
     })
 
+    if (res.sessionId) drawerSessionId.value = res.sessionId
+
+    if (res.isClarifying) {
+      chatMessages.value.push({
+        id: `msg-ai-${Date.now()}`,
+        sender: 'assistant',
+        content: res.summary || '请补充缺少的信息。',
+        time: timeStr
+      })
+    } else if (res.needConfirm === 1 && res.actionType === 'create_todo') {
+      chatMessages.value.push({
+        id: `msg-ai-${Date.now()}`,
+        sender: 'assistant',
+        content: res.summary || '已为您生成以下待办事项，请确认：',
+        time: timeStr,
+        isConfirmCard: true,
+        logId: res.logId,
+        parsedParams: res.parsedParams,
+        confirmState: 'pending'
+      })
+    } else {
+      chatMessages.value.push({
+        id: `msg-ai-${Date.now()}`,
+        sender: 'assistant',
+        content: res.summary || '好的，操作已处理。',
+        time: timeStr
+      })
+    }
+  } catch (e: unknown) {
+    chatMessages.value.push({
+      id: `msg-ai-err-${Date.now()}`,
+      sender: 'assistant',
+      content: e instanceof Error ? e.message : '请求失败，请检查网络或登录状态。',
+      time: timeStr
+    })
+  } finally {
+    drawerIsLoading.value = false
     scrollToBottom()
-  }, 1000)
-}
-
-function confirmDrawerExecution(msg: ChatMessage) {
-  if (msg.structuredCard) {
-    msg.structuredCard.status = 'confirmed'
-    msg.structuredCard.opCode = `OP-D-${Date.now().toString().slice(-6)}`
   }
 }
 
-function modifyDrawerExecution(msg: ChatMessage) {
-  if (msg.structuredCard) {
-    msg.structuredCard.status = 'modified'
+async function confirmDrawerExecution(msg: ChatMessage) {
+  if (!msg.logId || msg.confirmState !== 'pending') return
+  try {
+    await confirmAgent({ logId: msg.logId, action: 'confirm' })
+    msg.confirmState = 'confirmed'
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    chatMessages.value.push({
+      id: `msg-ai-ok-${Date.now()}`,
+      sender: 'assistant',
+      content: `✅ 已成功创建待办：${msg.parsedParams?.content || ''}${msg.parsedParams?.todoTime ? ' 时间：' + msg.parsedParams.todoTime : ''}`,
+      time: timeStr
+    })
+    ElMessage.success('待办事项已创建！')
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '确认失败')
   }
+  scrollToBottom()
 }
 
-function cancelDrawerExecution(msg: ChatMessage) {
-  if (msg.structuredCard) {
-    msg.structuredCard.status = 'cancelled'
+async function cancelDrawerExecution(msg: ChatMessage) {
+  if (!msg.logId || msg.confirmState !== 'pending') return
+  try {
+    await confirmAgent({ logId: msg.logId, action: 'cancel' })
+    msg.confirmState = 'cancelled'
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+    chatMessages.value.push({
+      id: `msg-ai-cancel-${Date.now()}`,
+      sender: 'assistant',
+      content: '已取消本次操作。',
+      time: timeStr
+    })
+  } catch (e: unknown) {
+    ElMessage.error(e instanceof Error ? e.message : '取消失败')
   }
+  scrollToBottom()
 }
 
 function resetDrawerChat() {
+  drawerSessionId.value = null
   chatMessages.value = [
     {
       id: `msg-init-reset-${Date.now()}`,
       sender: 'assistant',
-      content: '👋 对话已重置。你好，我是你的智能联系人助手。你可以告诉我你想创建的事项，我会帮你识别并创建。',
+      content: '👋 对话已重置。我可以帮你查找联系人、查询或创建待办事项，用自然语言告诉我就好。',
       time: ''
     }
   ]
