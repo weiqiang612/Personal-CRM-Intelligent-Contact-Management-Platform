@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
@@ -193,11 +193,50 @@ const showDropdown = ref<boolean>(false)
 
 // 天气逻辑
 const weatherData = ref<WeatherData | null>(null)
+const GEOLOCATION_TIMEOUT_MS = 2000
+
+const getBrowserCoordinates = (): Promise<{ latitude: number; longitude: number }> => {
+  if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+    return Promise.reject(new Error('Geolocation is not supported by this browser.'))
+  }
+
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        })
+      },
+      (error) => {
+        reject(error)
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: GEOLOCATION_TIMEOUT_MS,
+        maximumAge: 10 * 60 * 1000
+      }
+    )
+  })
+}
+
 const loadWeather = async () => {
+  if (route.path !== '/dashboard' || weatherData.value) {
+    return
+  }
+
+  try {
+    const coordinates = await getBrowserCoordinates()
+    weatherData.value = await getWeather(coordinates)
+    return
+  } catch (error) {
+    console.warn('Falling back to IP-based weather lookup:', error)
+  }
+
   try {
     weatherData.value = await getWeather()
-  } catch (e) {
-    console.error('Failed to load topbar weather:', e)
+  } catch (error) {
+    console.error('Failed to load topbar weather:', error)
   }
 }
 
@@ -393,9 +432,15 @@ const tipFeature = () => {
   ElMessage.info('通知中心属于 Phase 2 扩展范围，目前仅做占位展示')
 }
 
-onMounted(() => {
-  loadWeather()
-})
+watch(
+  () => route.path,
+  (path) => {
+    if (path === '/dashboard') {
+      void loadWeather()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -630,3 +675,4 @@ onMounted(() => {
   transform: translateY(8px);
 }
 </style>
+

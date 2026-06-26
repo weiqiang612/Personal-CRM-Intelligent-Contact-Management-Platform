@@ -26,24 +26,25 @@ public class WeatherController {
      * 获取天气信息
      *
      * @param address 模糊地址 (可选)
+     * @param latitude 浏览器 GEO 纬度 (可选)
+     * @param longitude 浏览器 GEO 经度 (可选)
      * @param request HTTP 请求
      * @return 统一响应封装体，含天气 VO 数据
      */
     @GetMapping
     public Result<WeatherVO> getWeather(
             @RequestParam(required = false) String address,
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude,
             HttpServletRequest request
     ) {
         String clientIp = getClientIp(request);
-        log.info("Weather controller query. address: {}, clientIp: {}", address, clientIp);
+        log.info("Weather controller query. address: {}, latitude: {}, longitude: {}, clientIp: {}", address, latitude, longitude, clientIp);
 
-        WeatherVO weatherVO = weatherService.getWeather(address, clientIp);
+        WeatherVO weatherVO = weatherService.getWeather(address, latitude, longitude, clientIp);
         return Result.success(weatherVO);
     }
 
-    /**
-     * 解析请求头获取客户端真实 IP 地址
-     */
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
@@ -55,7 +56,6 @@ public class WeatherController {
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
-        // 处理多级代理，以逗号分隔的第一个 IP 为真实客户端
         if (ip != null && ip.contains(",")) {
             ip = ip.split(",")[0].trim();
         }

@@ -3,9 +3,9 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`None`
-- spec.md → N/A
-- tasks.md → N/A
+`docs/4-tasks/features/TASK-011-agent-llm-session/`
+- spec.md ✅ Ready
+- tasks.md → Not started
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-010-agent-todo-confirmation/`
@@ -67,6 +67,9 @@
 ### TASK-010: Contact Agent Todo Write Confirmation
 - [x] Implementation (16 tasks)
 
+### TASK-011: Contact Agent OpenAI-Compatible LLM Sessions
+- [x] Implementation (13 tasks) Completed
+
 ## Backlog roadmap
 
 ### Phase 2: 核心业务完善
@@ -84,12 +87,11 @@
   - [x] 范围：创建事项预确认、确认执行、取消执行、操作记录完善
 
 ### Phase 4: 质量与交付
-- TASK-011: 测试与缺陷修复
-  - 范围：单元测试、接口测试、自测清单、联调缺陷修复、验收问题收敛
 - TASK-012: 交付收口
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-25: completed TASK-011 Contact Agent OpenAI-Compatible LLM Sessions (13 tasks, OpenAI-compatible model adapter + memory session state manager + multi-turn slot filling and database verification + Vue 3 chat flow E2E verification)
 - 2026-06-24: completed TASK-010 Contact Agent Todo Write Confirmation (16 tasks, rule-based NLP time/contact parsing + double-confirmation loop + Vue 3 layout & loading/disabled interaction E2E validation)
 - 2026-06-23: completed TASK-009 Weather Widget Integration (15 tasks, backend security proxy + GZIP decompression + memory cache + Vue 3 UI integration)
 - 2026-06-23: completed TASK-008 User Registration (13 tasks, frontend & backend integration and E2E verification)
@@ -107,5 +109,5 @@
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 已于 2026-06-24 完成 TASK-010 Contact Agent Todo Write Confirmation，后端测试、前端构建与桌面/移动端 UI 验收截图已归档。
-- 当前暂无活动任务；如继续推进，下一步应补 `TASK-011` 任务包并进入质量收口阶段。
+- 已于 2026-06-25 完成 TASK-011 Contact Agent OpenAI-Compatible LLM Sessions，后端全量 86 个测试通过，前端桌面与移动端多轮澄清及二次确认卡片流程自测无误。
+- 本期全部开发任务已圆满收口，下一步将进入 TASK-012 交付收口阶段。

@@ -97,6 +97,11 @@
 ```
 
 ## Notes
+
+### 2026-06-24 closeout check
+- 已重新执行 `mvn -f personal_crm_backend/pom.xml test`，73 个测试全部通过，其中包含 `WeatherServiceTest`。
+- 已重新执行 `npm --prefix personal_crm_web run build`，前端类型检查与生产构建通过。
+- 用户已在 2026-06-24 明确确认 UI 验收通过，本任务不再以天气截图归档作为关闭前置条件。
  
 ### Documentation impact
 - **Requirements**: true (更新 `docs/1-requirements/requirements_analysis.md` 说明天气组件的设计背景与使用场景)

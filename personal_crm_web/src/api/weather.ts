@@ -17,10 +17,23 @@ export interface WeatherData {
   dailyForecast: DailyForecast[]
 }
 
+export interface WeatherQueryParams {
+  address?: string
+  latitude?: number
+  longitude?: number
+}
+
+const resolveWeatherParams = (query?: string | WeatherQueryParams): WeatherQueryParams => {
+  if (typeof query === 'string') {
+    return { address: query }
+  }
+  return query ?? {}
+}
+
 /**
  * 获取天气信息
- * @param address 可选，联系人的模糊地址。如果不传，后端将根据请求的 IP 地址自动识别其常驻城市。
+ * @param query 可选。支持联系人模糊地址，或浏览器 GEO 提供的经纬度。
  */
-export function getWeather(address?: string): Promise<WeatherData> {
-  return request.get('/weather', { params: { address } })
+export function getWeather(query?: string | WeatherQueryParams): Promise<WeatherData> {
+  return request.get('/weather', { params: resolveWeatherParams(query) })
 }

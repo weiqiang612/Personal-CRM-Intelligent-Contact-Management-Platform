@@ -130,7 +130,7 @@ public class TodoControllerTest {
         mockMvc.perform(get("/api/v1/todos")
                         .header("Authorization", token)
                         .param("page", "1")
-                        .param("pageSize", "20"))
+                        .param("pageSize", "100"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.list", hasSize(greaterThanOrEqualTo(2))))

@@ -545,7 +545,8 @@
 
 ```json
 {
-  "input": "帮我查张三的联系方式"
+  "input": "帮我查张三的联系方式",
+  "sessionId": "会话 ID（可选，用于继续多轮会话）"
 }
 ```
 
@@ -556,6 +557,10 @@
   * `queryType`: 标识命中数据类别，取值 `"contact"` (联系人), `"todo"` (待办/事项), `"unsupported"` (不支持/超出本期范围)
   * `intent`: 识别出的意图编码，如 `"query_contact"`, `"query_todo"`, `"unsupported"`
   * `summary`: 统一的摘要文本描述
+  * `sessionId`: 会话 ID，用于续传多轮会话上下文
+  * `isClarifying`: 是否正处于多轮澄清状态 (true/false)
+  * `missingFields`: 缺失的字段列表 (如 `["contactName", "todoTime", "content"]`)
+  * `parsedParams`: 当前已解析出的属性参数映射
   * `results`: 列表，泛型承载实体对象。若是联系人，则返回包含标签和头像相对路径的联系人信息；若是事项，则包含关联联系人姓名及逾期标志。
 
 #### 9.1.1 联系人查询成功响应示例（以姓名“张三”为例）：
@@ -568,6 +573,12 @@
     "queryType": "contact",
     "intent": "query_contact",
     "summary": "已查找到包含关键字 '张三' 的联系人信息",
+    "sessionId": "s_8df26b1c-c9c4-4b53-bd32-cc5432ff11a8",
+    "isClarifying": false,
+    "missingFields": [],
+    "parsedParams": {
+      "keyword": "张三"
+    },
     "results": [
       {
         "ctId": "C000000001",
@@ -597,6 +608,13 @@
     "queryType": "todo",
     "intent": "query_todo",
     "summary": "已查找到联系人 '张三' 关联的 1 条待办事项",
+    "sessionId": "s_8df26b1c-c9c4-4b53-bd32-cc5432ff11a8",
+    "isClarifying": false,
+    "missingFields": [],
+    "parsedParams": {
+      "contactName": "张三",
+      "status": 0
+    },
     "results": [
       {
         "matterId": "T000000001",
@@ -626,6 +644,12 @@
     "queryType": "contact",
     "intent": "query_contact",
     "summary": "未查找到匹配的联系人信息",
+    "sessionId": "s_8df26b1c-c9c4-4b53-bd32-cc5432ff11a8",
+    "isClarifying": false,
+    "missingFields": [],
+    "parsedParams": {
+      "keyword": "张三"
+    },
     "results": []
   }
 }
@@ -641,6 +665,10 @@
     "queryType": "unsupported",
     "intent": "unsupported",
     "summary": "抱歉，本期智能助手仅支持查询联系人和事项，暂不支持创建、修改等写操作。",
+    "sessionId": "s_8df26b1c-c9c4-4b53-bd32-cc5432ff11a8",
+    "isClarifying": false,
+    "missingFields": [],
+    "parsedParams": {},
     "results": []
   }
 }
@@ -665,7 +693,8 @@
 
 ```json
 {
-  "input": "明天下午三点提醒我联系张三确认合同"
+  "input": "明天下午三点提醒我联系张三确认合同",
+  "sessionId": "会话 ID（可选，用于多轮继续对话和澄清）"
 }
 ```
 
@@ -680,6 +709,9 @@
     "needConfirm": 1,
     "actionType": "create_todo",
     "summary": "已为您生成待办事项预确认卡片，请核对：在 2026-06-25 15:00:00 提醒联系 张三 确认合同。",
+    "sessionId": "s_9ae1234c-a111-4c6e-8fa8-bb33aaff8920",
+    "isClarifying": false,
+    "missingFields": [],
     "parsedParams": {
       "contactId": "C000000001",
       "contactName": "张三",
@@ -702,6 +734,9 @@
     "needConfirm": 0,
     "actionType": "create_todo",
     "summary": "抱歉，无法识别您想为哪位联系人创建事项，请输入包含联系人姓名的指令，例如：“明天下午三点提醒我联系张三确认合同”",
+    "sessionId": "s_9ae1234c-a111-4c6e-8fa8-bb33aaff8920",
+    "isClarifying": true,
+    "missingFields": ["contactName"],
     "parsedParams": {
       "todoTime": "2026-06-25 15:00:00",
       "content": "确认合同",
@@ -722,6 +757,9 @@
     "needConfirm": 0,
     "actionType": "unsupported",
     "summary": "抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。",
+    "sessionId": "s_9ae1234c-a111-4c6e-8fa8-bb33aaff8920",
+    "isClarifying": false,
+    "missingFields": [],
     "parsedParams": {}
   }
 }
@@ -801,7 +839,9 @@
 
 | 参数 | 类型 | 必填 | 说明 |
 |---|---|---|---|
-| address | string | 否 | 联系人的模糊地址。如果不传，后端将根据用户请求的 IP 地址自动识别其常驻城市。 |
+| address | string | 否 | 联系人的模糊地址。传入后优先按地址解析城市。 |
+| latitude | number | 否 | 浏览器 GEO 纬度。需与 `longitude` 成对传入。 |
+| longitude | number | 否 | 浏览器 GEO 经度。需与 `latitude` 成对传入。 |
 
 #### 响应体：
 
@@ -849,3 +889,4 @@
 - 后端 Controller 仍未开始实现。
 - 当前文档已经固定了开发第一阶段所需的最小接口集合。
 - 后续若新增管理员、批量导入或标签管理页面，需要在本文件继续追加契约，而不是绕过文档直接写接口。
+

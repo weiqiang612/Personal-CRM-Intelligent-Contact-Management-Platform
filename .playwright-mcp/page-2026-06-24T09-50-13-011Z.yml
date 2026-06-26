@@ -1,0 +1,106 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e15]:
+    - complementary [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - img [ref=e20]
+          - generic [ref=e24]:
+            - generic [ref=e25]: Personal CRM
+            - generic [ref=e26]: 智能联系人管理系统
+        - list [ref=e27]:
+          - listitem [ref=e28]:
+            - link "工作台" [ref=e29] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e30]
+              - generic [ref=e35]: 工作台
+          - listitem [ref=e36]:
+            - link "联系人" [ref=e37] [cursor=pointer]:
+              - /url: /contacts
+              - img [ref=e38]
+              - generic [ref=e43]: 联系人
+          - listitem [ref=e44]:
+            - link "事项提醒" [ref=e45] [cursor=pointer]:
+              - /url: /todos
+              - img [ref=e46]
+              - generic [ref=e49]: 事项提醒
+          - listitem [ref=e50]:
+            - link "黑名单" [ref=e51] [cursor=pointer]:
+              - /url: /blacklist
+              - img [ref=e52]
+              - generic [ref=e54]: 黑名单
+          - listitem [ref=e55]:
+            - link "智能助手" [ref=e56] [cursor=pointer]:
+              - /url: /agent
+              - img [ref=e57]
+              - generic [ref=e60]: 智能助手
+          - listitem [ref=e61]:
+            - link "设置" [ref=e62] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e63]
+              - generic [ref=e66]: 设置
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - heading "升级到 Pro 专业版" [level=4] [ref=e69]
+          - paragraph [ref=e70]: 解锁更多智能分析与多端同步功能
+        - link "Avatar Ethan ethan@example.com" [ref=e71] [cursor=pointer]:
+          - /url: /settings
+          - img "Avatar" [ref=e73]
+          - generic [ref=e75]:
+            - generic [ref=e76]: Ethan
+            - generic [ref=e77]: ethan@example.com
+        - button "折叠侧边栏" [ref=e78] [cursor=pointer]:
+          - img [ref=e79]
+    - main [ref=e81]:
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - heading "智能助手" [level=1] [ref=e85]
+          - paragraph [ref=e86]: AI Agent 自然语言人脉分析与写操作二次确认
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - img
+            - textbox "快捷检索联系人或事项..." [ref=e89]
+            - generic: ⌘K
+          - button "3" [ref=e90] [cursor=pointer]:
+            - img [ref=e91]
+            - generic [ref=e94]: "3"
+          - generic [ref=e96] [cursor=pointer]:
+            - img "Avatar" [ref=e97]
+            - img [ref=e98]
+      - generic [ref=e102]:
+        - generic [ref=e104]:
+          - img [ref=e107]
+          - generic [ref=e111]:
+            - heading "智能助手" [level=2] [ref=e112]
+            - paragraph [ref=e113]: 使用自然语言快速查询联系人或事项，或创建联系事项
+        - generic [ref=e220]:
+          - img [ref=e222]
+          - heading "您好！我是您的 CRM 智能助理" [level=3] [ref=e225]
+          - paragraph [ref=e226]: 您可以向我提问查找您的联系人信息，或者筛选/创建您的待办事项。 本期我支持查询与事项创建功能，且所有数据严格按当前登录用户进行权限隔离。
+          - generic [ref=e227]:
+            - paragraph [ref=e228]: 试试这样问我：
+            - generic [ref=e229]:
+              - generic [ref=e230] [cursor=pointer]:
+                - img [ref=e232]
+                - generic [ref=e237]:
+                  - heading "查找联系人" [level=4] [ref=e238]
+                  - paragraph [ref=e239]: “帮我查一下张三的联系方式”
+              - generic [ref=e240] [cursor=pointer]:
+                - img [ref=e242]
+                - generic [ref=e244]:
+                  - heading "查询联系事项" [level=4] [ref=e245]
+                  - paragraph [ref=e246]: “查张三最近的待办事项”
+              - generic [ref=e247] [cursor=pointer]:
+                - img [ref=e249]
+                - generic [ref=e252]:
+                  - heading "创建待办事项" [level=4] [ref=e253]
+                  - paragraph [ref=e254]: “明天下午三点提醒我联系张三确认合同”
+        - generic [ref=e151]:
+          - textbox "输入您想查找的联系人姓名、微信，或者查找/创建事项，如“提醒我明天下午三点联系张三确认合同”..." [ref=e152]
+          - button "发送" [disabled] [ref=e154]:
+            - img [ref=e155]
+            - text: 发送
+  - generic [ref=e3]:
+    - generic "Toggle devtools panel" [ref=e4] [cursor=pointer]:
+      - img [ref=e5]
+    - generic "Toggle Component Inspector" [ref=e10] [cursor=pointer]:
+      - img [ref=e11]

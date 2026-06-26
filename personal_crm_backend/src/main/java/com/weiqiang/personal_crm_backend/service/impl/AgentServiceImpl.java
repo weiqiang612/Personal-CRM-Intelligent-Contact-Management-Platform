@@ -5,21 +5,13 @@ import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.AgentOperationLog;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.mapper.AgentOperationLogMapper;
-import com.weiqiang.personal_crm_backend.model.dto.AgentQueryParam;
-import com.weiqiang.personal_crm_backend.model.dto.AgentConfirmParam;
-import com.weiqiang.personal_crm_backend.model.dto.AgentExecuteParam;
-import com.weiqiang.personal_crm_backend.model.dto.ContactQueryParam;
-import com.weiqiang.personal_crm_backend.model.dto.TodoCreateDTO;
-import com.weiqiang.personal_crm_backend.model.dto.TodoQuery;
-import com.weiqiang.personal_crm_backend.model.vo.AgentExecuteResponseVO;
-import com.weiqiang.personal_crm_backend.model.vo.AgentQueryResponseVO;
-import com.weiqiang.personal_crm_backend.model.vo.ContactListVO;
-import com.weiqiang.personal_crm_backend.model.vo.ContactVO;
-import com.weiqiang.personal_crm_backend.model.vo.TodoListVO;
-import com.weiqiang.personal_crm_backend.model.vo.TodoVO;
+import com.weiqiang.personal_crm_backend.model.dto.*;
+import com.weiqiang.personal_crm_backend.model.vo.*;
+import com.weiqiang.personal_crm_backend.security.AgentSessionManager;
 import com.weiqiang.personal_crm_backend.security.UserContext;
 import com.weiqiang.personal_crm_backend.service.AgentService;
 import com.weiqiang.personal_crm_backend.service.ContactService;
+import com.weiqiang.personal_crm_backend.service.LlmService;
 import com.weiqiang.personal_crm_backend.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,18 +19,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Agent 业务服务实现类
+ * Agent 业务服务实现类（已根据 Code Review 指导修复强转与 500 分页漏洞）
  */
 @Service
 @RequiredArgsConstructor
@@ -49,6 +39,8 @@ public class AgentServiceImpl implements AgentService {
 
     private final ContactService contactService;
     private final TodoService todoService;
+    private final LlmService llmService;
+    private final AgentSessionManager agentSessionManager;
     private final AgentOperationLogMapper agentOperationLogMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -59,195 +51,56 @@ public class AgentServiceImpl implements AgentService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
         }
 
-        String input = param.getInput().trim();
+        String input = param.getInput() != null ? param.getInput().trim() : "";
         if (input.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "输入内容不能为空");
         }
 
-        // 1. 意图识别
-        String intent;
-        String queryType;
-        
-        // 判断是否为写操作（本期不支持，以友好形式提示）
-        // 1. 强写操作词直接匹配：直接拦截
+        // 强拦截：如果查询接口输入包含强写词或弱写词，直接快速拦截并返回 unsupported
         boolean hasStrongWriteAction = input.matches(".*(创建|添加|新建|修改|更新|删除|新增|拉黑|恢复).*");
-        // 2. 弱写操作词条件匹配：包含“完成|取消”，但排除状态修饰（比如前面没有“已”，后面没有“的”等）
         boolean hasWeakWriteAction = input.matches(".*(?<!已)(完成|取消)(?!的).*");
-        
-        boolean isWriteAction = hasStrongWriteAction || hasWeakWriteAction;
-        
-        if (isWriteAction) {
-            intent = "unsupported";
-            queryType = "unsupported";
-        } else if (input.matches(".*(待办|事项|日程|提醒|todo|Todo).*")) {
-            intent = "query_todo";
-            queryType = "todo";
-        } else {
-            intent = "query_contact";
-            queryType = "contact";
+        if (hasStrongWriteAction || hasWeakWriteAction) {
+            AgentQueryResponseVO response = new AgentQueryResponseVO();
+            response.setQueryType("unsupported");
+            response.setIntent("unsupported");
+            response.setSummary("抱歉，本期智能助手仅支持查询联系人和事项，暂不支持创建、修改或拉黑等操作。");
+            response.setResults(Collections.emptyList());
+            return response;
         }
 
-        // 2. 根据意图执行编排逻辑
+        // 复用通用的流转处理逻辑
+        AgentExecuteResponseVO executeRes = processAgentRequest(input, param.getSessionId(), userId);
+
+        // 如果在查询接口中底层解析为了写操作，则在查询接口也同样强制拦截为 unsupported
+        if ("create_todo".equals(executeRes.getActionType())) {
+            AgentQueryResponseVO response = new AgentQueryResponseVO();
+            response.setQueryType("unsupported");
+            response.setIntent("unsupported");
+            response.setSummary("抱歉，本期智能助手仅支持查询联系人和事项，暂不支持创建、修改等写操作。");
+            response.setResults(Collections.emptyList());
+            return response;
+        }
+
+        // 将全集字段的 executeRes 转换包装为 AgentQueryResponseVO
         AgentQueryResponseVO response = new AgentQueryResponseVO();
+        String actionType = executeRes.getActionType();
+        response.setIntent(actionType);
+        
+        String queryType = "unsupported";
+        if ("query_contact".equals(actionType)) {
+            queryType = "contact";
+        } else if ("query_todo".equals(actionType)) {
+            queryType = "todo";
+        }
         response.setQueryType(queryType);
-        response.setIntent(intent);
-
-        Map<String, Object> parsedParams = new HashMap<>();
-        List<?> results = Collections.emptyList();
-        String summary = "";
-
-        try {
-            if ("unsupported".equals(intent)) {
-                summary = "抱歉，本期智能助手仅支持查询联系人和事项，暂不支持创建、修改或拉黑等操作。";
-                parsedParams.put("action", "rejected");
-            } else if ("query_contact".equals(intent)) {
-                // 联系人查询：剥离前后缀提取关键字
-                String keyword = extractContactKeyword(input);
-                parsedParams.put("keyword", keyword);
-
-                ContactQueryParam queryParam = new ContactQueryParam();
-                queryParam.setKeyword(keyword);
-                queryParam.setPage(1);
-                queryParam.setPageSize(20);
-                
-                ContactListVO listVO = contactService.listContacts(queryParam);
-                results = listVO.getList();
-                
-                if (results == null || results.isEmpty()) {
-                    summary = "未查找到匹配的联系人信息";
-                } else {
-                    summary = "已查找到包含关键字 '" + keyword + "' 的联系人信息，共 " + results.size() + " 条";
-                }
-            } else {
-                // 事项查询：遍历联系人姓名以寻找匹配的联系人 ID
-                String matchedContactId = null;
-                String matchedContactName = null;
-                
-                // 查询前 500 个联系人以查找候选名字
-                ContactQueryParam allParam = new ContactQueryParam();
-                allParam.setPage(1);
-                allParam.setPageSize(500);
-                ContactListVO allContacts = contactService.listContacts(allParam);
-                
-                if (allContacts != null && allContacts.getList() != null) {
-                    for (ContactVO c : allContacts.getList()) {
-                        if (input.contains(c.getName())) {
-                            matchedContactId = c.getContactId();
-                            matchedContactName = c.getName();
-                            break; // 匹配第一个包含的名字
-                        }
-                    }
-                }
-
-                // 识别事项状态 (0 待完成, 1 已取消, 2 已完成)
-                Integer status = 0; // 默认待完成
-                if (input.matches(".*(已完成|完成|搞定|完成的|done).*")) {
-                    status = 2;
-                } else if (input.matches(".*(已取消|取消|取消的|cancel).*")) {
-                    status = 1;
-                }
-
-                TodoQuery todoQuery = new TodoQuery();
-                todoQuery.setPage(1);
-                todoQuery.setPageSize(20);
-                todoQuery.setStatus(status);
-                
-                if (matchedContactId != null) {
-                    todoQuery.setContactId(matchedContactId);
-                    parsedParams.put("contactId", matchedContactId);
-                    parsedParams.put("contactName", matchedContactName);
-                }
-                parsedParams.put("status", status);
-
-                TodoListVO listVO = todoService.listTodos(todoQuery);
-                results = listVO.getList();
-
-                String statusName = status == 2 ? "已完成" : (status == 1 ? "已取消" : "待完成");
-                if (matchedContactName != null) {
-                    if (results == null || results.isEmpty()) {
-                        summary = "未查找到联系人 '" + matchedContactName + "' 关联的" + statusName + "事项";
-                    } else {
-                        summary = "已查找到联系人 '" + matchedContactName + "' 关联的 " + results.size() + " 条" + statusName + "事项";
-                    }
-                } else {
-                    if (results == null || results.isEmpty()) {
-                        summary = "未查找到您的" + statusName + "事项";
-                    } else {
-                        summary = "已查找到您的 " + results.size() + " 条" + statusName + "事项";
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Agent query execution error", e);
-            summary = "智能助手在处理查询时遇到异常：" + e.getMessage();
-        }
-
-        response.setSummary(summary);
-        response.setResults(results);
-
-        // 3. 记录操作审计日志
-        try {
-            AgentOperationLog operationLog = new AgentOperationLog();
-            operationLog.setUserId(userId);
-            operationLog.setUserInput(input);
-            operationLog.setIntent(intent);
-            operationLog.setParsedParams(objectMapper.writeValueAsString(parsedParams));
-            operationLog.setNeedConfirm(0);
-            operationLog.setConfirmed(0);
-            operationLog.setActionType("unsupported".equals(intent) ? "unsupported" : "query");
-            operationLog.setExecutionStatus(1); // 成功处理响应
-            
-            // 结果只记录摘要，results 为列表不宜全部塞入 log 导致数据库过载，记录 summary 即可
-            Map<String, Object> resultPayload = new HashMap<>();
-            resultPayload.put("summary", summary);
-            resultPayload.put("count", results.size());
-            operationLog.setExecutionResult(objectMapper.writeValueAsString(resultPayload));
-            operationLog.setCreatedAt(LocalDateTime.now());
-            
-            agentOperationLogMapper.insert(operationLog);
-        } catch (Exception e) {
-            log.error("Failed to write agent operation log to database", e);
-        }
+        response.setSummary(executeRes.getSummary());
+        response.setResults(executeRes.getResults() != null ? executeRes.getResults() : Collections.emptyList());
+        response.setSessionId(executeRes.getSessionId());
+        response.setIsClarifying(executeRes.getIsClarifying());
+        response.setMissingFields(executeRes.getMissingFields());
+        response.setParsedParams(executeRes.getParsedParams());
 
         return response;
-    }
-
-    /**
-     * 去除常见的自然语言前后缀，提取关键字进行模糊查询
-     */
-    private String extractContactKeyword(String input) {
-        String keyword = input;
-        
-        // 常见前缀列表（按长度降序排序）
-        String[] prefixes = {
-            "帮我查一下", "帮我查询", "帮我查找", "帮我找", 
-            "查一下", "查询", "查找", "找一下", "我想找", "查", "找"
-        };
-        
-        // 常见后缀列表（按长度降序排序）
-        String[] suffixes = {
-            "的联系方式", "的联系信息", "的手机号", "的电话", "的微信", "的邮箱", "的信息", "的资料"
-        };
-
-        // 去除前缀
-        for (String prefix : prefixes) {
-            if (keyword.startsWith(prefix)) {
-                keyword = keyword.substring(prefix.length());
-                break; // 只匹配并去除最长的前缀一次
-            }
-        }
-
-        // 去除后缀
-        for (String suffix : suffixes) {
-            if (keyword.endsWith(suffix)) {
-                keyword = keyword.substring(0, keyword.length() - suffix.length());
-                break;
-            }
-        }
-
-        keyword = keyword.trim();
-        // 如果剥离后变成空字符，则兜底返回原始输入
-        return keyword.isEmpty() ? input : keyword;
     }
 
     @Override
@@ -257,194 +110,299 @@ public class AgentServiceImpl implements AgentService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
         }
 
-        String input = param.getInput().trim();
+        String input = param.getInput() != null ? param.getInput().trim() : "";
         if (input.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "输入内容不能为空");
         }
 
-        // 1. 意图识别，正则识别是否是“创建事项”相关的写意图，否则返回 unsupported
-        boolean isCreateTodo = false;
-        boolean hasCreateKeywords = input.matches(".*(提醒|事项|日程|待办|todo|Todo|联系|创建|添加|新建|新增).*");
-        boolean hasOtherWriteKeywords = input.matches(".*(删除|修改|更新|拉黑|恢复|完成|取消).*");
-        if (hasCreateKeywords && !hasOtherWriteKeywords) {
-            isCreateTodo = true;
+        return processAgentRequest(input, param.getSessionId(), userId);
+    }
+
+    /**
+     * 通用的 Agent 自然语言核心流转处理（大模型解析 + 二阶段本地库校验 + 多轮澄清）
+     */
+    private AgentExecuteResponseVO processAgentRequest(String input, String sessionId, String userId) {
+        // 1. 获取或创建会话状态
+        AgentSessionState sessionState = null;
+        if (sessionId != null && !sessionId.trim().isEmpty()) {
+            sessionState = agentSessionManager.getSession(sessionId, userId);
         }
-
-        AgentExecuteResponseVO response = new AgentExecuteResponseVO();
-        Map<String, Object> parsedParams = new HashMap<>();
-
-        if (!isCreateTodo) {
-            response.setNeedConfirm(0);
-            response.setActionType("unsupported");
-            response.setSummary("抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。");
-            response.setParsedParams(parsedParams);
-
-            // 记录日志：不支持的写操作，need_confirm = 0, confirmed = 0, execution_status = 1
-            AgentOperationLog operationLog = new AgentOperationLog();
-            operationLog.setUserId(userId);
-            operationLog.setUserInput(input);
-            operationLog.setIntent("unsupported");
-            try {
-                operationLog.setParsedParams(objectMapper.writeValueAsString(parsedParams));
-            } catch (Exception e) {
-                log.error("JSON write error", e);
-            }
-            operationLog.setNeedConfirm(0);
-            operationLog.setConfirmed(0);
-            operationLog.setActionType("unsupported");
-            operationLog.setExecutionStatus(1);
-            Map<String, Object> resultPayload = new HashMap<>();
-            resultPayload.put("summary", response.getSummary());
-            try {
-                operationLog.setExecutionResult(objectMapper.writeValueAsString(resultPayload));
-            } catch (Exception e) {
-                log.error("JSON write error", e);
-            }
-            operationLog.setCreatedAt(LocalDateTime.now());
-            agentOperationLogMapper.insert(operationLog);
-
-            response.setLogId(operationLog.getId());
-            return response;
+        if (sessionState == null) {
+            sessionState = agentSessionManager.createSession(userId);
         }
+        String currentSessionId = sessionState.getSessionId();
 
-        // 2. 意图为创建事项，开始提取字段
-        response.setActionType("create_todo");
-
-        // 提取联系人姓名 (模糊匹配当前用户的联系人列表)
-        String matchedContactId = null;
-        String matchedContactName = null;
-
+        // 2. 提取并获取候选联系人列表（仅提取前 100 个人的名字注入 System Prompt 充当上下文背景指示）
         ContactQueryParam allParam = new ContactQueryParam();
         allParam.setPage(1);
-        allParam.setPageSize(500);
+        allParam.setPageSize(100);
         ContactListVO allContacts = contactService.listContacts(allParam);
-        if (allContacts != null && allContacts.getList() != null) {
-            for (ContactVO c : allContacts.getList()) {
-                if (input.contains(c.getName())) {
-                    matchedContactId = c.getContactId();
-                    matchedContactName = c.getName();
-                    break;
-                }
-            }
-        }
-
-        // 提取时间
-        LocalDateTime todoTime = parseTime(input);
-
-        // 提取优先级 (0 普通, 1 重要, 2 紧急，默认为重要 1)
-        int priority = 1;
-        if (input.contains("紧急") || input.contains("高优")) {
-            priority = 2;
-        } else if (input.contains("普通") || input.contains("低") || input.contains("一般")) {
-            priority = 0;
-        }
-
-        // 提取内容
-        String content = input;
-        // 去除动作词
-        content = content.replaceAll("(?i)提醒我联系", "");
-        content = content.replaceAll("(?i)提醒我", "");
-        content = content.replaceAll("(?i)联系", "");
-        content = content.replaceAll("(?i)帮我创建", "");
-        content = content.replaceAll("(?i)创建待办", "");
-        content = content.replaceAll("(?i)创建事项", "");
-        content = content.replaceAll("(?i)新建待办", "");
-        content = content.replaceAll("(?i)新建事项", "");
+        @SuppressWarnings("unchecked")
+        List<ContactVO> contactList = allContacts != null && allContacts.getList() != null ? 
+                (List<ContactVO>) allContacts.getList() : Collections.emptyList();
         
-        // 去除联系人名字
-        if (matchedContactName != null) {
-            content = content.replaceAll(matchedContactName, "");
+        List<String> contactNames = new ArrayList<>();
+        for (ContactVO c : contactList) {
+            contactNames.add(c.getName());
         }
-        
-        // 去除时间词
-        String[] timeKeywords = {
-            "今天晚上八点", "今天晚上8点", "今天晚上", "今天",
-            "明天下午三点", "明天下午3点", "明天下午", "明天",
-            "后天早上九点", "后天早上9点", "后天早上", "后天",
-            "下周一中午十二点", "下周一中午12点", "下周一",
-            "下周二", "下周三", "下周四", "下周五", "下周六", "下周日", "下周天",
-            "下午三点", "下午3点", "早上九点", "早上9点", "晚上八点", "晚上8点",
-            "中午十二点", "中午12点", "点", "分"
-        };
-        for (String tk : timeKeywords) {
-            content = content.replace(tk, "");
-        }
-        
-        // 去除优先级修饰词
-        content = content.replace("紧急", "");
-        content = content.replace("高优", "");
-        content = content.replace("普通", "");
-        content = content.replace("重要", "");
-        
-        // 清理一些标点符号和空格
-        content = content.replaceAll("^[，。、, ]+", "").replaceAll("[，。、, ]+$", "").trim();
 
-        // 组装解析的参数
-        if (matchedContactId != null) {
-            parsedParams.put("contactId", matchedContactId);
-            parsedParams.put("contactName", matchedContactName);
-        }
-        if (todoTime != null) {
-            parsedParams.put("todoTime", todoTime.format(TODO_TIME_FORMATTER));
-        }
-        if (!content.isEmpty()) {
-            parsedParams.put("content", content);
-        }
-        parsedParams.put("priority", priority);
-
-        response.setParsedParams(parsedParams);
-
-        // 3. 校验联系人、时间、内容是否缺失
-        int needConfirm = 1;
-        String summary = "";
-        if (matchedContactId == null) {
-            needConfirm = 0;
-            summary = "抱歉，无法识别您想为哪位联系人创建事项，请输入包含联系人姓名的指令，例如：“明天下午三点提醒我联系张三确认合同”";
-        } else if (todoTime == null) {
-            needConfirm = 0;
-            summary = "抱歉，无法识别事项提醒时间，请输入包含具体时间的指令，例如：“明天下午三点提醒我联系张三确认合同”";
-        } else if (content.isEmpty()) {
-            needConfirm = 0;
-            summary = "抱歉，无法识别事项内容，请输入包含具体事项内容的指令，例如：“明天下午三点提醒我联系张三确认合同”";
+        // 3. 构建大模型消息历史上下文
+        List<OpenAiMessage> messages = sessionState.getMessages();
+        if (messages.isEmpty()) {
+            // 第一轮会话，写入 System Prompt
+            messages.add(new OpenAiMessage("system", buildSystemPrompt(contactNames)));
         } else {
-            String formattedTime = todoTime.format(TODO_TIME_FORMATTER);
-            summary = "已为您生成待办事项预确认卡片，请核对：在 " + formattedTime + " 提醒联系 " + matchedContactName + " " + content + "。";
+            // 已有会话，更新第一条 system 的时间等动态参数，保持计算基准准确
+            messages.set(0, new OpenAiMessage("system", buildSystemPrompt(contactNames)));
         }
-
-        response.setNeedConfirm(needConfirm);
-        response.setSummary(summary);
-
-        // 4. 将操作入库
-        AgentOperationLog operationLog = new AgentOperationLog();
-        operationLog.setUserId(userId);
-        operationLog.setUserInput(input);
-        operationLog.setIntent("create_todo");
-        try {
-            operationLog.setParsedParams(objectMapper.writeValueAsString(parsedParams));
-        } catch (Exception e) {
-            log.error("JSON write error", e);
-        }
-        operationLog.setNeedConfirm(needConfirm);
-        operationLog.setConfirmed(0);
-        operationLog.setActionType("create_todo");
-        // 如果需要确认，设为 pending (0)；否则设为已处理完成 (1)
-        operationLog.setExecutionStatus(needConfirm == 1 ? 0 : 1);
         
-        // 结果存入 execution_result
-        Map<String, Object> resultPayload = new HashMap<>();
-        resultPayload.put("summary", summary);
-        try {
-            operationLog.setExecutionResult(objectMapper.writeValueAsString(resultPayload));
-        } catch (Exception e) {
-            log.error("JSON write error", e);
-        }
-        operationLog.setCreatedAt(LocalDateTime.now());
-        agentOperationLogMapper.insert(operationLog);
+        // 追入用户最新一轮输入
+        messages.add(new OpenAiMessage("user", input));
 
-        response.setLogId(operationLog.getId());
+        // 4. 发送大模型调用
+        String chatResult = llmService.chat(messages);
+        String cleanedJson = cleanJsonString(chatResult);
+        log.debug("Llm raw output after clean: {}", cleanedJson);
+
+        AgentExecuteResponseVO response = new AgentExecuteResponseVO();
+        response.setSessionId(currentSessionId);
+        response.setNeedConfirm(0); // 默认无需确认
+
+        try {
+            Map<?, ?> parsedJson = objectMapper.readValue(cleanedJson, Map.class);
+            String intent = parseString(parsedJson.get("intent"));
+            String summary = parseString(parsedJson.get("summary"));
+            Boolean isClarifying = (Boolean) parsedJson.get("isClarifying");
+            @SuppressWarnings("unchecked")
+            List<String> missingFields = (List<String>) parsedJson.get("missingFields");
+            if (missingFields == null) {
+                missingFields = new ArrayList<>();
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsedParams = (Map<String, Object>) parsedJson.get("parsedParams");
+            if (parsedParams == null) {
+                parsedParams = new HashMap<>();
+            }
+
+            // 将大模型本轮解析出的属性融入到累计槽位中
+            Map<String, Object> accumulatedParams = sessionState.getAccumulatedParams();
+            accumulatedParams.putAll(parsedParams);
+
+            response.setActionType(intent);
+
+            // 5. 意图分支分流处理
+            if ("query_contact".equals(intent)) {
+                // 联系人模糊查询
+                String keyword = parseString(accumulatedParams.get("keyword"));
+                if (keyword == null || keyword.isEmpty()) {
+                    keyword = input; // 兜底使用原始输入
+                }
+                ContactQueryParam queryParam = new ContactQueryParam();
+                queryParam.setKeyword(keyword);
+                queryParam.setPage(1);
+                queryParam.setPageSize(20);
+                ContactListVO listVO = contactService.listContacts(queryParam);
+                
+                response.setResults(listVO.getList());
+                response.setIsClarifying(false);
+                response.setMissingFields(Collections.emptyList());
+                response.setSummary(listVO.getList() == null || listVO.getList().isEmpty() ? 
+                        "未查找到匹配的联系人信息" : 
+                        "已查找到包含关键字 '" + keyword + "' 的联系人信息，共 " + listVO.getList().size() + " 条");
+
+                // 单轮查询直接清空会话
+                agentSessionManager.removeSession(currentSessionId);
+                auditLog(userId, input, intent, accumulatedParams, 0, 1, response.getSummary());
+
+            } else if ("query_todo".equals(intent)) {
+                // 事项模糊查询
+                String contactName = parseString(accumulatedParams.get("contactName"));
+                Integer status = parseInteger(accumulatedParams.get("status"), 0);
+
+                String matchedContactId = null;
+                String matchedContactName = null;
+                
+                // 【已优化】不使用内存全量匹配，直接按大模型解析出的名字模糊查库
+                if (contactName != null && !contactName.isEmpty()) {
+                    ContactQueryParam qParam = new ContactQueryParam();
+                    qParam.setKeyword(contactName);
+                    qParam.setPage(1);
+                    qParam.setPageSize(20);
+                    ContactListVO matchedList = contactService.listContacts(qParam);
+                    @SuppressWarnings("unchecked")
+                    List<ContactVO> matchedCandidates = matchedList != null && matchedList.getList() != null ? 
+                            (List<ContactVO>) matchedList.getList() : Collections.emptyList();
+                    if (!matchedCandidates.isEmpty()) {
+                        matchedContactId = matchedCandidates.get(0).getContactId();
+                        matchedContactName = matchedCandidates.get(0).getName();
+                    }
+                }
+
+                TodoQuery todoQuery = new TodoQuery();
+                todoQuery.setPage(1);
+                todoQuery.setPageSize(20);
+                todoQuery.setStatus(status);
+                if (matchedContactId != null) {
+                    todoQuery.setContactId(matchedContactId);
+                    accumulatedParams.put("contactId", matchedContactId);
+                }
+
+                TodoListVO listVO = todoService.listTodos(todoQuery);
+                response.setResults(listVO.getList());
+                response.setIsClarifying(false);
+                response.setMissingFields(Collections.emptyList());
+
+                String statusName = status == 2 ? "已完成" : (status == 1 ? "已取消" : "待完成");
+                if (matchedContactName != null) {
+                    response.setSummary(listVO.getList() == null || listVO.getList().isEmpty() ? 
+                            "未查找到联系人 '" + matchedContactName + "' 关联的" + statusName + "事项" : 
+                            "已查找到联系人 '" + matchedContactName + "' 关联的 " + listVO.getList().size() + " 条" + statusName + "事项");
+                } else {
+                    response.setSummary(listVO.getList() == null || listVO.getList().isEmpty() ? 
+                            "未查找到您的" + statusName + "事项" : 
+                            "已查找到您的 " + listVO.getList().size() + " 条" + statusName + "事项");
+                }
+
+                // 结束会话
+                agentSessionManager.removeSession(currentSessionId);
+                auditLog(userId, input, intent, accumulatedParams, 0, 1, response.getSummary());
+
+            } else if ("create_todo".equals(intent)) {
+                // 创建事项：执行二阶段业务校验与补槽
+                List<String> actualMissingFields = new ArrayList<>();
+
+                // 2阶段校验 1: 验证联系人 【已优化】直接根据大模型抽取的关键字定向库查询，解开全内存 500 页面限制
+                String contactName = parseString(accumulatedParams.get("contactName"));
+                String matchedContactId = null;
+                String matchedContactName = null;
+
+                if (contactName == null || contactName.isEmpty()) {
+                    actualMissingFields.add("contactName");
+                } else {
+                    ContactQueryParam qParam = new ContactQueryParam();
+                    qParam.setKeyword(contactName);
+                    qParam.setPage(1);
+                    qParam.setPageSize(100); // 检索前 100 位候选
+                    ContactListVO matchedList = contactService.listContacts(qParam);
+                    @SuppressWarnings("unchecked")
+                    List<ContactVO> matchedCandidates = matchedList != null && matchedList.getList() != null ? 
+                            (List<ContactVO>) matchedList.getList() : new ArrayList<>();
+
+                    if (matchedCandidates.isEmpty()) {
+                        actualMissingFields.add("contactName");
+                        accumulatedParams.remove("contactName");
+                        accumulatedParams.remove("contactId");
+                        isClarifying = true;
+                        summary = "抱歉，在您的联系人列表中没有找到名为 '" + contactName + "' 的联系人，请检查姓名是否正确，或重新指定。";
+                    } else if (matchedCandidates.size() > 1) {
+                        // 出现多个候选人，重新置为澄清态并提供候选列表
+                        actualMissingFields.add("contactName");
+                        accumulatedParams.remove("contactName");
+                        accumulatedParams.remove("contactId");
+                        isClarifying = true;
+                        StringBuilder sb = new StringBuilder("系统为您匹配到了多个同名或相似的联系人：");
+                        for (int i = 0; i < matchedCandidates.size(); i++) {
+                            sb.append(matchedCandidates.get(i).getName());
+                            if (i < matchedCandidates.size() - 1) sb.append("、");
+                        }
+                        sb.append("，请明确具体是哪一位？");
+                        summary = sb.toString();
+                    } else {
+                        // 锁定唯一匹配
+                        matchedContactId = matchedCandidates.get(0).getContactId();
+                        matchedContactName = matchedCandidates.get(0).getName();
+                        accumulatedParams.put("contactId", matchedContactId);
+                        accumulatedParams.put("contactName", matchedContactName);
+                    }
+                }
+
+                // 2阶段校验 2: 验证时间
+                String todoTimeStr = parseString(accumulatedParams.get("todoTime"));
+                if (todoTimeStr == null || todoTimeStr.isEmpty()) {
+                    actualMissingFields.add("todoTime");
+                } else {
+                    try {
+                        LocalDateTime.parse(todoTimeStr, TODO_TIME_FORMATTER);
+                    } catch (Exception e) {
+                        actualMissingFields.add("todoTime");
+                        accumulatedParams.remove("todoTime");
+                        isClarifying = true;
+                        summary = "抱歉，无法识别提醒时间，请输入包含具体时间的指令，例如：“明天下午三点”或“2026-06-26 15:00:00”。";
+                    }
+                }
+
+                // 2阶段校验 3: 验证内容
+                String content = parseString(accumulatedParams.get("content"));
+                if (content == null || content.isEmpty()) {
+                    actualMissingFields.add("content");
+                } else {
+                    accumulatedParams.put("content", content);
+                }
+
+                // 补充默认优先级 【已修复】使用安全数字转型，防 ClassCastException
+                Integer priority = parseInteger(accumulatedParams.get("priority"), 1);
+                accumulatedParams.put("priority", priority);
+
+                response.setParsedParams(accumulatedParams);
+
+                if (!actualMissingFields.isEmpty() || Boolean.TRUE.equals(isClarifying)) {
+                    // 依然缺失关键参数，处于澄清补槽阶段
+                    response.setIsClarifying(true);
+                    response.setMissingFields(actualMissingFields.isEmpty() ? missingFields : actualMissingFields);
+                    response.setSummary(summary);
+                    response.setNeedConfirm(0);
+
+                    // 写入 Assistant 回复历史，以维持后续上下文理解
+                    messages.add(new OpenAiMessage("assistant", summary));
+
+                    // 预确认缺失时，也写入审计日志，设置 pending (needConfirm = 0, status = 1)
+                    AgentOperationLog operationLog = auditLog(userId, input, intent, accumulatedParams, 0, 1, summary);
+                    response.setLogId(operationLog.getId());
+                } else {
+                    // 所有槽位都配齐，生成二次确认卡片
+                    response.setIsClarifying(false);
+                    response.setMissingFields(Collections.emptyList());
+                    response.setNeedConfirm(1);
+
+                    String formattedSummary = "已为您生成待办事项预确认卡片，请核对：在 " + todoTimeStr + " 提醒联系 " + matchedContactName + " " + content + "。";
+                    response.setSummary(formattedSummary);
+
+                    // 销毁内存会话
+                    agentSessionManager.removeSession(currentSessionId);
+
+                    // 写入预确认 pending 操作审计日志 (needConfirm = 1, status = 0)
+                    AgentOperationLog operationLog = auditLog(userId, input, intent, accumulatedParams, 1, 0, formattedSummary);
+                    response.setLogId(operationLog.getId());
+                }
+
+            } else {
+                // 不支持的意图操作
+                response.setIsClarifying(false);
+                response.setNeedConfirm(0);
+                response.setSummary(summary != null && !summary.isEmpty() ? 
+                        summary : "抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。");
+
+                agentSessionManager.removeSession(currentSessionId);
+                auditLog(userId, input, "unsupported", accumulatedParams, 0, 1, response.getSummary());
+            }
+
+        } catch (Exception e) {
+            log.error("Failed to parse Llm result: {}", chatResult, e);
+            response.setIsClarifying(false);
+            response.setNeedConfirm(0);
+            response.setActionType("unsupported");
+            response.setSummary("智能助手无法解析当前指令，请重试。");
+
+            agentSessionManager.removeSession(currentSessionId);
+            auditLog(userId, input, "unsupported", new HashMap<>(), 0, 1, response.getSummary());
+        }
+
         return response;
     }
 
+    /**
+     * 写操作二次确认（执行创建或取消）
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Object confirm(AgentConfirmParam param) {
@@ -455,17 +413,17 @@ public class AgentServiceImpl implements AgentService {
 
         AgentOperationLog logRecord = agentOperationLogMapper.selectById(param.getLogId());
         if (logRecord == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "未找到该操作日志");
+            throw new BusinessException(ErrorCode.NOT_FOUND, "未找到该操作日志记录");
         }
 
-        // 防越权
+        // 防越权校验
         if (!userId.equals(logRecord.getUserId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "无权操作此日志记录");
         }
 
-        // 状态必须是 pending(0)
+        // 只有状态处于待确认 (0) 的日志才能被处理
         if (logRecord.getExecutionStatus() != 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "日志状态不正确，无法操作");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "日志状态已完成或已处理，无法重复确认");
         }
 
         if ("cancel".equalsIgnoreCase(param.getAction())) {
@@ -476,21 +434,21 @@ public class AgentServiceImpl implements AgentService {
         }
 
         if ("confirm".equalsIgnoreCase(param.getAction())) {
-            // 解析 parsed_params
-            Map<String, Object> parsedParams;
+            Map<?, ?> parsedParams;
             try {
                 parsedParams = objectMapper.readValue(logRecord.getParsedParams(), Map.class);
             } catch (Exception e) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "解析日志参数失败");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "解析日志预存参数失败");
             }
 
-            String contactId = (String) parsedParams.get("contactId");
-            String todoTimeStr = (String) parsedParams.get("todoTime");
-            String content = (String) parsedParams.get("content");
-            Integer priority = (Integer) parsedParams.get("priority");
+            // 【已修复】类型安全转型，防 ClassCastException
+            String contactId = parseString(parsedParams.get("contactId"));
+            String todoTimeStr = parseString(parsedParams.get("todoTime"));
+            String content = parseString(parsedParams.get("content"));
+            Integer priority = parseInteger(parsedParams.get("priority"), 1);
 
-            if (contactId == null || todoTimeStr == null || content == null || priority == null) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "预确认参数缺失，无法创建事项");
+            if (contactId == null || todoTimeStr == null || content == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "预确认槽位参数缺失，无法创建事项");
             }
 
             TodoCreateDTO createDTO = new TodoCreateDTO();
@@ -499,141 +457,153 @@ public class AgentServiceImpl implements AgentService {
             createDTO.setContent(content);
             createDTO.setPriority(priority);
 
-            // 调用业务 Service 层落库
+            // 调用实际的 TodoService 落地存储
             TodoVO todoVO = todoService.createTodo(createDTO);
 
-            // 更新日志状态
+            // 成功落库后更新操作审计日志
             logRecord.setConfirmed(1);
-            logRecord.setExecutionStatus(1); // 1: 成功
+            logRecord.setExecutionStatus(1); // 1: 成功执行
             try {
                 logRecord.setExecutionResult(objectMapper.writeValueAsString(todoVO));
             } catch (Exception e) {
-                log.error("JSON write error", e);
+                log.error("JSON serialization error", e);
             }
             agentOperationLogMapper.updateById(logRecord);
 
             return todoVO;
         }
 
-        throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的确认动作");
+        throw new BusinessException(ErrorCode.PARAMS_ERROR, "不支持的确认指令");
     }
 
-    private LocalDateTime parseTime(String input) {
-        if (input == null || input.isEmpty()) {
+    /**
+     * 记录审计日志
+     */
+    private AgentOperationLog auditLog(String userId, String input, String intent, Map<String, Object> params, int needConfirm, int execStatus, String summary) {
+        try {
+            AgentOperationLog operationLog = new AgentOperationLog();
+            operationLog.setUserId(userId);
+            operationLog.setUserInput(input);
+            operationLog.setIntent(intent);
+            operationLog.setParsedParams(objectMapper.writeValueAsString(params));
+            operationLog.setNeedConfirm(needConfirm);
+            operationLog.setConfirmed(0);
+            operationLog.setActionType("create_todo".equals(intent) ? "create_todo" : ("unsupported".equals(intent) ? "unsupported" : "query"));
+            operationLog.setExecutionStatus(execStatus);
+
+            Map<String, Object> resultPayload = new HashMap<>();
+            resultPayload.put("summary", summary);
+            operationLog.setExecutionResult(objectMapper.writeValueAsString(resultPayload));
+            operationLog.setCreatedAt(LocalDateTime.now());
+
+            agentOperationLogMapper.insert(operationLog);
+            return operationLog;
+        } catch (Exception e) {
+            log.error("Failed to save audit log to DB", e);
+            return new AgentOperationLog();
+        }
+    }
+
+    /**
+     * 剔除 Llm 可能输出的 markdown wrap ```json...```
+     */
+    private String cleanJsonString(String raw) {
+        if (raw == null) {
+            return "{}";
+        }
+        String cleaned = raw.trim();
+        if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replaceAll("^```[a-zA-Z]*\\s*", "");
+            cleaned = cleaned.replaceAll("\\s*```$", "");
+        }
+        return cleaned.trim();
+    }
+
+    /**
+     * 安全 String 类型转换
+     */
+    private String parseString(Object val) {
+        if (val == null) {
             return null;
         }
-
-        LocalDate baseDate = LocalDate.now();
-        LocalDate targetDate = null;
-
-        if (input.contains("今天")) {
-            targetDate = baseDate;
-        } else if (input.contains("明天")) {
-            targetDate = baseDate.plusDays(1);
-        } else if (input.contains("后天")) {
-            targetDate = baseDate.plusDays(2);
-        } else if (input.contains("下周一")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.MONDAY);
-        } else if (input.contains("下周二")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.TUESDAY);
-        } else if (input.contains("下周三")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.WEDNESDAY);
-        } else if (input.contains("下周四")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.THURSDAY);
-        } else if (input.contains("下周五")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.FRIDAY);
-        } else if (input.contains("下周六")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.SATURDAY);
-        } else if (input.contains("下周日") || input.contains("下周天")) {
-            targetDate = resolveNextWeekDate(baseDate, DayOfWeek.SUNDAY);
-        }
-
-        if (targetDate == null) {
-            return null;
-        }
-
-        int hour = 9;
-        int minute = 0;
-
-        boolean isPm = false;
-        if (input.contains("下午") || input.contains("晚上") || input.contains("晚间") || input.contains("夜里") || input.contains("下半天")) {
-            isPm = true;
-        }
-        
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(?:(\\d+)|([一二三四五六七八九十百]+))点(?:(?:(\\d+)|([一二三四五六七八九十百]+))分)?");
-        java.util.regex.Matcher matcher = pattern.matcher(input);
-        if (matcher.find()) {
-            String numStr = matcher.group(1);
-            String cnStr = matcher.group(2);
-            int h = -1;
-            if (numStr != null) {
-                h = Integer.parseInt(numStr);
-            } else if (cnStr != null) {
-                h = cnTextToInt(cnStr);
-            }
-            
-            if (h != -1) {
-                hour = h;
-                if (isPm && hour < 12) {
-                    hour += 12;
-                }
-            }
-            
-            String minNumStr = matcher.group(3);
-            String minCnStr = matcher.group(4);
-            if (minNumStr != null) {
-                minute = Integer.parseInt(minNumStr);
-            } else if (minCnStr != null) {
-                minute = cnTextToInt(minCnStr);
-            }
-        } else {
-            java.util.regex.Pattern timePattern = java.util.regex.Pattern.compile("(\\d{1,2}):(\\d{2})");
-            java.util.regex.Matcher timeMatcher = timePattern.matcher(input);
-            if (timeMatcher.find()) {
-                hour = Integer.parseInt(timeMatcher.group(1));
-                minute = Integer.parseInt(timeMatcher.group(2));
-            } else {
-                if (input.contains("下午")) {
-                    hour = 15;
-                } else if (input.contains("晚上")) {
-                    hour = 20;
-                } else if (input.contains("中午")) {
-                    hour = 12;
-                } else if (input.contains("早上") || input.contains("上午")) {
-                    hour = 9;
-                }
-            }
-        }
-
-        return LocalDateTime.of(targetDate, LocalTime.of(hour, minute));
+        return String.valueOf(val).trim();
     }
 
-    private LocalDate resolveNextWeekDate(LocalDate baseDate, DayOfWeek targetDay) {
-        return baseDate.with(TemporalAdjusters.next(targetDay));
+    /**
+     * 安全 Integer 类型转换
+     */
+    private Integer parseInteger(Object val, Integer defaultValue) {
+        if (val == null) {
+            return defaultValue;
+        }
+        if (val instanceof Number) {
+            return ((Number) val).intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(val).trim());
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 
-    private int cnTextToInt(String cn) {
-        switch (cn) {
-            case "一": return 1;
-            case "二": case "两": return 2;
-            case "三": return 3;
-            case "四": return 4;
-            case "五": return 5;
-            case "六": return 6;
-            case "七": return 7;
-            case "八": return 8;
-            case "九": return 9;
-            case "十": return 10;
-            case "十一": return 11;
-            case "十二": return 12;
-            case "十三": return 13;
-            case "十四": return 14;
-            case "十五": return 15;
-            case "二十": return 20;
-            case "三十": return 30;
-            case "四十": return 40;
-            case "五十": return 50;
-            default: return -1;
+    /**
+     * 构造系统 Prompt
+     */
+    private String buildSystemPrompt(List<String> contactNames) {
+        LocalDateTime now = LocalDateTime.now();
+        String dayOfWeekCn = getDayOfWeekCn(now.getDayOfWeek());
+        String candidates = contactNames.isEmpty() ? "（暂无联系人）" : String.join(", ", contactNames);
+
+        return "你是一个个人 CRM 系统的智能助手（Contact Agent）。你的任务是根据用户输入的自然语言，理解其意图并提取出结构化的参数。\n\n" +
+                "用户可能会进行以下三类操作：\n" +
+                "1. 查询联系人（query_contact）：用户想要查询联系人的信息。\n" +
+                "   - 提取参数：keyword (String，模糊查询的关键字，通常是名字、电话、标签等)\n" +
+                "2. 查询事项/待办（query_todo）：用户想要查询待办事项。\n" +
+                "   - 提取参数：\n" +
+                "     - contactName (String，关联的联系人姓名，若未提及则为空)\n" +
+                "     - status (Integer，事项状态。0: 待完成, 1: 已取消, 2: 已完成。默认为 0)\n" +
+                "3. 创建事项/待办（create_todo）：用户想要创建新的待办事项。这是一个写操作。\n" +
+                "   - 必须提取的关键槽位（字段）：\n" +
+                "     - contactName (String，关联的联系人姓名)\n" +
+                "     - todoTime (String，提醒时间，格式必须是 \"yyyy-MM-dd HH:mm:ss\")\n" +
+                "     - content (String，具体事项内容)\n" +
+                "     - priority (Integer，优先级。0: 普通, 1: 重要, 2: 紧急。若未提及默认为 1)\n" +
+                "   - 注意：如果用户输入中缺少任何一个关键槽位（contactName, todoTime, content），你需要将其列入 `missingFields` 列表中，并将 `isClarifying` 设为 true，并在 `summary` 中以友好、礼貌的中文向用户提出澄清问题（比如询问缺失的信息）。如果所有关键槽位都已齐全，`isClarifying` 设为 false，`missingFields` 为空数组。\n" +
+                "4. 不支持的操作（unsupported）：如删除、修改、拉黑、恢复联系人等写操作，或者与 CRM系统无关的输入。\n" +
+                "   - 响应中 `isClarifying` 为 false，`summary` 给出友好的不支持提示，如：“抱歉，智能助手目前仅支持“创建事项”的写操作，暂不支持其他类型的写请求。”\n\n" +
+                "【上下文信息】\n" +
+                "当前系统时间：" + now.format(TODO_TIME_FORMATTER) + " (" + dayOfWeekCn + ") （你的所有相对时间解析，如“明天下午三点”、“下周一”，都应该基于这个基准时间计算。计算时请注意星期和日期）\n" +
+                "当前用户的联系人候选名单：" + candidates + " （当用户提及某个名字时，尽量与这个名单里的名字做匹配，或者提取该名字。如果拼写或谐音相似，也可以在 summary 里引导澄清）\n\n" +
+                "【约束条件】\n" +
+                "- 你必须只返回符合以下 JSON 格式的字符串，绝对不要包含任何 markdown 标记（如 ```json）。\n" +
+                "- JSON 结构：\n" +
+                "{\n" +
+                "  \"intent\": \"query_contact\" | \"query_todo\" | \"create_todo\" | \"unsupported\",\n" +
+                "  \"queryType\": \"contact\" | \"todo\" | \"unsupported\",\n" +
+                "  \"summary\": \"回复文本\",\n" +
+                "  \"isClarifying\": true | false,\n" +
+                "  \"missingFields\": [\"contactName\", \"todoTime\", \"content\"],\n" +
+                "  \"parsedParams\": {\n" +
+                "     \"keyword\": \"\",\n" +
+                "     \"contactName\": \"\",\n" +
+                "     \"status\": 0,\n" +
+                "     \"todoTime\": \"\",\n" +
+                "     \"content\": \"\",\n" +
+                "     \"priority\": 1\n" +
+                "  }\n" +
+                "}";
+    }
+
+    private String getDayOfWeekCn(DayOfWeek d) {
+        switch (d) {
+            case MONDAY: return "星期一";
+            case TUESDAY: return "星期二";
+            case WEDNESDAY: return "星期三";
+            case THURSDAY: return "星期四";
+            case FRIDAY: return "星期五";
+            case SATURDAY: return "星期六";
+            case SUNDAY: return "星期日";
+            default: return "";
         }
     }
 }

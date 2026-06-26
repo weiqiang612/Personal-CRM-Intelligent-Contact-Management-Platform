@@ -35,3 +35,5 @@ personal_crm_web/coverage/
 tmp/
 temp/
 *.tmp
+personal_crm_backend/src/main/resources/application-local.yaml
+

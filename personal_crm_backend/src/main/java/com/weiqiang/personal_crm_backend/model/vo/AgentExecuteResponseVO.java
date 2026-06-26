@@ -3,7 +3,9 @@ package com.weiqiang.personal_crm_backend.model.vo;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+
 
 /**
  * Agent 写操作预确认响应对象
@@ -37,4 +39,25 @@ public class AgentExecuteResponseVO implements Serializable {
      * 解析参数映射
      */
     private Map<String, Object> parsedParams;
+
+    /**
+     * 会话 ID
+     */
+    private String sessionId;
+
+    /**
+     * 是否正在澄清信息
+     */
+    private Boolean isClarifying;
+
+    /**
+     * 缺失关键字段
+     */
+    private List<String> missingFields;
+
+    /**
+     * 结果列表 (若是查询分流)
+     */
+    private List<?> results;
 }
+

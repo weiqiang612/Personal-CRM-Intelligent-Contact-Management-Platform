@@ -15,4 +15,10 @@ public class AgentQueryParam implements Serializable {
 
     @NotBlank(message = "输入内容不能为空")
     private String input;
+
+    /**
+     * 会话 ID
+     */
+    private String sessionId;
+
 }

@@ -6,13 +6,24 @@ export type AgentResultItem = ContactInfo | TodoInfo
 
 export interface AgentQueryParams {
   input: string
+  sessionId?: string
 }
 
 export interface AgentQueryResult {
   queryType: 'contact' | 'todo' | 'unsupported'
-  intent: 'query_contact' | 'query_todo' | 'unsupported'
+  intent: string
   summary: string
   results: AgentResultItem[]
+  sessionId?: string
+  isClarifying?: boolean
+  missingFields?: string[]
+  parsedParams?: {
+    contactId?: string
+    contactName?: string
+    todoTime?: string
+    content?: string
+    priority?: number
+  }
 }
 
 /**
@@ -24,14 +35,19 @@ export function queryAgent(data: AgentQueryParams): Promise<AgentQueryResult> {
 
 export interface AgentExecuteParams {
   input: string
+  sessionId?: string
 }
 
 export interface AgentExecuteResult {
-  logId: number
+  logId?: number
   needConfirm: number // 0 | 1
   actionType: string // 'create_todo' | 'unsupported' 等
   summary: string
-  parsedParams: {
+  sessionId?: string
+  isClarifying?: boolean
+  missingFields?: string[]
+  results?: AgentResultItem[]
+  parsedParams?: {
     contactId?: string
     contactName?: string
     todoTime?: string

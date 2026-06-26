@@ -1,0 +1,5 @@
+- main [ref=e3]:
+  - paragraph [ref=e4]: "404"
+  - heading "页面不存在" [level=1] [ref=e5]
+  - link "回到作品集" [ref=e6] [cursor=pointer]:
+    - /url: /
