@@ -185,11 +185,54 @@
             </Transition>
           </div>
 
-          <!-- 通知铃铛 -->
-          <button class="notification-bell" type="button" @click="tipFeature">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-            <span class="notification-badge">3</span>
-          </button>
+          <!-- 通知铃铛与浮窗 -->
+          <div class="notification-container">
+            <button class="notification-bell" type="button" @click.stop="toggleNotifications" aria-label="通知中心">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+              <span v-if="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
+            </button>
+            
+            <!-- 移动端遮罩层 -->
+            <div class="notification-backdrop" :class="{ show: showNotifications }" @click="showNotifications = false"></div>
+            
+            <!-- 消息通知下拉浮窗 / 移动端抽屉 -->
+            <div class="notification-dropdown" :class="{ show: showNotifications }">
+              <div class="notification-header">
+                <span class="notification-header-title">通知提醒 ({{ unreadCount }})</span>
+                <button v-if="unreadCount > 0" class="notification-clear-all" @click="markAllAsRead">全部已读</button>
+              </div>
+              
+              <div class="notification-list-wrapper">
+                <div v-if="unreadNotifications.length === 0" class="notification-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <span>暂无新通知</span>
+                </div>
+                <div v-else class="notification-list">
+                  <div 
+                    v-for="item in unreadNotifications" 
+                    :key="item.id" 
+                    class="notification-item"
+                    :class="item.type"
+                    @click="handleNotificationClick(item)"
+                  >
+                    <div class="notification-item-icon">
+                      <span v-if="item.type === 'birthday'">🎂</span>
+                      <span v-else-if="item.type === 'overdue'">⚠️</span>
+                      <span v-else>📅</span>
+                    </div>
+                    <div class="notification-item-body">
+                      <div class="notification-item-title">{{ item.title }}</div>
+                      <div class="notification-item-content">{{ item.content }}</div>
+                      <div class="notification-item-time">{{ item.time }}</div>
+                    </div>
+                    <button class="notification-item-action" @click.stop="markAsRead(item.id)" title="标记已读">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><polyline points="20 6 9 17 4 12"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- 用户下拉 -->
           <div class="user-dropdown">
@@ -430,11 +473,14 @@ const handleGlobalKeydown = (e: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('click', handleDocumentClick)
   loadRecentlyViewed()
+  loadReadNotifications()
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('click', handleDocumentClick)
 })
 
 // 天气逻辑
@@ -674,8 +720,153 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const tipFeature = () => {
-  ElMessage.info('通知中心属于 Phase 2 扩展范围，目前仅做占位展示')
+interface NotificationItem {
+  id: string
+  type: 'birthday' | 'todo' | 'overdue'
+  title: string
+  content: string
+  time: string
+  link?: string
+}
+
+const showNotifications = ref(false)
+const notifications = ref<NotificationItem[]>([])
+const readNotificationIds = ref<string[]>([])
+
+const toggleNotifications = () => {
+  showNotifications.value = !showNotifications.value
+  if (showNotifications.value) {
+    showDropdown.value = false // 互斥展示
+  }
+}
+
+const loadReadNotifications = () => {
+  try {
+    const stored = localStorage.getItem('read_notifications')
+    readNotificationIds.value = stored ? JSON.parse(stored) : []
+  } catch (e) {
+    console.error('Failed to load read notifications:', e)
+  }
+}
+
+const markAsRead = (id: string) => {
+  if (!readNotificationIds.value.includes(id)) {
+    readNotificationIds.value.push(id)
+    localStorage.setItem('read_notifications', JSON.stringify(readNotificationIds.value))
+  }
+}
+
+const markAllAsRead = () => {
+  notifications.value.forEach(item => {
+    if (!readNotificationIds.value.includes(item.id)) {
+      readNotificationIds.value.push(item.id)
+    }
+  })
+  localStorage.setItem('read_notifications', JSON.stringify(readNotificationIds.value))
+}
+
+const unreadNotifications = computed(() => {
+  return notifications.value.filter(item => !readNotificationIds.value.includes(item.id))
+})
+
+const unreadCount = computed(() => {
+  return unreadNotifications.value.length
+})
+
+const handleNotificationClick = (item: NotificationItem) => {
+  markAsRead(item.id)
+  showNotifications.value = false
+  if (item.link) {
+    router.push(item.link)
+  }
+}
+
+const handleDocumentClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.user-dropdown')) {
+    showDropdown.value = false
+  }
+  if (!target.closest('.notification-container')) {
+    showNotifications.value = false
+  }
+}
+
+const scanNotifications = async () => {
+  try {
+    // 1. 获取活跃联系人，pageSize 设为大数如 200，保证能查全以过滤生日
+    const contactsRes = await getContactsApi({ status: 0, pageSize: 200 })
+    const activeContacts = contactsRes.list || []
+    
+    // 2. 获取未完成的待办事项
+    const todosRes = await getTodos({ status: 0, pageSize: 200 })
+    const pendingTodos = todosRes.list || []
+
+    const today = new Date()
+    const todayMMDD = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const currentYear = today.getFullYear()
+    
+    const list: NotificationItem[] = []
+
+    // 扫描生日
+    activeContacts.forEach(contact => {
+      if (contact.birthday) {
+        // birthday 格式为 yyyy-MM-dd
+        const parts = contact.birthday.split('-')
+        if (parts.length >= 3) {
+          const birthMMDD = `${parts[1]}-${parts[2]}`
+          if (birthMMDD === todayMMDD) {
+            list.push({
+              id: `birthday-${contact.contactId}-${currentYear}`,
+              type: 'birthday',
+              title: '🎂 生日提醒',
+              content: `今天是联系人【${contact.name}】的生日，送上您的问候吧！`,
+              time: '今天生日',
+              link: `/contacts/${contact.contactId}`
+            })
+          }
+        }
+      }
+    })
+
+    // 扫描待办与逾期
+    pendingTodos.forEach(todo => {
+      const todoDate = new Date(todo.todoTime.replace(/-/g, '/')) // 兼容性日期解析
+      const isOverdue = todo.overdue || todoDate < today
+      
+      const isToday = todoDate.toDateString() === today.toDateString()
+      
+      if (isOverdue) {
+        list.push({
+          id: `overdue-${todo.matterId}`,
+          type: 'overdue',
+          title: '⚠️ 事项逾期提醒',
+          content: `事项【${todo.content}】已逾期，请及时处理。`,
+          time: '已逾期',
+          link: '/todos'
+        })
+      } else if (isToday) {
+        const timePart = todo.todoTime.substring(11, 16)
+        list.push({
+          id: `todo-${todo.matterId}`,
+          type: 'todo',
+          title: '📅 今日日程提醒',
+          content: `今日待办: ${todo.content}，预约时间: ${timePart}`,
+          time: `今天 ${timePart}`,
+          link: '/todos'
+        })
+      }
+    })
+
+    // 排序：逾期 -> 生日 -> 今日待办
+    list.sort((a, b) => {
+      const order = { overdue: 0, birthday: 1, todo: 2 }
+      return order[a.type] - order[b.type]
+    })
+
+    notifications.value = list
+  } catch (e) {
+    console.error('Failed to scan notifications:', e)
+  }
 }
 
 watch(
@@ -684,6 +875,7 @@ watch(
     if (path === '/dashboard') {
       void loadWeather()
     }
+    void scanNotifications()
   },
   { immediate: true }
 )

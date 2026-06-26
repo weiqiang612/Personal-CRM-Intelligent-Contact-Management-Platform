@@ -512,6 +512,12 @@ button {
   pointer-events: none;
 }
 
+/* 通知容器与整体框架 */
+.notification-container {
+  position: relative;
+  display: inline-block;
+}
+
 .notification-bell {
   display: flex;
   align-items: center;
@@ -534,8 +540,9 @@ button {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 16px;
+  min-width: 16px;
   height: 16px;
+  padding: 0 4px;
   border-radius: var(--radius-full);
   background-color: var(--color-danger);
   color: var(--text-inverse);
@@ -545,6 +552,235 @@ button {
   justify-content: center;
   border: 2px solid var(--bg-app);
   font-weight: 700;
+}
+
+/* 通知下拉菜单浮窗 */
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 14px;
+  width: 320px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notification-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notification-header-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.notification-clear-all {
+  font-size: 12px;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: opacity 0.2s;
+}
+
+.notification-clear-all:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.notification-list-wrapper {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  color: var(--text-muted);
+  gap: 8px;
+}
+
+.notification-empty .empty-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.notification-empty span {
+  font-size: 13px;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.notification-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item-icon {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--bg-app);
+  flex-shrink: 0;
+}
+
+.notification-item.birthday .notification-item-icon {
+  background-color: rgba(236, 72, 153, 0.1);
+}
+.notification-item.overdue .notification-item-icon {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+.notification-item.todo .notification-item-icon {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.notification-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.notification-item-content {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.notification-item-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+.notification-item-action {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+  opacity: 0;
+  align-self: flex-start;
+  margin-top: -2px;
+  margin-right: -4px;
+}
+
+.notification-item:hover .notification-item-action {
+  opacity: 1;
+}
+
+.notification-item-action:hover {
+  background-color: var(--border-color);
+  color: var(--color-success);
+}
+
+/* 移动端响应式通知抽屉 */
+@media (max-width: 768px) {
+  .notification-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  
+  .notification-backdrop.show {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .notification-dropdown {
+    position: fixed;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    border-left: 1px solid var(--border-color);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    z-index: 999;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .notification-dropdown.show {
+    right: 0;
+    transform: none;
+  }
+  
+  .notification-list-wrapper {
+    max-height: calc(100vh - 60px);
+  }
 }
 
 /* 头像下拉菜单样式 */
