@@ -1021,7 +1021,7 @@ const scanNotifications = async () => {
           title: '⚠️ 事项逾期提醒',
           content: `事项【${todo.content}】已逾期，请及时处理。`,
           time: '已逾期',
-          link: '/todos'
+          link: `/todos?keyword=${encodeURIComponent(todo.content)}`
         })
       } else if (isToday) {
         const timePart = todo.todoTime.substring(11, 16)
@@ -1031,7 +1031,7 @@ const scanNotifications = async () => {
           title: '📅 今日日程提醒',
           content: `今日待办: ${todo.content}，预约时间: ${timePart}`,
           time: `今天 ${timePart}`,
-          link: '/todos'
+          link: `/todos?keyword=${encodeURIComponent(todo.content)}`
         })
       }
     })

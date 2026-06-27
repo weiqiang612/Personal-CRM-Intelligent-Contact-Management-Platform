@@ -3,14 +3,18 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-012-mobile-responsive-adaptation/`
-- spec.md ✅ Ready
+None (TASK-013 Contact and Todo Deletion Feature Completed)
+
+## Previous implementation task
+`docs/4-tasks/features/TASK-013-contact-todo-deletion/`
+- spec.md ✅ Completed
 - tasks.md ✅ Completed
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-011-agent-llm-session/`
 - spec.md ✅ Completed
 - tasks.md ✅ Completed
+
 
 
 ## Stages
@@ -73,6 +77,9 @@
 
 ### TASK-012: Mobile Responsive Adaptation
 - [x] Implementation (9 tasks) Completed
+
+### TASK-013: Contact and Todo Entity Deletion Support
+- [ ] Implementation (16 tasks)
 
 
 ## Backlog roadmap

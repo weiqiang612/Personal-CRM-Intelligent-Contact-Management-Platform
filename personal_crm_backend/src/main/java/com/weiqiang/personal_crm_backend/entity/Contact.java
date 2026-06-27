@@ -3,6 +3,7 @@ package com.weiqiang.personal_crm_backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -91,6 +92,12 @@ public class Contact implements Serializable {
      * 状态 (0 正常, 1 黑名单)
      */
     private Integer status;
+
+    /**
+     * 逻辑删除标识 (0 正常, 1 已删除)
+     */
+    @TableLogic
+    private Integer deleted;
 
     /**
      * 创建时间

@@ -441,4 +441,12 @@ defineExpose({
   background: var(--bg-surface, #ffffff);
   border-top: 1px solid var(--border-color-light, #f0f0f0);
 }
+
+/* 在 Web 桌面端视口下 (width > 768px)，彻底隐藏底部抽屉与遮罩，避免与右上角浮窗重叠 */
+@media (min-width: 769px) {
+  .mobile-sheet-backdrop,
+  .mobile-bottom-sheet {
+    display: none !important;
+  }
+}
 </style>

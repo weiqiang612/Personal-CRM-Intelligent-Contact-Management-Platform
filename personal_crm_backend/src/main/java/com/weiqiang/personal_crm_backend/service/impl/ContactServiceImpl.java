@@ -221,6 +221,22 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         this.updateById(contact);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteContact(String contactId) {
+        Contact contact = getAndValidateContact(contactId);
+        String userId = contact.getUserId();
+        
+        // 1. 执行逻辑删除联系人
+        this.removeById(contact.getId());
+
+        // 2. 清理标签关联关系
+        LambdaQueryWrapper<ContactTag> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ContactTag::getContactId, contactId)
+                .eq(ContactTag::getUserId, userId);
+        contactTagMapper.delete(wrapper);
+    }
+
     /**
      * 并发安全地生成全局唯一联系人业务编号 (C000000001格式)
      */

@@ -82,4 +82,13 @@ public class ContactController {
         contactService.restoreFromBlacklist(contactId);
         return Result.success();
     }
+
+    /**
+     * 删除联系人 (逻辑删除)
+     */
+    @DeleteMapping("/{contactId}")
+    public Result<Void> deleteContact(@PathVariable String contactId) {
+        contactService.deleteContact(contactId);
+        return Result.success();
+    }
 }

@@ -55,4 +55,13 @@ public class TodoController {
         todoService.cancelTodo(matterId);
         return Result.success();
     }
+
+    /**
+     * 删除事项 (逻辑删除)
+     */
+    @DeleteMapping("/{matterId}")
+    public Result<Void> deleteTodo(@PathVariable String matterId) {
+        todoService.deleteTodo(matterId);
+        return Result.success();
+    }
 }

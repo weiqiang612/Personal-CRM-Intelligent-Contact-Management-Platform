@@ -3,6 +3,7 @@ package com.weiqiang.personal_crm_backend.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -74,6 +75,12 @@ public class Todo implements Serializable {
      */
     @TableField("cancelled_at")
     private LocalDateTime cancelledAt;
+
+    /**
+     * 逻辑删除标识 (0 正常, 1 已删除)
+     */
+    @TableLogic
+    private Integer deleted;
 
     /**
      * 创建时间

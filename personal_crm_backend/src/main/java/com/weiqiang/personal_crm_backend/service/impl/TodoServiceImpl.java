@@ -128,6 +128,13 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
         this.updateById(todo);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteTodo(String matterId) {
+        Todo todo = getAndValidateTodo(matterId);
+        this.removeById(todo.getId());
+    }
+
     private Todo getAndValidateTodo(String matterId) {
         String userId = UserContext.getUserId();
         if (userId == null) {

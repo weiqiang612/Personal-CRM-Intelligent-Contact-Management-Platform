@@ -89,9 +89,28 @@
             </div>
           </div>
 
+          <button class="btn btn-danger-outline" @click="showDeleteConfirm = true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;margin-right:4px;display:inline-block;vertical-align:middle;">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            删除联系人
+          </button>
+
           <button class="btn btn-secondary" @click="goBack" style="border-color: #d1d5db;">返回列表</button>
         </div>
       </section>
+
+      <!-- 删除联系人危险确认弹窗 -->
+      <AppDialog
+        v-model="showDeleteConfirm"
+        title="确认删除该联系人？"
+        description="删除后联系人将被移出系统，关联标签将被清理，但历史创建的事项数据依然保留。"
+        confirm-text="确认删除"
+        confirm-type="danger"
+        :loading="deleteLoading"
+        @confirm="executeDeleteContact"
+      >
+      </AppDialog>
 
       <!-- 中部两栏 -->
       <section class="detail-body-layout" style="margin-top: 24px;">
@@ -405,7 +424,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi } from '@/api/contact'
+import AppDialog from '@/components/common/AppDialog.vue'
+import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi, deleteContactApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
 import { getTagsApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
@@ -425,6 +445,8 @@ const loading = ref<boolean>(false)
 const contact = ref<ContactInfo | null>(null)
 const currentTab = ref<string>('pending')
 const showBlacklistConfirm = ref<boolean>(false)
+const showDeleteConfirm = ref<boolean>(false)
+const deleteLoading = ref<boolean>(false)
 
 // 天气状态管理
 const contactWeather = ref<WeatherData | null>(null)
@@ -570,6 +592,22 @@ const handleCancel = async (matterId: string) => {
     loadContactTodos()
   } catch (error) {
     console.error('Failed to cancel todo:', error)
+  }
+}
+
+const executeDeleteContact = async () => {
+  if (!contact.value) return
+  try {
+    deleteLoading.value = true
+    await deleteContactApi(contact.value.contactId)
+    ElMessage.success('联系人已删除')
+    showDeleteConfirm.value = false
+    router.push('/contacts')
+  } catch (error: any) {
+    console.error('Failed to delete contact:', error)
+    ElMessage.error(error.message || '删除失败，请重试')
+  } finally {
+    deleteLoading.value = false
   }
 }
 

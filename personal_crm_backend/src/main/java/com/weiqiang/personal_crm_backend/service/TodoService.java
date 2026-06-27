@@ -41,4 +41,11 @@ public interface TodoService extends IService<Todo> {
      * @param matterId 事项业务 ID
      */
     void cancelTodo(String matterId);
+
+    /**
+     * 删除事项 (逻辑删除)
+     *
+     * @param matterId 事项业务 ID
+     */
+    void deleteTodo(String matterId);
 }

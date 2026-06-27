@@ -122,6 +122,7 @@
                   <router-link :to="`/contacts/${row.contactId}`" class="btn btn-secondary btn-sm">查看</router-link>
                   <router-link :to="`/contacts/${row.contactId}/edit`" class="btn btn-secondary btn-sm">编辑</router-link>
                   <router-link :to="`/todos?contactId=${row.contactId}`" class="btn btn-secondary btn-sm">事项</router-link>
+                  <button class="btn btn-danger-outline btn-sm" @click="openDeleteConfirm(row.contactId)">删除</button>
                   
                   <!-- 拉黑确认框 -->
                   <div class="popconfirm-container" style="display: inline-block; position: relative;">
@@ -192,6 +193,7 @@
             </div>
             <div class="card-actions-column">
               <router-link :to="`/contacts/${row.contactId}/edit`" class="btn btn-secondary btn-xs" @click.stop>编辑</router-link>
+              <button class="btn btn-danger-outline btn-xs" @click.stop="openDeleteConfirm(row.contactId)">删除</button>
               <button class="btn btn-danger-outline btn-xs" @click.stop="confirmToBlacklist(row.contactId)">拉黑</button>
             </div>
           </div>
@@ -235,6 +237,18 @@
         </div>
       </div>
     </section>
+
+    <!-- 删除联系人危险确认弹窗 -->
+    <AppDialog
+      v-model="showDeleteConfirm"
+      title="确认删除该联系人？"
+      description="删除后联系人将被移出系统，关联标签将被清理，但历史创建的事项数据依然保留。"
+      confirm-text="确认删除"
+      confirm-type="danger"
+      :loading="deleteLoading"
+      @confirm="executeDeleteContact"
+    >
+    </AppDialog>
     <!-- 标签管理弹窗 -->
     <el-dialog
       v-model="tagManagerVisible"
@@ -320,13 +334,39 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getContactsApi, addToBlacklistApi } from '@/api/contact'
+import AppDialog from '@/components/common/AppDialog.vue'
+import { getContactsApi, addToBlacklistApi, deleteContactApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
 import { getTagsApi, createTagApi, updateTagApi, deleteTagApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
 
 const router = useRouter()
 const defaultAvatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80'
+
+const showDeleteConfirm = ref<boolean>(false)
+const deleteContactId = ref<string>('')
+const deleteLoading = ref<boolean>(false)
+
+const openDeleteConfirm = (contactId: string) => {
+  deleteContactId.value = contactId
+  showDeleteConfirm.value = true
+}
+
+const executeDeleteContact = async () => {
+  if (!deleteContactId.value) return
+  try {
+    deleteLoading.value = true
+    await deleteContactApi(deleteContactId.value)
+    ElMessage.success('联系人已删除')
+    showDeleteConfirm.value = false
+    fetchContactsList()
+  } catch (error: any) {
+    console.error('Failed to delete contact:', error)
+    ElMessage.error(error.message || '删除失败，请重试')
+  } finally {
+    deleteLoading.value = false
+  }
+}
 
 const handleRowClick = (event: MouseEvent, contactId: string) => {
   const target = event.target as HTMLElement

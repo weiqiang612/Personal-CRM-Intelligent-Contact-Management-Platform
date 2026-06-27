@@ -203,6 +203,8 @@
                     </template>
                   </el-popconfirm>
 
+                  <button class="btn btn-danger-outline btn-sm" @click="openDeleteConfirm(row.matterId)">删除</button>
+
                   <router-link :to="`/contacts/${row.contactId}`" class="btn btn-secondary btn-sm">查看联系人</router-link>
                 </div>
               </td>
@@ -273,6 +275,8 @@
                   <button class="btn btn-secondary btn-xs" :disabled="row.status !== 0">取消</button>
                 </template>
               </el-popconfirm>
+
+              <button class="btn btn-danger-outline btn-xs" @click="openDeleteConfirm(row.matterId)">删除</button>
             </div>
           </div>
         </div>
@@ -315,14 +319,27 @@
         </div>
       </div>
     </section>
+
+    <!-- 删除事项危险确认弹窗 -->
+    <AppDialog
+      v-model="showDeleteConfirm"
+      title="确认删除该事项？"
+      description="删除后该日程待办提醒将被移出提醒列表，无法恢复。"
+      confirm-text="确认删除"
+      confirm-type="danger"
+      :loading="deleteLoading"
+      @confirm="executeDeleteTodo"
+    >
+    </AppDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
+import AppDialog from '@/components/common/AppDialog.vue'
+import { getTodos, completeTodo, cancelTodo, deleteTodo } from '@/api/todo'
 import { getContactsApi } from '@/api/contact'
 import type { TodoInfo, TodoParams } from '@/types/todo'
 import type { ContactInfo } from '@/api/contact'
@@ -334,6 +351,31 @@ const loading = ref(false)
 const todos = ref<TodoInfo[]>([])
 const total = ref(0)
 const activeTab = ref('all')
+
+const showDeleteConfirm = ref<boolean>(false)
+const deleteMatterId = ref<string>('')
+const deleteLoading = ref<boolean>(false)
+
+const openDeleteConfirm = (matterId: string) => {
+  deleteMatterId.value = matterId
+  showDeleteConfirm.value = true
+}
+
+const executeDeleteTodo = async () => {
+  if (!deleteMatterId.value) return
+  try {
+    deleteLoading.value = true
+    await deleteTodo(deleteMatterId.value)
+    ElMessage.success('事项已删除')
+    showDeleteConfirm.value = false
+    fetchTodos()
+  } catch (error: any) {
+    console.error('Failed to delete todo:', error)
+    ElMessage.error(error.message || '删除失败，请重试')
+  } finally {
+    deleteLoading.value = false
+  }
+}
 
 // 下拉联系人选项
 const contactOptions = ref<ContactInfo[]>([])
@@ -716,7 +758,7 @@ onMounted(async () => {
   fetchTabCounts()
 })
 
-// 监听路由 query 参数变化，以便从全局检索跳转时能实时更新列表
+// 监听路由 query 参数变化，以便从全局检索或通知中心跳转时能实时更新列表
 watch(
   () => route.query,
   (query) => {

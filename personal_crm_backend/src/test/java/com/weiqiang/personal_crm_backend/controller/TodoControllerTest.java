@@ -283,4 +283,21 @@ public class TodoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40901)));
     }
+
+    @Test
+    void testDeleteTodo_Success() throws Exception {
+        // 删除 user1PendingTodoMatterId
+        mockMvc.perform(delete("/api/v1/todos/" + user1PendingTodoMatterId)
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 验证列表不再能查出该事项
+        mockMvc.perform(get("/api/v1/todos")
+                        .header("Authorization", token)
+                        .param("page", "1")
+                        .param("pageSize", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[*].matterId", not(hasItem(user1PendingTodoMatterId))));
+    }
 }

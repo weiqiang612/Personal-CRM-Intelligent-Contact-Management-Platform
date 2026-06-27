@@ -41,4 +41,9 @@ public interface ContactService extends IService<Contact> {
      * 从黑名单恢复联系人
      */
     void restoreFromBlacklist(String contactId);
+
+    /**
+     * 删除联系人 (逻辑删除)
+     */
+    void deleteContact(String contactId);
 }

@@ -82,61 +82,46 @@
     </div>
 
     <!-- 修改邮箱弹窗 -->
-    <el-dialog
+    <AppDialog
       v-model="emailDialogVisible"
       title="修改电子邮箱"
-      class="settings-dialog"
-      align-center
-      append-to-body
-      destroy-on-close
+      description="请输入新的邮箱地址，用于登录和通知。"
+      confirm-text="保存"
+      :loading="submitLoading"
+      @confirm="handleUpdateEmail"
     >
-      <div class="dialog-description">请输入新的邮箱地址，用于登录和通知。</div>
       <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-position="top">
         <el-form-item label="电子邮箱" prop="email">
           <el-input v-model="emailForm.email" placeholder="请输入新电子邮箱" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <div style="display:flex; justify-content:flex-end; gap:12px;">
-          <el-button @click="emailDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleUpdateEmail">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 修改手机弹窗 -->
-    <el-dialog
+    <AppDialog
       v-model="phoneDialogVisible"
       title="修改手机号码"
-      class="settings-dialog"
-      align-center
-      append-to-body
-      destroy-on-close
+      description="请输入新的手机号码，用于接收系统重要通知。"
+      confirm-text="保存"
+      :loading="submitLoading"
+      @confirm="handleUpdatePhone"
     >
-      <div class="dialog-description">请输入新的手机号码，用于接收系统重要通知。</div>
       <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" label-position="top">
         <el-form-item label="手机号码" prop="phone">
           <el-input v-model="phoneForm.phone" placeholder="请输入新手机号码" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <div style="display:flex; justify-content:flex-end; gap:12px;">
-          <el-button @click="phoneDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleUpdatePhone">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 修改密码弹窗 -->
-    <el-dialog
+    <AppDialog
       v-model="passwordDialogVisible"
       title="修改密码"
-      class="settings-dialog"
-      align-center
-      append-to-body
-      destroy-on-close
+      description="为了您的账号安全，请定期更换复杂密码。"
+      confirm-text="保存"
+      :loading="submitLoading"
+      @confirm="handleUpdatePassword"
     >
-      <div class="dialog-description">为了您的账号安全，请定期更换复杂密码。</div>
       <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-position="top">
         <el-form-item label="原密码" prop="oldPassword">
           <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
@@ -148,18 +133,13 @@
           <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <div style="display:flex; justify-content:flex-end; gap:12px;">
-          <el-button @click="passwordDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitLoading" @click="handleUpdatePassword">保存</el-button>
-        </div>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElNotification, ElMessage } from 'element-plus'

@@ -103,3 +103,10 @@ export function addToBlacklistApi(contactId: string): Promise<void> {
 export function restoreFromBlacklistApi(contactId: string): Promise<void> {
   return request.patch(`/contacts/${contactId}/restore`, { status: 0 })
 }
+
+/**
+ * 删除联系人 (逻辑删除)
+ */
+export function deleteContactApi(contactId: string): Promise<void> {
+  return request.delete(`/contacts/${contactId}`)
+}

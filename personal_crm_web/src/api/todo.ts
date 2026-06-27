@@ -28,3 +28,10 @@ export function completeTodo(matterId: string): Promise<void> {
 export function cancelTodo(matterId: string): Promise<void> {
   return request.patch(`/todos/${matterId}/cancel`)
 }
+
+/**
+ * 删除事项 (逻辑删除)
+ */
+export function deleteTodo(matterId: string): Promise<void> {
+  return request.delete(`/todos/${matterId}`)
+}

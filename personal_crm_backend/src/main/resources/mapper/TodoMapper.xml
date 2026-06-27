@@ -16,9 +16,10 @@
             t.cancelled_at AS cancelledAt,
             t.created_at AS createdAt
         FROM contact_todo t
-        LEFT JOIN contact c ON t.contact_id = c.ct_id
+        LEFT JOIN contact c ON t.contact_id = c.ct_id AND c.deleted = 0
         <where>
             t.user_id = #{userId}
+            AND t.deleted = 0
             <if test="query.contactId != null and query.contactId != ''">
                 AND t.contact_id = #{query.contactId}
             </if>

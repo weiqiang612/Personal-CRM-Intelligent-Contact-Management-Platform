@@ -308,4 +308,19 @@ public class ContactControllerTest {
                 .andExpect(jsonPath("$.data.list", hasSize(1)))
                 .andExpect(jsonPath("$.data.list[0].contactId", is(otherCtId)));
     }
+
+    @Test
+    void testDeleteContact_Success() throws Exception {
+        // 删除现有的 testCtId
+        mockMvc.perform(delete("/api/v1/contacts/" + testCtId)
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 再次获取详情，应该返回 40401
+        mockMvc.perform(get("/api/v1/contacts/" + testCtId)
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40401)));
+    }
 }
