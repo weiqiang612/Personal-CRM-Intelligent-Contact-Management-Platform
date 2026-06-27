@@ -270,7 +270,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const loading = ref<boolean>(false)
-const rememberMe = ref<boolean>(true)
+const rememberMe = ref<boolean>(false)
 const showPassword = ref<boolean>(false)
 
 // 错误提示控制
@@ -284,9 +284,17 @@ const loginForm = reactive({
 
 onMounted(() => {
   const savedUsername = localStorage.getItem('saved_username')
+  const savedPassword = localStorage.getItem('saved_password')
   if (savedUsername) {
     loginForm.username = savedUsername
     rememberMe.value = true
+  }
+  if (savedPassword) {
+    try {
+      loginForm.password = atob(savedPassword)
+    } catch {
+      loginForm.password = savedPassword
+    }
   }
 })
 
@@ -320,8 +328,10 @@ const handleLogin = async () => {
 
     if (rememberMe.value) {
       localStorage.setItem('saved_username', username)
+      localStorage.setItem('saved_password', btoa(password))
     } else {
       localStorage.removeItem('saved_username')
+      localStorage.removeItem('saved_password')
     }
 
     ElMessage.success('登录成功')

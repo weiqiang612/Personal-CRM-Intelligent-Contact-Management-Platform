@@ -199,16 +199,73 @@
         <div ref="genderChartRef" id="genderChart" style="width: 100%;"></div>
       </div>
 
-      <!-- 未来 7 天趋势 -->
-      <div class="card chart-card">
+      <!-- 未来 7 天事项 Entry Overview 卡片 (Apple 极致打磨版) -->
+      <div class="card chart-card timeline-overview-card">
         <div class="card-header">
-          <h3 class="card-title">未来 7 天事项趋势</h3>
-          <div class="card-actions-inline">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;cursor:pointer;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <router-link to="/todos" class="action-link">查看详情</router-link>
+          <div class="header-title-group">
+            <h3 class="card-title">未来 7 天事项</h3>
           </div>
         </div>
-        <div ref="trendChartRef" id="trendChart" style="width: 100%;"></div>
+        
+        <!-- 顶部：7 天底线高亮极简导航条 -->
+        <div class="timeline-segmented-bar line-bar">
+          <button 
+            v-for="(day, index) in microScheduleDays" 
+            :key="day.fullDate"
+            class="timeline-segment-item line-item"
+            :class="{ 
+              'is-active': activeDayIndex === index, 
+              'is-today': index === 0,
+              'has-indicator': day.count > 0 
+            }"
+            @click="selectTimelineDay(index)"
+          >
+            <span class="segment-indicator" v-if="day.count > 0"></span>
+            <span class="segment-day">{{ day.dayName }}</span>
+            <span class="segment-date">{{ day.dateStr }}</span>
+          </button>
+        </div>
+
+        <div class="overview-divider"></div>
+
+        <!-- 底部：Apple 风格精美事项 Card 视窗 (带切换平滑动效) -->
+        <transition name="fade-slide" mode="out-in">
+          <div class="overview-focus-section" v-if="currentActiveDay" :key="activeDayIndex">
+            <div class="focus-section-header">
+              <span class="focus-title">{{ currentActiveDay.dayName }} · {{ currentActiveDay.count }} 项待办</span>
+            </div>
+
+            <div class="focus-section-body">
+              <div v-if="currentActiveDay.loadingTodos" class="focus-loading-row">加载中...</div>
+              <div v-else-if="!currentActiveDay.todos || currentActiveDay.todos.length === 0" class="focus-empty-row">
+                该日暂无待办事项，轻松一下吧☕
+              </div>
+              <div v-else class="summary-cards-wrapper">
+                <div 
+                  v-for="todo in (currentActiveDay.todos || []).slice(0, 2)" 
+                  :key="todo.matterId" 
+                  class="summary-card-item"
+                  @click="goToTodoDate(currentActiveDay.fullDate)"
+                >
+                  <div class="card-item-top">
+                    <span class="priority-mini-dot" :class="getPriorityClass(todo.priority)"></span>
+                    <span class="card-item-title">{{ todo.content }}</span>
+                  </div>
+                  <div class="card-item-bottom">
+                    <span class="card-item-time">{{ formatTodoTime(todo.todoTime) || '全天' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="focus-section-footer">
+              <router-link to="/todos" class="entry-more-link">
+                <span>查看全部</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="link-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </router-link>
+            </div>
+          </div>
+        </transition>
       </div>
     </section>
 
@@ -834,7 +891,104 @@ async function fetchTodayTodos() {
 }
 
 async function refreshDashboardData() {
-  await Promise.all([fetchOverview(), fetchTodayTodos(), initTrendChart()])
+  await Promise.all([fetchOverview(), fetchTodayTodos(), initMicroSchedule()])
+}
+
+interface MicroScheduleDay {
+  dateStr: string
+  fullDate: string
+  dayName: string
+  count: number
+  todos?: TodoInfo[]
+  loadingTodos?: boolean
+}
+
+const microScheduleDays = ref<MicroScheduleDay[]>([])
+const activeDayIndex = ref<number>(0)
+const currentActiveDay = computed(() => {
+  return microScheduleDays.value[activeDayIndex.value] || null
+})
+
+const totalFutureTodos = computed(() => {
+  return microScheduleDays.value.reduce((acc, item) => acc + item.count, 0)
+})
+
+function selectTimelineDay(index: number) {
+  activeDayIndex.value = index
+  const day = microScheduleDays.value[index]
+  if (day) {
+    loadDayTodos(day)
+  }
+}
+
+async function initMicroSchedule() {
+  try {
+    const data: TodoTrendItem[] = await getTodoTrend(7)
+    const daysName = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    const result: MicroScheduleDay[] = []
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date()
+      d.setDate(d.getDate() + i)
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      const fullDate = `${year}-${month}-${day}`
+      const dateStr = `${d.getMonth() + 1}/${d.getDate()}`
+      const dayName = i === 0 ? '今天' : daysName[d.getDay()]
+      
+      const match = data.find(item => item.date === fullDate || item.date === dateStr)
+      const count = match ? match.count : (data[i] ? data[i].count : 0)
+
+      result.push({
+        dateStr,
+        fullDate,
+        dayName,
+        count
+      })
+    }
+    microScheduleDays.value = result
+
+    // 自动拉取所有有事项日期的详细待办列表
+    await Promise.all(
+      microScheduleDays.value
+        .filter(d => d.count > 0)
+        .map(d => loadDayTodos(d))
+    )
+
+    // 智能定位：默认选中第一个有待办的日期，方便用户一眼看核心事项；若无待办则选中今天
+    const firstHasTodoIndex = microScheduleDays.value.findIndex(d => d.count > 0)
+    if (firstHasTodoIndex !== -1) {
+      activeDayIndex.value = firstHasTodoIndex
+    } else {
+      activeDayIndex.value = 0
+    }
+  } catch (e) {
+    console.error('Failed to init micro schedule:', e)
+  }
+}
+
+async function loadDayTodos(day: MicroScheduleDay) {
+  if (day.todos !== undefined || day.loadingTodos) return
+  day.loadingTodos = true
+  try {
+    const res = await getTodos({
+      startTime: `${day.fullDate} 00:00:00`,
+      endTime: `${day.fullDate} 23:59:59`,
+      page: 1,
+      pageSize: 5
+    })
+    day.todos = res.list
+  } catch (e) {
+    console.error('Failed to load day todos:', e)
+    day.todos = []
+  } finally {
+    day.loadingTodos = false
+  }
+}
+
+function goToTodoDate(fullDate: string) {
+  router.push({ path: '/todos', query: { date: fullDate } })
 }
 
 async function fetchRecentContacts() {
@@ -1348,7 +1502,7 @@ onMounted(async () => {
     fetchRecentContacts()
   ])
 
-  await initTrendChart()
+  await initMicroSchedule()
   await initGenderChart()
 
   window.addEventListener('resize', handleResize)
@@ -1963,6 +2117,7 @@ onBeforeUnmount(() => {
 
 .chart-card {
   min-height: 226px;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -2880,14 +3035,6 @@ onBeforeUnmount(() => {
     z-index: 1000 !important;
   }
 
-  .agent-drawer.open {
-    transform: translateY(0) !important; /* 打开时滑上 */
-  }
-
-  .agent-drawer-resizer {
-    display: none !important; /* 小屏下禁用并隐藏拉伸条 */
-  }
-
   .chat-header {
     position: relative !important;
     padding-top: 22px !important; /* 留出顶部手势条空间 */
@@ -2910,5 +3057,245 @@ onBeforeUnmount(() => {
   .chat-input-area {
     padding-bottom: env(safe-area-inset-bottom, 16px) !important;
   }
+}
+
+/* ==========================================
+ * Apple 极致打磨 7 天 Entry Overview 卡片样式
+ * ========================================== */
+.timeline-overview-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px 14px 20px;
+  height: 100%;
+  min-height: 226px;
+}
+
+/* 顶部：7天底线高亮极简导航条（无灰色大卡槽） */
+.timeline-segmented-bar.line-bar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  margin-top: 4px;
+}
+
+.timeline-segment-item.line-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px 6px 2px;
+  border: none;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.timeline-segment-item.line-item:hover {
+  background-color: #f0f7ff;
+  transform: translateY(-1px);
+}
+
+/* 选中态 (Click selection)：底边精致品牌蓝指示线，展现稳定坚固掌控感 */
+.timeline-segment-item.line-item.is-active {
+  background-color: transparent;
+  border-bottom-color: #2563eb;
+}
+
+.segment-indicator {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #2563eb;
+}
+
+.segment-day {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.1;
+}
+
+.timeline-segment-item.is-today .segment-day {
+  color: var(--color-primary, #2563eb);
+}
+
+.timeline-segment-item.is-active .segment-day {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.segment-date {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-top: 1px;
+}
+
+.timeline-segment-item.is-active .segment-date {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.overview-divider {
+  height: 1px;
+  border-bottom: 1px dashed #e2e8f0;
+  margin: 4px 0 6px 0;
+}
+
+/* 底部：Apple 风格精美事项 Card 视窗 (标题主视角，时间 Secondary) */
+.overview-focus-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.focus-section-header {
+  display: flex;
+  align-items: center;
+}
+
+.focus-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.2px;
+}
+
+.focus-section-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4px 0;
+}
+
+.focus-loading-row, .focus-empty-row {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.summary-cards-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background-color: var(--bg-hover, #f8fafc);
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.summary-card-item:hover {
+  transform: translateX(2px);
+  background-color: #ffffff;
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 12px -3px rgba(37, 99, 235, 0.08);
+}
+
+.card-item-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.priority-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: #3b82f6;
+}
+
+.priority-mini-dot.badge-priority-emergency {
+  background-color: #ef4444;
+}
+
+.priority-mini-dot.badge-priority-important {
+  background-color: #f59e0b;
+}
+
+.card-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-item-bottom {
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+}
+
+.card-item-time {
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.focus-section-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.entry-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+  transition: gap 0.15s ease, color 0.15s ease;
+}
+
+.entry-more-link:hover {
+  color: #1d4ed8;
+  gap: 6px;
+}
+
+.link-arrow {
+  width: 12px;
+  height: 12px;
+}
+
+/* 切换平滑动效 (150ms 黄金微滑) */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.26s cubic-bezier(0.25, 1, 0.5, 1), transform 0.26s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
 }
 </style>
