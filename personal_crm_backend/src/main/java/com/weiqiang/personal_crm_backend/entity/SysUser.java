@@ -38,6 +38,16 @@ public class SysUser {
     private Integer status;
 
     /**
+     * 电子邮箱
+     */
+    private String email;
+
+    /**
+     * 手机号码
+     */
+    private String phone;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createdAt;

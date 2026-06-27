@@ -22,6 +22,7 @@
 - [x] T8 — Verify: 验证 ACs：在 `spec.md` 中将全部测试通过的标准的 `passes` 修改为 `true` · covers: AC-005
 - [x] T9 — Update: 更新 `docs/4-tasks/CURRENT_PLAN.md` 标志本适配任务完成 · covers: doc-maintenance
 - [x] T11 — Bugfix: 修复联系人详情页 (ContactDetailView.vue) 移动端按钮被截断、事项卡片溢出的排版 Bug · covers: AC-005
+- [x] T12 — Bugfix: 修复设置页 (SettingsView.vue) 修改邮箱、修改手机、修改密码等弹窗的移动端响应式适配 · covers: AC-005
 
 ## Dependencies
 - T2, T3 require T1

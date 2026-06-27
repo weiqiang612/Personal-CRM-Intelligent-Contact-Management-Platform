@@ -29,6 +29,8 @@ export interface UserMeResult {
   username: string
   status: number
   avatarUrl: string | null
+  email?: string | null
+  phone?: string | null
 }
 
 /**
@@ -58,4 +60,33 @@ export interface RegisterParams {
  */
 export function registerApi(data: RegisterParams): Promise<void> {
   return request.post('/auth/register', data)
+}
+
+/**
+ * 修改邮箱 API
+ */
+export function updateEmailApi(email: string): Promise<void> {
+  return request.put('/auth/profile/email', { email })
+}
+
+/**
+ * 修改手机 API
+ */
+export function updatePhoneApi(phone: string): Promise<void> {
+  return request.put('/auth/profile/phone', { phone })
+}
+
+/**
+ * 修改密码请求参数接口
+ */
+export interface UpdatePasswordParams {
+  oldPassword: string
+  newPassword: string
+}
+
+/**
+ * 修改密码 API
+ */
+export function updatePasswordApi(data: UpdatePasswordParams): Promise<void> {
+  return request.put('/auth/profile/password', data)
 }

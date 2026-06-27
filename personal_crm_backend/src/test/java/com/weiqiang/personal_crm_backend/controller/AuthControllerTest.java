@@ -292,4 +292,134 @@ public class AuthControllerTest {
         // 4个并发创建的用户的 userId 应全部不相同
         org.junit.jupiter.api.Assertions.assertEquals(threadCount, userIds.size());
     }
+
+    @Test
+    public void testUpdateEmail_Success() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("ethan");
+        loginRequest.setPassword("123456");
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).path("data").path("token").asText();
+
+        // 1. 修改邮箱
+        com.weiqiang.personal_crm_backend.model.dto.UpdateEmailRequest updateEmailRequest = new com.weiqiang.personal_crm_backend.model.dto.UpdateEmailRequest();
+        updateEmailRequest.setEmail("ethan_new@example.com");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/auth/profile/email")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateEmailRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 2. 校验用户信息接口返回的邮箱是否已改变
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.email", is("ethan_new@example.com")));
+    }
+
+    @Test
+    public void testUpdatePhone_Success() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("ethan");
+        loginRequest.setPassword("123456");
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).path("data").path("token").asText();
+
+        // 1. 修改手机号
+        com.weiqiang.personal_crm_backend.model.dto.UpdatePhoneRequest updatePhoneRequest = new com.weiqiang.personal_crm_backend.model.dto.UpdatePhoneRequest();
+        updatePhoneRequest.setPhone("13988889999");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/auth/profile/phone")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatePhoneRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 2. 校验返回
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.phone", is("13988889999")));
+    }
+
+    @Test
+    public void testUpdatePassword_SuccessAndFail() throws Exception {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setUsername("ethan");
+        loginRequest.setPassword("123456");
+
+        String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String token = objectMapper.readTree(loginResponse).path("data").path("token").asText();
+
+        // 1. 使用错误的旧密码修改密码，应该失败
+        com.weiqiang.personal_crm_backend.model.dto.UpdatePasswordRequest updatePasswordRequest = new com.weiqiang.personal_crm_backend.model.dto.UpdatePasswordRequest();
+        updatePasswordRequest.setOldPassword("wrongpassword");
+        updatePasswordRequest.setNewPassword("newpassword123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/auth/profile/password")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatePasswordRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40001))); // PARAMS_ERROR
+
+        // 2. 使用正确的密码修改密码，应该成功
+        updatePasswordRequest.setOldPassword("123456");
+        updatePasswordRequest.setNewPassword("newpassword123");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/auth/profile/password")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatePasswordRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 3. 验证使用老密码登录失败
+        LoginRequest failLogin = new LoginRequest();
+        failLogin.setUsername("ethan");
+        failLogin.setPassword("123456");
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(failLogin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40001)));
+
+        // 4. 验证使用新密码登录成功
+        LoginRequest successLogin = new LoginRequest();
+        successLogin.setUsername("ethan");
+        successLogin.setPassword("newpassword123");
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(successLogin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+    }
 }

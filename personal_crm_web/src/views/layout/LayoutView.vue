@@ -315,20 +315,21 @@
                 <span v-if="unreadCount > 0" class="mobile-bell-badge">{{ unreadCount }}</span>
               </button>
               
-              <!-- 移动端遮罩层 -->
-              <div class="notification-backdrop" :class="{ show: showNotifications }" @click="showNotifications = false"></div>
-              
-              <!-- 消息通知下拉浮窗 / 移动端抽屉 -->
-              <div class="notification-dropdown" :class="{ show: showNotifications }">
-                <div class="notification-header">
-                  <span class="notification-header-title">通知提醒 ({{ unreadCount }})</span>
+              <!-- 移动端统一 Bottom Sheet 通知提醒 -->
+              <MobileBottomSheet
+                v-model="showNotifications"
+                :title="`通知提醒 (${unreadCount})`"
+                :preset="unreadNotifications.length === 0 ? 'notification-empty' : 'notification'"
+              >
+                <template #header>
+                  <div class="sheet-title">通知提醒 ({{ unreadCount }})</div>
                   <button v-if="unreadCount > 0" class="notification-clear-all" @click="markAllAsRead">全部已读</button>
-                </div>
-                
+                </template>
                 <div class="notification-list-wrapper">
                   <div v-if="unreadNotifications.length === 0" class="notification-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="empty-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    <span>暂无新通知</span>
+                    <div class="empty-title">暂无新通知</div>
+                    <div class="empty-sub">今天没有需要提醒的事项</div>
                   </div>
                   <div v-else class="notification-list">
                     <div 
@@ -354,7 +355,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </MobileBottomSheet>
             </div>
             <!-- 用户头像快捷跳转 -->
             <router-link to="/settings" class="mobile-avatar-link">
@@ -409,6 +410,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import MobileBottomSheet from '@/components/common/MobileBottomSheet.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'

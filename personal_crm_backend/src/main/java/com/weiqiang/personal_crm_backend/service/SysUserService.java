@@ -27,4 +27,19 @@ public interface SysUserService extends IService<SysUser> {
      * 用户注册
      */
     void register(RegisterRequest registerRequest);
+
+    /**
+     * 修改用户邮箱
+     */
+    void updateEmail(String userId, String email);
+
+    /**
+     * 修改用户手机号
+     */
+    void updatePhone(String userId, String phone);
+
+    /**
+     * 修改用户密码
+     */
+    void updatePassword(String userId, String oldPassword, String newPassword);
 }

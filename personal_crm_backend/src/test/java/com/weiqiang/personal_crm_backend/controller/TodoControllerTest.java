@@ -143,7 +143,9 @@ public class TodoControllerTest {
     void testListTodos_FilterByStatus() throws Exception {
         mockMvc.perform(get("/api/v1/todos")
                         .header("Authorization", token)
-                        .param("status", "2")) // 已完成
+                        .param("status", "2")
+                        .param("page", "1")
+                        .param("pageSize", "100")) // 已完成
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.list", hasSize(greaterThanOrEqualTo(1))))
@@ -233,7 +235,9 @@ public class TodoControllerTest {
         // 再次查看该事项的完成状态
         mockMvc.perform(get("/api/v1/todos")
                         .header("Authorization", token)
-                        .param("status", "2")) // 已完成
+                        .param("status", "2")
+                        .param("page", "1")
+                        .param("pageSize", "100")) // 已完成
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[*].matterId", hasItem(user1PendingTodoMatterId)));
     }

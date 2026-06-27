@@ -45,3 +45,7 @@ erDiagram
 ## 6. 原始方案索引 (Source Reference)
 - 本文为结构化数据库摘要。
 - 若需要查看字段级设计说明、状态定义、索引设计和指导书基线对齐说明，请回看：`docs/Personal CRM 智能联系人管理平台数据库设计.md`。
+
+## 7. 数据模型微调 (Schema Adjustments)
+- **2026-06-27**：在 `sys_user` 表中新增 `email` (VARCHAR(100)) 与 `phone` (VARCHAR(30)) 字段，用以支持个人资料管理中修改电子邮箱和修改手机号码功能。
+

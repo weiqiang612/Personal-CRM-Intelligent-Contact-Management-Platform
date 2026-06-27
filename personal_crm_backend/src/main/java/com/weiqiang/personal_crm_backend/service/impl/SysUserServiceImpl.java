@@ -88,6 +88,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         userMeVo.setUsername(user.getUsername());
         userMeVo.setStatus(user.getStatus());
         userMeVo.setAvatarUrl(avatarAccessService.resolveUserAvatarUrl(avatar));
+        userMeVo.setEmail(user.getEmail());
+        userMeVo.setPhone(user.getPhone());
 
         return userMeVo;
     }
@@ -179,5 +181,41 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         } catch (Exception e) {
             return "U" + (System.currentTimeMillis() % 1000000000L);
         }
+    }
+
+    @Override
+    public void updateEmail(String userId, String email) {
+        SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+        }
+        user.setEmail(email);
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+    }
+
+    @Override
+    public void updatePhone(String userId, String phone) {
+        SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+        }
+        user.setPhone(phone);
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+    }
+
+    @Override
+    public void updatePassword(String userId, String oldPassword, String newPassword) {
+        SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+        }
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid old password");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
     }
 }

@@ -80,6 +80,8 @@ agent_operation_log  Agent 操作记录表
 | username | varchar(50) | 非空，唯一 | 登录账号 |
 | password_hash | varchar(255) | 非空 | 密码加密摘要 |
 | status | tinyint | 非空，默认 0 | 用户状态，0 正常，1 禁用 |
+| email | varchar(100) | 可空 | 电子邮箱 |
+| phone | varchar(30) | 可空 | 手机号码 |
 | created_at | datetime | 非空 | 创建时间 |
 | updated_at | datetime | 非空 | 更新时间 |
 
@@ -89,6 +91,7 @@ agent_operation_log  Agent 操作记录表
 2. 密码字段保存加密后的摘要，不直接保存明文密码。
 3. `username` 用于登录，`user_id` 用于对齐指导书中的数据结构说明。
 4. `status` 字段用于后续扩展账号禁用能力。
+5. `email` 和 `phone` 字段为 2026-06-27 功能扩展，用于支持个人资料修改邮箱和手机号码功能，初始默认为 `NULL`。
 
 ## 3.2 用户图片信息表 user_avatar
 

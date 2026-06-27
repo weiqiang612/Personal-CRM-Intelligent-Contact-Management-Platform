@@ -127,6 +127,73 @@
 }
 ```
 
+### 4.4 修改电子邮箱
+
+- `PUT /api/v1/auth/profile/email`
+
+请求体：
+
+```json
+{
+  "email": "ethan@example.com"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+### 4.5 修改手机号码
+
+- `PUT /api/v1/auth/profile/phone`
+
+请求体：
+
+```json
+{
+  "phone": "13800000000"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
+### 4.6 修改密码
+
+- `PUT /api/v1/auth/profile/password`
+
+请求体：
+
+```json
+{
+  "oldPassword": "oldpassword123",
+  "newPassword": "newpassword123"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": null
+}
+```
+
 ## 5. Contact APIs (联系人模块)
 
 

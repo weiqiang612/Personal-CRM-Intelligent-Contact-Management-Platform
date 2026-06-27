@@ -37,17 +37,17 @@
           <div class="settings-row">
             <div class="settings-info">
               <span class="settings-title">电子邮箱</span>
-              <span class="settings-desc">{{ (user?.username || 'ethan').toLowerCase() }}@example.com</span>
+              <span class="settings-desc">{{ user?.email || '未绑定电子邮箱' }}</span>
             </div>
-            <button class="btn btn-secondary btn-sm" @click="tipFeature('修改邮箱')">修改邮箱</button>
+            <button class="btn btn-secondary btn-sm" @click="openEmailDialog">修改邮箱</button>
           </div>
 
           <div class="settings-row">
             <div class="settings-info">
               <span class="settings-title">手机号码</span>
-              <span class="settings-desc">138 0013 8000</span>
+              <span class="settings-desc">{{ user?.phone || '未绑定手机号码' }}</span>
             </div>
-            <button class="btn btn-secondary btn-sm" @click="tipFeature('修改手机')">修改手机</button>
+            <button class="btn btn-secondary btn-sm" @click="openPhoneDialog">修改手机</button>
           </div>
 
           <div class="settings-row">
@@ -55,7 +55,7 @@
               <span class="settings-title">密码管理</span>
               <span class="settings-desc">为了您的账号安全，请定期更换复杂密码</span>
             </div>
-            <button class="btn btn-secondary btn-sm" @click="tipFeature('修改密码')">修改密码</button>
+            <button class="btn btn-secondary btn-sm" @click="openPasswordDialog">修改密码</button>
           </div>
         </div>
       </div>
@@ -80,6 +80,81 @@
         </div>
       </div>
     </div>
+
+    <!-- 修改邮箱弹窗 -->
+    <el-dialog
+      v-model="emailDialogVisible"
+      title="修改电子邮箱"
+      class="settings-dialog"
+      align-center
+      append-to-body
+      destroy-on-close
+    >
+      <div class="dialog-description">请输入新的邮箱地址，用于登录和通知。</div>
+      <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-position="top">
+        <el-form-item label="电子邮箱" prop="email">
+          <el-input v-model="emailForm.email" placeholder="请输入新电子邮箱" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <el-button @click="emailDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleUpdateEmail">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 修改手机弹窗 -->
+    <el-dialog
+      v-model="phoneDialogVisible"
+      title="修改手机号码"
+      class="settings-dialog"
+      align-center
+      append-to-body
+      destroy-on-close
+    >
+      <div class="dialog-description">请输入新的手机号码，用于接收系统重要通知。</div>
+      <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" label-position="top">
+        <el-form-item label="手机号码" prop="phone">
+          <el-input v-model="phoneForm.phone" placeholder="请输入新手机号码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <el-button @click="phoneDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleUpdatePhone">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 修改密码弹窗 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="修改密码"
+      class="settings-dialog"
+      align-center
+      append-to-body
+      destroy-on-close
+    >
+      <div class="dialog-description">为了您的账号安全，请定期更换复杂密码。</div>
+      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-position="top">
+        <el-form-item label="原密码" prop="oldPassword">
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="请输入 8 位以上新密码" />
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <el-button @click="passwordDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleUpdatePassword">保存</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -88,9 +163,11 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElNotification, ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { uploadUserAvatar } from '@/api/upload'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { updateEmailApi, updatePhoneApi, updatePasswordApi } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -115,16 +192,193 @@ function triggerFileInput() {
   fileInputRef.value?.click()
 }
 
-// 演示占位气泡
-function tipFeature(name: string) {
-  ElMessage.info(`${name}功能属于 Phase 2 账号管理范围，目前已完美完成 UI 视觉占位`)
-}
-
 // 退出登录
 function handleLogout() {
   authStore.logout()
   ElMessage.success('您已安全退出系统')
   router.push('/login')
+}
+
+// 弹窗可见性与状态
+const emailDialogVisible = ref(false)
+const phoneDialogVisible = ref(false)
+const passwordDialogVisible = ref(false)
+const submitLoading = ref(false)
+
+const emailFormRef = ref<FormInstance>()
+const phoneFormRef = ref<FormInstance>()
+const passwordFormRef = ref<FormInstance>()
+
+const emailForm = ref({ email: '' })
+const phoneForm = ref({ phone: '' })
+const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+
+// 表单验证规则
+const emailRules = ref<FormRules>({
+  email: [
+    { required: true, message: '请输入电子邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ]
+})
+
+const phoneRules = ref<FormRules>({
+  phone: [
+    { required: true, message: '请输入手机号码', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码格式', trigger: 'blur' }
+  ]
+})
+
+const validateConfirmPassword = (rule: any, value: any, callback: any) => {
+  if (value === '') {
+    callback(new Error('请再次输入新密码'))
+  } else if (value !== passwordForm.value.newPassword) {
+    callback(new Error('两次输入的新密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const passwordRules = ref<FormRules>({
+  oldPassword: [
+    { required: true, message: '请输入原密码', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 8, message: '密码长度不能少于 8 位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
+  ]
+})
+
+// 将后端英文错误消息映射为对用户友好的中文提示
+function getFriendlyErrorMessage(msg: string): string {
+  if (!msg) return '网络连接异常，请重试'
+  const message = msg.toLowerCase()
+  if (message.includes('invalid old password')) {
+    return '原密码输入错误，请重新输入'
+  }
+  if (message.includes('user profile not found')) {
+    return '未找到用户信息，请重新登录'
+  }
+  if (message.includes('email cannot be blank')) {
+    return '电子邮箱不能为空'
+  }
+  if (message.includes('invalid email format')) {
+    return '电子邮箱格式不正确'
+  }
+  if (message.includes('phone cannot be blank')) {
+    return '手机号码不能为空'
+  }
+  if (message.includes('invalid phone number format')) {
+    return '手机号码格式不正确'
+  }
+  return msg
+}
+
+// 开启弹窗并填充现有值
+function openEmailDialog() {
+  emailForm.value.email = user.value?.email || ''
+  emailDialogVisible.value = true
+}
+
+function openPhoneDialog() {
+  phoneForm.value.phone = user.value?.phone || ''
+  phoneDialogVisible.value = true
+}
+
+function openPasswordDialog() {
+  passwordForm.value.oldPassword = ''
+  passwordForm.value.newPassword = ''
+  passwordForm.value.confirmPassword = ''
+  passwordDialogVisible.value = true
+}
+
+// 修改邮箱提交
+async function handleUpdateEmail() {
+  if (!emailFormRef.value) return
+  await emailFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        submitLoading.value = true
+        await updateEmailApi(emailForm.value.email)
+        await authStore.fetchUserProfile()
+        ElNotification.success({
+          title: '修改成功',
+          message: '您的电子邮箱已更新！',
+          duration: 3000
+        })
+        emailDialogVisible.value = false
+      } catch (error: any) {
+        ElNotification.error({
+          title: '修改失败',
+          message: getFriendlyErrorMessage(error.message),
+          duration: 5000
+        })
+      } finally {
+        submitLoading.value = false
+      }
+    }
+  })
+}
+
+// 修改手机号提交
+async function handleUpdatePhone() {
+  if (!phoneFormRef.value) return
+  await phoneFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        submitLoading.value = true
+        await updatePhoneApi(phoneForm.value.phone)
+        await authStore.fetchUserProfile()
+        ElNotification.success({
+          title: '修改成功',
+          message: '您的手机号码已更新！',
+          duration: 3000
+        })
+        phoneDialogVisible.value = false
+      } catch (error: any) {
+        ElNotification.error({
+          title: '修改失败',
+          message: getFriendlyErrorMessage(error.message),
+          duration: 5000
+        })
+      } finally {
+        submitLoading.value = false
+      }
+    }
+  })
+}
+
+// 修改密码提交
+async function handleUpdatePassword() {
+  if (!passwordFormRef.value) return
+  await passwordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        submitLoading.value = true
+        await updatePasswordApi({
+          oldPassword: passwordForm.value.oldPassword,
+          newPassword: passwordForm.value.newPassword
+        })
+        ElNotification.success({
+          title: '密码修改成功',
+          message: '请使用新密码重新登录',
+          duration: 3000
+        })
+        passwordDialogVisible.value = false
+        handleLogout()
+      } catch (error: any) {
+        ElNotification.error({
+          title: '修改失败',
+          message: getFriendlyErrorMessage(error.message),
+          duration: 5000
+        })
+      } finally {
+        submitLoading.value = false
+      }
+    }
+  })
 }
 
 // 文件变更并执行上传
@@ -286,7 +540,7 @@ async function handleFileChange(event: Event) {
   100% { transform: rotate(360deg); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .settings-profile-summary {
     align-items: flex-start;
     gap: 16px;
@@ -295,6 +549,168 @@ async function handleFileChange(event: Event) {
   .settings-avatar-wrap {
     width: 72px;
     height: 72px;
+  }
+
+}
+
+</style>
+
+<style>
+/* 全局遮罩定制，调整为 rgba(0,0,0,.35) */
+.el-overlay {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* ------------------------------------------
+   Web 端弹窗 (macOS 风格)
+   ------------------------------------------ */
+.settings-dialog {
+  border-radius: 24px !important;
+  box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid var(--border-color) !important;
+  padding: 32px !important;
+  width: 90% !important;
+  max-width: 440px !important;
+  background-color: #ffffff !important;
+}
+
+.settings-dialog .el-dialog__header {
+  padding: 0 0 12px 0 !important;
+  margin-right: 0 !important;
+  border-bottom: none !important; /* 取消下划线，显的更轻盈 */
+}
+
+.settings-dialog .el-dialog__title {
+  font-family: var(--font-sans) !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* 弹窗说明文字 */
+.settings-dialog .dialog-description {
+  font-size: 14px !important;
+  color: var(--text-muted) !important;
+  margin-top: 4px !important;
+  margin-bottom: 24px !important;
+  line-height: 1.5 !important;
+}
+
+.settings-dialog .el-dialog__headerbtn {
+  top: 28px !important;
+  right: 28px !important;
+}
+
+.settings-dialog .el-dialog__body {
+  padding: 0 !important; /* 紧贴说明文字下方 */
+}
+
+.settings-dialog .el-dialog__footer {
+  padding: 16px 0 0 0 !important;
+  border-top: none !important; /* 取消下划线，轻量感 */
+}
+
+/* 极简表单标签 */
+.settings-dialog .el-form-item {
+  margin-bottom: 20px !important;
+}
+
+.settings-dialog .el-form-item__label {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--text-main) !important;
+  margin-bottom: 8px !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+}
+
+/* 输入框扁平苹果风 (高度 46px 左右) */
+.settings-dialog .el-input__wrapper {
+  background-color: #f8fafc !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  border: 1px solid #e2e8f0 !important;
+  padding: 12px 14px !important; /* 增加 padding */
+  transition: all var(--transition-fast) !important;
+  height: 46px !important;
+}
+
+.settings-dialog .el-input__wrapper.is-focus {
+  border-color: var(--color-primary) !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08) !important;
+}
+
+.settings-dialog .el-input__inner {
+  color: var(--text-main) !important;
+  font-size: 14px !important;
+  font-family: var(--font-sans) !important;
+}
+
+/* 按钮定制 */
+.settings-dialog .el-button {
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: all var(--transition-fast) !important;
+  border: none !important;
+}
+
+.settings-dialog .el-button:active {
+}
+
+.settings-dialog .el-button:not(.el-button--primary) {
+  background-color: #f1f5f9 !important;
+  border-color: #f1f5f9 !important;
+  color: var(--color-neutral-text) !important;
+}
+
+.settings-dialog .el-button:not(.el-button--primary):hover {
+  background-color: #e2e8f0 !important;
+  color: var(--text-main) !important;
+}
+
+.settings-dialog .el-button--primary {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.settings-dialog .el-button--primary:hover {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
+
+/* 移动端响应式适配 */
+@media (max-width: 768px) {
+  .settings-dialog {
+    width: 92% !important;
+    max-width: 380px !important;
+    padding: 20px 20px 24px 20px !important;
+  }
+
+  .settings-dialog .el-dialog__headerbtn {
+    top: 16px !important;
+    right: 16px !important;
+  }
+
+  .settings-dialog .el-dialog__body {
+    padding: 16px 0 8px 0 !important;
+  }
+
+  .settings-dialog .el-dialog__footer {
+    padding: 12px 0 0 0 !important;
+  }
+
+  /* 底部按钮纵向竖版排列，方便单手操作 */
+  .settings-dialog .el-dialog__footer > div {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+
+  .settings-dialog .el-dialog__footer .el-button {
+    width: 100% !important;
+    margin-left: 0 !important; /* 强制清除 element-plus 默认的左外边距 */
   }
 }
 </style>

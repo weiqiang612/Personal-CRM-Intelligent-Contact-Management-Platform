@@ -16,4 +16,6 @@ public class UserMeVo implements Serializable {
     private String username;
     private Integer status;
     private String avatarUrl;
+    private String email;
+    private String phone;
 }

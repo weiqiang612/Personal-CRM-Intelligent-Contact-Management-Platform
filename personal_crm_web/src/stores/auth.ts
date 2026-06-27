@@ -9,6 +9,8 @@ export const useAuthStore = defineStore('auth', () => {
     userId: string
     username: string
     avatarUrl: string | null
+    email?: string | null
+    phone?: string | null
   } | null>(null)
 
   // 从 localStorage 恢复初始用户信息
@@ -43,6 +45,8 @@ export const useAuthStore = defineStore('auth', () => {
       userId: data.userId,
       username: data.username,
       avatarUrl: data.avatarUrl,
+      email: data.email,
+      phone: data.phone,
     }
     localStorage.setItem('user', JSON.stringify(user.value))
   }

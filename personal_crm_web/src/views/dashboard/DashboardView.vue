@@ -215,7 +215,7 @@
     <!-- 悬浮 Contact Agent 按钮 -->
     <button
       class="floating-agent-btn"
-      :class="{ hidden: isDrawerOpen }"
+      :class="{ hidden: isDrawerOpen || isExternalSheetOpen }"
       @click="toggleAgentDrawer"
       @mousedown="handleDragStart"
       @touchstart="handleDragStart"
@@ -224,8 +224,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:22px;height:22px;"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>
     </button>
 
-    <!-- Agent 抽屉 -->
+    <!-- PC 端 Agent 抽屉 -->
     <div
+      v-if="!isMobile"
       class="agent-drawer"
       :class="{ open: isDrawerOpen, resizing: isResizing }"
       :style="{ '--agent-drawer-width': drawerWidth + 'px' }"
@@ -255,44 +256,37 @@
           <div class="bubble-content">
             <div class="bubble-text" style="white-space: pre-wrap;">{{ msg.content }}</div>
             
-            <!-- AI 事项识别卡片（旧静态） -->
+            <!-- AI 事项识别卡片 -->
             <div v-if="msg.structuredCard" class="structured-card">
               <div class="structured-card-title">识别结果</div>
-              
               <div class="structured-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span class="structured-label">联系人：</span>
                 <span class="structured-value">{{ msg.structuredCard.contactName }}</span>
               </div>
-              
               <div class="structured-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
                 <span class="structured-label">时间：</span>
                 <span class="structured-value">{{ msg.structuredCard.timeStr }}</span>
               </div>
-              
               <div class="structured-row">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span class="structured-label">内容：</span>
                 <span class="structured-value">{{ msg.structuredCard.todoContent }}</span>
               </div>
-
-              <!-- 卡片状态变更 -->
               <div v-if="!msg.structuredCard.status || msg.structuredCard.status === 'pending'" class="structured-card-actions">
                 <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
                 <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
               </div>
-
               <div v-else-if="msg.structuredCard.status === 'confirmed'" style="margin-top: 12px;">
                 <div style="color: var(--color-success); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--color-success); width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
                   执行成功！
                 </div>
               </div>
-
               <div v-else-if="msg.structuredCard.status === 'cancelled'" style="margin-top: 12px;">
                 <div style="color: var(--text-muted); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: var(--text-muted); width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                   操作已取消
                 </div>
               </div>
@@ -316,7 +310,6 @@
                 <span class="structured-label">内容：</span>
                 <span class="structured-value">{{ msg.parsedParams.content }}</span>
               </div>
-
               <div v-if="msg.confirmState === 'pending'" class="structured-card-actions">
                 <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
                 <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
@@ -354,14 +347,12 @@
             </div>
           </div>
 
-          <!-- 时间戳（气泡外，用户靠右带对勾，助手靠左） -->
           <div v-if="msg.time" class="bubble-timestamp" :class="msg.sender">
             <span>{{ msg.time }}</span>
             <svg v-if="msg.sender === 'user'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="read-icon"><polyline points="20 6 9 17 4 12"/><polyline points="22 10 12 20 9 17"/></svg>
           </div>
         </div>
 
-        <!-- AI 打字中气泡 -->
         <div v-if="drawerIsLoading" class="message-bubble-wrapper assistant">
           <div class="bubble-content">
             <div class="typing-indicator">
@@ -390,11 +381,170 @@
       </div>
       <div class="chat-footer-note">内容由 AI 生成，请仔细核对</div>
     </div>
+
+    <!-- 移动端可拖拽三段式 Bottom Sheet Contact Agent -->
+    <MobileBottomSheet
+      v-else
+      v-model="isDrawerOpen"
+      preset="agent"
+    >
+      <template #header>
+        <div class="chat-header-left" style="display:flex;align-items:center;gap:8px;">
+          <div class="chat-header-icon" style="color:var(--color-primary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px;"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path><path d="M20 2v4"></path><path d="M22 4h-4"></path><circle cx="4" cy="20" r="2"></circle></svg>
+          </div>
+          <strong style="font-size: 18px; font-weight: 600; color: var(--text-main);">Contact Agent</strong>
+        </div>
+        <div class="chat-header-actions" style="display:flex;align-items:center;gap:12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" @click="resetDrawerChat" title="清空对话" style="width:20px;height:20px;cursor:pointer;color:var(--text-muted);"><path d="M2.5 2v6h6M21.5 22v-6h-6M22 11.5A10 10 0 0 0 3.2 7.2M2 12.5a10 10 0 0 0 18.8 4.2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" @click="toggleAgentDrawer" title="关闭" style="width:20px;height:20px;cursor:pointer;color:var(--text-muted);"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+      </template>
+
+      <div class="chat-messages-container" ref="chatContainerRef" style="height:100%;">
+        <div
+          v-for="msg in chatMessages"
+          :key="msg.id"
+          class="message-bubble-wrapper"
+          :class="msg.sender"
+        >
+          <div class="bubble-content">
+            <div class="bubble-text" style="white-space: pre-wrap;">{{ msg.content }}</div>
+            
+            <!-- AI 事项识别卡片 -->
+            <div v-if="msg.structuredCard" class="structured-card">
+              <div class="structured-card-title">识别结果</div>
+              <div class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span class="structured-label">联系人：</span>
+                <span class="structured-value">{{ msg.structuredCard.contactName }}</span>
+              </div>
+              <div class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                <span class="structured-label">时间：</span>
+                <span class="structured-value">{{ msg.structuredCard.timeStr }}</span>
+              </div>
+              <div class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span class="structured-label">内容：</span>
+                <span class="structured-value">{{ msg.structuredCard.todoContent }}</span>
+              </div>
+              <div v-if="!msg.structuredCard.status || msg.structuredCard.status === 'pending'" class="structured-card-actions">
+                <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
+                <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
+              </div>
+              <div v-else-if="msg.structuredCard.status === 'confirmed'" style="margin-top: 12px;">
+                <div style="color: var(--color-success); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
+                  执行成功！
+                </div>
+              </div>
+              <div v-else-if="msg.structuredCard.status === 'cancelled'" style="margin-top: 12px;">
+                <div style="color: var(--text-muted); font-weight:600; font-size:12px; display:flex; align-items:center; gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  操作已取消
+                </div>
+              </div>
+            </div>
+
+            <!-- 真实 API 写操作确认卡片 -->
+            <div v-if="msg.isConfirmCard" class="structured-card">
+              <div class="structured-card-title">待办事项预确认</div>
+              <div v-if="msg.parsedParams?.contactName" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span class="structured-label">联系人：</span>
+                <span class="structured-value">{{ msg.parsedParams.contactName }}</span>
+              </div>
+              <div v-if="msg.parsedParams?.todoTime" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+                <span class="structured-label">时间：</span>
+                <span class="structured-value">{{ msg.parsedParams.todoTime }}</span>
+              </div>
+              <div v-if="msg.parsedParams?.content" class="structured-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span class="structured-label">内容：</span>
+                <span class="structured-value">{{ msg.parsedParams.content }}</span>
+              </div>
+              <div v-if="msg.confirmState === 'pending'" class="structured-card-actions">
+                <button class="btn-confirm" @click="confirmDrawerExecution(msg)">确认创建</button>
+                <button class="btn-cancel" @click="cancelDrawerExecution(msg)">取消</button>
+              </div>
+              <div v-else-if="msg.confirmState === 'confirmed'" style="margin-top:12px;">
+                <div style="color:var(--color-success);font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                  已创建
+                </div>
+              </div>
+              <div v-else-if="msg.confirmState === 'cancelled'" style="margin-top:12px;">
+                <div style="color:var(--text-muted);font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                  已取消
+                </div>
+              </div>
+            </div>
+
+            <!-- 联系人查询结果卡片 -->
+            <div v-if="msg.queryType === 'contact' && msg.results && msg.results.length > 0" class="contact-results-list">
+              <div
+                v-for="contact in msg.results"
+                :key="contact.contactId"
+                class="drawer-contact-card"
+                @click="goToContactDetail(contact.contactId)"
+              >
+                <img :src="getAvatarUrl(contact.avatarUrl)" :alt="contact.name" class="drawer-contact-avatar" />
+                <div class="drawer-contact-info">
+                  <div class="drawer-contact-name">{{ contact.name }}</div>
+                  <div class="drawer-contact-sub" v-if="contact.phone">{{ contact.phone }}</div>
+                  <div class="drawer-contact-sub" v-else-if="contact.wechat">{{ contact.wechat }}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="drawer-contact-arrow"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="msg.time" class="bubble-timestamp" :class="msg.sender">
+            <span>{{ msg.time }}</span>
+            <svg v-if="msg.sender === 'user'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="read-icon"><polyline points="20 6 9 17 4 12"/><polyline points="22 10 12 20 9 17"/></svg>
+          </div>
+        </div>
+
+        <div v-if="drawerIsLoading" class="message-bubble-wrapper assistant">
+          <div class="bubble-content">
+            <div class="typing-indicator">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="chat-input-area" style="border-top:none; padding: 12px 16px;">
+          <div class="chat-input-card" :class="{ 'input-disabled': drawerIsLoading }" style="border-radius:18px; padding:10px 14px;">
+            <textarea
+              v-model="drawerInputText"
+              placeholder="告诉我你想做什么..."
+              :disabled="drawerIsLoading"
+              @keydown.enter.prevent="sendDrawerUserMessage"
+              style="height:40px; font-size:14px;"
+            ></textarea>
+            <div class="chat-input-card-bottom" style="margin-top:2px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="clip-icon" style="width:18px;height:18px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              <button class="chat-send-btn-circle" :class="{ loading: drawerIsLoading }" :disabled="drawerIsLoading" @click="sendDrawerUserMessage" style="width:32px;height:32px;">
+                <svg v-if="!drawerIsLoading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon" style="width:14px;height:14px;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="chat-footer-note" style="padding-bottom:12px;">内容由 AI 生成，请仔细核对</div>
+      </template>
+    </MobileBottomSheet>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
+import MobileBottomSheet from '@/components/common/MobileBottomSheet.vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -411,6 +561,29 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// 移动端响应式识别
+const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
+const checkMobileDevice = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 移动端外部 Bottom Sheet 联动态 (用于收起 FAB)
+const isExternalSheetOpen = ref(false)
+const handleExternalSheetState = (e: Event) => {
+  const customEvt = e as CustomEvent
+  if (customEvt.detail) {
+    isExternalSheetOpen.value = customEvt.detail.isOpen
+  }
+}
+onMounted(() => {
+  window.addEventListener('resize', checkMobileDevice)
+  window.addEventListener('mobile-sheet-state-change', handleExternalSheetState)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobileDevice)
+  window.removeEventListener('mobile-sheet-state-change', handleExternalSheetState)
+})
 
 // 智能助手悬浮窗拖拽相关逻辑
 let isDragging = false
@@ -2697,13 +2870,13 @@ onBeforeUnmount(() => {
     left: 0 !important;
     right: 0 !important;
     width: 100vw !important;
-    height: 80vh !important;
-    border-radius: 24px 24px 0 0 !important;
+    height: 60vh !important; /* 默认展开 60% 保留背景上下文 */
+    border-radius: 20px 20px 0 0 !important;
     border-left: none !important;
     border-top: 1px solid var(--border-color) !important;
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.15) !important;
     transform: translateY(100%) !important; /* 初始在底部不可见 */
-    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), height 0.25s cubic-bezier(0.25, 1, 0.5, 1) !important;
     z-index: 1000 !important;
   }
 
@@ -2721,17 +2894,17 @@ onBeforeUnmount(() => {
     background: var(--bg-card) !important;
   }
 
-  /* 移动端专属拖拽手势指示条 */
+  /* 移动端专属拖拽手势指示条规范 */
   .chat-header::before {
     content: "" !important;
     position: absolute !important;
     top: 8px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    width: 38px !important;
+    width: 48px !important;
     height: 5px !important;
-    background-color: #cbd5e1 !important;
-    border-radius: 3px !important;
+    background-color: var(--el-border-color-drag, #cbd5e1) !important;
+    border-radius: 999px !important;
   }
 
   .chat-input-area {
