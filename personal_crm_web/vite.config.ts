@@ -16,6 +16,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true, // 监听所有网络接口，允许局域网访问
     proxy: {
       '/api/v1': {
         target: 'http://localhost:8080',
