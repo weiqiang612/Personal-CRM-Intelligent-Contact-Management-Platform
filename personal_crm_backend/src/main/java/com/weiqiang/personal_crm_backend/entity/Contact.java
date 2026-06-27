@@ -83,6 +83,11 @@ public class Contact implements Serializable {
     private String phone;
 
     /**
+     * 备注
+     */
+    private String remarks;
+
+    /**
      * 状态 (0 正常, 1 黑名单)
      */
     private Integer status;

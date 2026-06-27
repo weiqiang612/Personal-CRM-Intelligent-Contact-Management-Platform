@@ -396,7 +396,7 @@ onMounted(async () => {
 /* 两栏布局 */
 .todo-form-layout {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 68fr 32fr;
   gap: 24px;
 }
 
@@ -576,5 +576,29 @@ onMounted(async () => {
 .required-star {
   color: var(--color-danger);
   margin-left: 2px;
+}
+
+@media (max-width: 768px) {
+  .todo-form-page-wrapper {
+    padding-bottom: 24px;
+  }
+  .todo-form-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .priority-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .form-actions-bar {
+    justify-content: space-between;
+  }
+  .form-actions-bar .btn {
+    flex: 1;
+    min-width: 0;
+  }
+  .preview-card {
+    padding: 16px;
+  }
 }
 </style>

@@ -5,7 +5,7 @@
       <!-- 联系人总数 -->
       <div class="card stat-card stat-primary">
         <div class="stat-icon primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px;height:22px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div class="stat-info">
           <span class="stat-label">联系人总数</span>
@@ -566,21 +566,20 @@ function slideCarousel(index: number) {
     const prevPage = pages[prevIndex]
     const nextPage = pages[index]
 
-    // 1. 上一页就地快速淡出 (0.25s) - 点击后稍微停顿 0.1s 后再执行退场，快速清空视线防重影
+    // 1. 上一页就地快速淡出 (0.15s)
     if (prevPage) {
       gsap.to(prevPage, {
-        delay: 0.1,
-        duration: 0.25,
+        duration: 0.15,
         autoAlpha: 0,
         ease: "power1.out",
         overwrite: "auto"
       })
     }
 
-    // 2. 新一页延迟 0.3s 启动 (错开上一页淡出时间)，从侧边极其平缓地滑入 (2.4s)
+    // 2. 新一页快速滑入 (0.5s)
     if (nextPage) {
       const isNext = index > prevIndex
-      const startX = isNext ? 80 : -80 // 向后切换从右侧引入，向前切换从左侧引入
+      const startX = isNext ? 50 : -50 // 适当缩减开始的偏差值，使 0.5s 滑行更自然
       
       gsap.fromTo(nextPage,
         { 
@@ -588,11 +587,11 @@ function slideCarousel(index: number) {
           x: startX
         },
         {
-          delay: 0.3, // 错开 0.3s 保证上一张卡片淡影完全消失，彻底消除重影
-          duration: 2.4, // 速度慢一倍，时长增加为原来的两倍 (1.2s -> 2.4s)
+          delay: 0.1, // 极其错开淡入
+          duration: 0.5, // 黄金 0.5s 时长，动作清爽利落
           autoAlpha: 1,
           x: 0,
-          ease: "power3.out", // 2.4s 配合 power3.out，使滑动在最后阶段极轻极慢，呈现高大气质感
+          ease: "power3.out", // 后半段平缓收尾
           overwrite: "auto"
         }
       )
@@ -786,8 +785,17 @@ async function initGenderChart() {
       return {
         value: item.count,
         name: item.name,
+        gender: item.gender,
         itemStyle: { color }
       }
+    })
+
+    // 按指定顺序排序：男(1) -> 女(2) -> 未知(0)
+    const genderOrder: Record<number, number> = { 1: 1, 2: 2, 0: 3 }
+    chartData.sort((a, b) => {
+      const orderA = genderOrder[a.gender] ?? 99
+      const orderB = genderOrder[b.gender] ?? 99
+      return orderA - orderB
     })
 
     const totalCount = data.reduce((sum, item) => sum + item.count, 0)
@@ -2594,6 +2602,7 @@ onBeforeUnmount(() => {
     visibility: visible !important;
     position: static !important;
     transform: none !important;
+    pointer-events: auto !important;
   }
   
   .contact-card {

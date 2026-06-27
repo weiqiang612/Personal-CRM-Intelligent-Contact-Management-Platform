@@ -101,6 +101,12 @@
             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
           </svg>
         </button>
+        <router-link to="/todos/new" class="btn btn-primary mobile-add-todo-btn" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 13px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          新增事项
+        </router-link>
       </div>
 
       <div class="filter-right">
@@ -114,7 +120,7 @@
     </section>
 
     <!-- 数据表格 -->
-    <section class="card" style="padding: 0; position: relative;" v-loading="loading">
+    <section class="card todo-list-card" style="padding: 0; position: relative;" v-loading="loading">
       <div class="table-container" style="min-height: 200px;">
         <table class="custom-table" v-if="filteredTodos.length > 0">
           <thead>
@@ -906,6 +912,10 @@ watch(
   margin-bottom: 20px;
 }
 
+.mobile-add-todo-btn {
+  display: none !important;
+}
+
 /* ===== 移动端响应式覆盖 ===== */
 .mobile-todo-list {
   display: none;
@@ -921,25 +931,36 @@ watch(
     padding: 0 !important;
   }
   
+  .todo-list-card {
+    padding: 4px 12px !important;
+    border-radius: 14px !important;
+  }
+
   /* 开启移动端卡片列表流 */
   .mobile-todo-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 12px;
+    gap: 0 !important;
+    padding: 0 !important;
+    margin-top: 0;
   }
   
   .mobile-todo-card {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 14px;
+    padding: 14px 4px !important;
     display: flex;
     flex-wrap: wrap !important;
     align-items: flex-start !important;
-    border: 1px solid #f1f5f9;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    transition: transform 0.2s ease;
     gap: 10px 0 !important;
+  }
+
+  .mobile-todo-card:last-child {
+    border-bottom: none !important;
   }
   
   .card-left-check {
@@ -1019,6 +1040,7 @@ watch(
     flex-direction: column;
     gap: 12px;
     padding: 12px !important;
+    margin-bottom: 16px !important; /* 统一缩窄外边距，与联系人卡片留白保持一致 */
   }
   
   .filter-left {
@@ -1031,6 +1053,7 @@ watch(
   .filter-left .search-box {
     grid-column: span 2 !important;
     width: 100% !important;
+    margin-right: 0 !important; /* 清除 PC 端继承的右边距，使其在移动端完美铺满对齐 */
   }
   
   .filter-left .select-control {
@@ -1039,18 +1062,26 @@ watch(
   }
   
   .filter-left .btn-icon {
-    grid-column: span 2 !important;
+    grid-column: span 1 !important;
     width: 100% !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
+  }
+
+  .filter-left .mobile-add-todo-btn {
+    grid-column: span 1 !important;
+    width: 100% !important;
+    height: 36px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
   }
   
   .filter-right {
-    width: 100%;
-  }
-  
-  .filter-right .btn-primary {
-    width: 100%;
-    justify-content: center;
+    display: none !important;
   }
   
   /* tab-bar 移动端优化 */
@@ -1062,6 +1093,7 @@ watch(
     gap: 8px !important;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    margin-bottom: 8px !important; /* 缩减外边距以补偿 padding，使第一个留白与第二个留白在视觉上完全一致 */
   }
   
   .todo-tabs-bar::-webkit-scrollbar {

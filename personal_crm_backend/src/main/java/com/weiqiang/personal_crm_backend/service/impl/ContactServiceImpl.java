@@ -180,6 +180,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         contact.setGender(dto.getGender());
         contact.setBirthday(dto.getBirthday());
         contact.setPhone(dto.getPhone());
+        contact.setRemarks(dto.getRemarks());
         contact.setUpdatedAt(LocalDateTime.now());
 
         this.updateById(contact);

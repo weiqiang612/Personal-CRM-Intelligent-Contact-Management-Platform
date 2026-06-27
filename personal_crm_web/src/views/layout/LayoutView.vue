@@ -59,53 +59,55 @@
         <!-- PC端顶栏包裹层 -->
         <div class="pc-topbar-wrapper">
           <div class="topbar-left">
-            <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack" :aria-label="backLabel">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            </a>
-            <h1 class="page-title">
-              {{ pageTitle }}
-              <el-popover
-                v-if="route.path === '/dashboard' && weatherData"
-                placement="bottom"
-                :width="290"
-                trigger="click"
-                popper-class="weather-forecast-popover"
-                :teleported="true"
-              >
-                <template #reference>
-                  <span class="topbar-weather interactive">
-                    <img :src="getWeatherIconUrl(weatherData.currentIcon)" :alt="weatherData.currentText" class="topbar-weather-icon" />
-                    <span class="topbar-weather-temp">{{ weatherData.currentTemp }}°C</span>
-                    <span class="topbar-weather-text">{{ weatherData.currentText }}</span>
-                    <span class="topbar-weather-city">{{ weatherData.cityName }}</span>
-                  </span>
-                </template>
-                
-                <div class="weather-forecast-container">
-                  <div class="forecast-header">
-                    <span class="forecast-city">{{ weatherData.cityName }}</span>
-                    <span class="forecast-title">未来三日预报</span>
-                  </div>
-                  <div class="forecast-list">
-                    <div v-for="item in weatherData.dailyForecast" :key="item.date" class="forecast-item">
-                      <div class="forecast-date-group">
-                        <span class="forecast-date">{{ formatForecastDate(item.date) }}</span>
-                      </div>
-                      <div class="forecast-status">
-                        <img :src="getWeatherIconUrl(item.iconDay)" :alt="item.textDay" class="forecast-weather-icon" />
-                        <span class="forecast-text">{{ item.textDay }}</span>
-                      </div>
-                      <div class="forecast-temp-range">
-                        <span class="temp-min">{{ item.tempMin }}°C</span>
-                        <span class="temp-sep">~</span>
-                        <span class="temp-max">{{ item.tempMax }}°C</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+              <a v-if="showBackButton" href="#" class="back-link" @click.prevent="goBack" :aria-label="backLabel" style="margin: 0; flex-shrink: 0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="back-icon"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              </a>
+              <h1 class="page-title" style="margin: 0; line-height: 1.2;">
+                {{ pageTitle }}
+                <el-popover
+                  v-if="route.path === '/dashboard' && weatherData"
+                  placement="bottom"
+                  :width="290"
+                  trigger="click"
+                  popper-class="weather-forecast-popover"
+                  :teleported="true"
+                >
+                  <template #reference>
+                    <span class="topbar-weather interactive">
+                      <img :src="getWeatherIconUrl(weatherData.currentIcon)" :alt="weatherData.currentText" class="topbar-weather-icon" />
+                      <span class="topbar-weather-temp">{{ weatherData.currentTemp }}°C</span>
+                      <span class="topbar-weather-text">{{ weatherData.currentText }}</span>
+                      <span class="topbar-weather-city">{{ weatherData.cityName }}</span>
+                    </span>
+                  </template>
+                  
+                  <div class="weather-forecast-container">
+                    <div class="forecast-header">
+                      <span class="forecast-city">{{ weatherData.cityName }}</span>
+                      <span class="forecast-title">未来三日预报</span>
+                    </div>
+                    <div class="forecast-list">
+                      <div v-for="item in weatherData.dailyForecast" :key="item.date" class="forecast-item">
+                        <div class="forecast-date-group">
+                          <span class="forecast-date">{{ formatForecastDate(item.date) }}</span>
+                        </div>
+                        <div class="forecast-status">
+                          <img :src="getWeatherIconUrl(item.iconDay)" :alt="item.textDay" class="forecast-weather-icon" />
+                          <span class="forecast-text">{{ item.textDay }}</span>
+                        </div>
+                        <div class="forecast-temp-range">
+                          <span class="temp-min">{{ item.tempMin }}°C</span>
+                          <span class="temp-sep">~</span>
+                          <span class="temp-max">{{ item.tempMax }}°C</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </el-popover>
-            </h1>
-            <p class="page-subtitle">{{ pageSubtitle }}</p>
+                </el-popover>
+              </h1>
+            </div>
+            <p class="page-subtitle" style="margin-top: 2px;">{{ pageSubtitle }}</p>
           </div>
         </div>
 
@@ -261,8 +263,45 @@
           <div class="mobile-topbar-left">
             <div class="mobile-brand-title">Personal CRM</div>
             <div class="mobile-greeting-row" v-if="route.path === '/dashboard'">
-              <span class="mobile-weather-icon" style="display: inline-block;">☀️</span>
               <span class="mobile-greeting-text">{{ greeting }}，{{ user?.username ? (user.username.charAt(0).toUpperCase() + user.username.slice(1)) : 'Ethan' }}</span>
+              <el-popover
+                v-if="weatherData"
+                placement="bottom-end"
+                :width="290"
+                trigger="click"
+                popper-class="weather-forecast-popover"
+                :teleported="true"
+              >
+                <template #reference>
+                  <span class="mobile-weather-wrap interactive">
+                    <span class="mobile-weather-emoji">{{ getWeatherEmoji(weatherData.currentText, weatherData.currentIcon) }}</span>
+                  </span>
+                </template>
+                
+                <div class="weather-forecast-container">
+                  <div class="forecast-header">
+                    <span class="forecast-city">{{ weatherData.cityName }}</span>
+                    <span class="forecast-title">未来三日预报</span>
+                  </div>
+                  <div class="forecast-list">
+                    <div v-for="item in weatherData.dailyForecast" :key="item.date" class="forecast-item">
+                      <div class="forecast-date-group">
+                        <span class="forecast-date">{{ formatForecastDate(item.date) }}</span>
+                      </div>
+                      <div class="forecast-status">
+                        <img :src="getWeatherIconUrl(item.iconDay)" :alt="item.textDay" class="forecast-weather-icon" />
+                        <span class="forecast-text">{{ item.textDay }}</span>
+                      </div>
+                      <div class="forecast-temp-range">
+                        <span class="temp-min">{{ item.tempMin }}°C</span>
+                        <span class="temp-sep">~</span>
+                        <span class="temp-max">{{ item.tempMax }}°C</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </el-popover>
+              <span v-else class="mobile-weather-icon" style="display: inline-block; margin-left: 4px;">☀️</span>
             </div>
             <div class="mobile-page-title" v-else>
               {{ pageTitle }}
@@ -756,6 +795,32 @@ const greeting = computed(() => {
   }
 })
 
+// 根据天气状况代码返回对应的 Emoji
+const getWeatherEmoji = (text: string, icon: string) => {
+  const code = parseInt(icon || '')
+  if (isNaN(code)) return '☀️'
+  
+  if (code === 100 || code === 150) return '☀️' // 晴
+  if (code >= 101 && code <= 103) return '⛅' // 多云
+  if (code === 104 || code === 154) return '☁️' // 阴
+  
+  if (code >= 300 && code <= 399) {
+    if (code >= 302 && code <= 304) return '⛈️' // 雷阵雨
+    return '🌧️' // 雨
+  }
+  if (code >= 400 && code <= 499) return '❄️' // 雪
+  if (code >= 500 && code <= 599) return '🌫️' // 雾/霾/沙尘
+  
+  const textStr = text || ''
+  if (textStr.includes('晴')) return '☀️'
+  if (textStr.includes('多云')) return '⛅'
+  if (textStr.includes('阴')) return '☁️'
+  if (textStr.includes('雨')) return '🌧️'
+  if (textStr.includes('雪')) return '❄️'
+  
+  return '☀️'
+}
+
 // 动态大标题
 const pageTitle = computed(() => {
   if (route.path === '/dashboard') {
@@ -998,6 +1063,7 @@ watch(
 .app-container {
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
@@ -1465,6 +1531,8 @@ watch(
     display: flex;
     flex-direction: column;
     height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
   }
   
   /* 开启移动端专属头部 */
@@ -1502,6 +1570,36 @@ watch(
   
   .mobile-weather-icon {
     font-size: 13px;
+  }
+  
+  .mobile-weather-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-left: 4px; /* 改为左边距，挂在名字后面 */
+    transition: transform 0.2s ease;
+  }
+
+  .mobile-weather-wrap.interactive:active {
+    background: transparent !important;
+    transform: scale(0.85) translateY(0.5px);
+  }
+
+  .mobile-weather-emoji {
+    font-size: 14px; /* 字号调小，与问候文字完美契合 */
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .mobile-weather-temp {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-main);
   }
   
   .mobile-greeting-text {
@@ -1584,7 +1682,7 @@ watch(
     flex: 1;
     overflow-y: auto;
     padding: 0 !important;
-    margin-bottom: 60px; /* 留出底部 TabBar 的高度 */
+    margin-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); /* 留出底部 TabBar 的高度加上安全区域高度 */
   }
 
   /* 开启移动端底栏 TabBar 导航 */
@@ -1593,7 +1691,7 @@ watch(
     bottom: 0;
     left: 0;
     width: 100vw;
-    height: 60px;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
     background-color: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     border-top: 1px solid rgba(226, 232, 240, 0.8);
@@ -1639,17 +1737,7 @@ watch(
   
   /* 虚拟的 iOS 底部指示条 */
   .home-indicator {
-    display: block;
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 130px;
-    height: 5px;
-    background-color: #000000;
-    border-radius: 10px;
-    z-index: 995;
-    pointer-events: none;
+    display: none !important;
   }
 }
 </style>

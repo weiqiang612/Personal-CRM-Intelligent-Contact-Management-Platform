@@ -46,6 +46,12 @@
           </svg>
           标签管理
         </button>
+        <router-link to="/contacts/new" class="btn btn-primary mobile-add-contact-btn" style="display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 12px; font-size: 13px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          新增联系人
+        </router-link>
       </div>
     </section>
 
@@ -614,6 +620,10 @@ onMounted(() => {
   gap: 24px;
 }
 
+.mobile-add-contact-btn {
+  display: none !important;
+}
+
 .search-icon {
   width: 16px;
   height: 16px;
@@ -774,6 +784,7 @@ onMounted(() => {
   .filter-left .search-box {
     flex: 1 1 100% !important;
     width: 100% !important;
+    margin-right: 0 !important; /* 清除 PC 端继承的右边距，使其与下面的选择框完美对齐填充 */
   }
 
   .filter-left .select-control {
@@ -798,12 +809,14 @@ onMounted(() => {
     justify-content: center !important;
   }
 
-  .filter-left .btn:not(.btn-icon) {
-    flex: 1 1 calc(100% - 44px) !important;
+  .filter-left .btn:not(.btn-icon),
+  .filter-left .mobile-add-contact-btn {
+    flex: 1 1 calc(50% - 26px) !important;
     height: 36px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 4px !important;
   }
 
   /* 开启卡片流式列表 */

@@ -198,6 +198,7 @@
     "birthday": "2001-05-01",
     "status": 0,
     "avatarUrl": "/uploads/contact-avatar/c0001.png",
+    "remarks": "合作客户，喜欢喝茶",
     "tags": ["同学", "朋友"],
     "createdAt": "2026-06-15 10:00:00"
   }
@@ -221,6 +222,7 @@
   "gender": 1,
   "birthday": "2001-05-01",
   "phone": "13800000000",
+  "remarks": "合作客户，喜欢喝茶",
   "tagIds": [1, 2]
 }
 ```

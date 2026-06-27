@@ -64,6 +64,11 @@ public class ContactSaveDTO implements Serializable {
     private String phone;
 
     /**
+     * 备注 (选填)
+     */
+    private String remarks;
+
+    /**
      * 绑定的标签 ID 列表 (选填)
      */
     private java.util.List<Long> tagIds;

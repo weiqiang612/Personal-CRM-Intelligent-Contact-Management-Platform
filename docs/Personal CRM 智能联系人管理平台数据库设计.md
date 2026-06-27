@@ -128,6 +128,7 @@ agent_operation_log  Agent 操作记录表
 | gender | tinyint | 可空 | 性别，0 未知，1 男，2 女 |
 | birthday | date | 可空 | 联系人生日 |
 | phone | varchar(30) | 可空 | 联系人电话 |
+| remarks | varchar(500) | 可空 | 备注 |
 | status | tinyint | 非空，默认 0 | 联系人状态，0 正常，1 黑名单 |
 | created_at | datetime | 非空 | 创建时间 |
 | updated_at | datetime | 非空 | 更新时间 |

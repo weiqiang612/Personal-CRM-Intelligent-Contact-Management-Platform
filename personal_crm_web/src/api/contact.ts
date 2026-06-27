@@ -14,6 +14,7 @@ export interface ContactInfo {
   gender: number | null // 0 未知, 1 男, 2 女
   birthday: string | null // yyyy-MM-dd
   phone: string
+  remarks: string | null
   status: number // 0 正常, 1 黑名单
   avatarUrl: string | null
   tags?: string[]
@@ -57,6 +58,7 @@ export interface ContactSaveParams {
   gender?: number | null
   birthday?: string | null // yyyy-MM-dd
   phone: string
+  remarks?: string | null
   tagIds?: number[]
 }
 

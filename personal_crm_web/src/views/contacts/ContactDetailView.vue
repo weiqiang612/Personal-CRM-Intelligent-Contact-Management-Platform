@@ -211,6 +211,12 @@
                 </svg>
               </span>
             </div>
+            <div class="info-item remarks-info-item">
+              <span class="info-label">备注</span>
+              <span :class="['info-value', contact.remarks ? 'remarks-text' : '']">
+                {{ contact.remarks || '-' }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -698,6 +704,22 @@ onMounted(() => {
 <style scoped>
 .contact-detail-page-wrapper {
   animation: fadeIn 0.4s ease-out;
+}
+
+/* 备注与其它行一致样式 */
+.remarks-info-item {
+  align-items: flex-start !important;
+}
+
+.remarks-text {
+  max-width: 75%;
+  text-align: right;
+  display: block !important;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-weight: 500 !important;
+  color: var(--text-main);
 }
 
 .detail-header-card {

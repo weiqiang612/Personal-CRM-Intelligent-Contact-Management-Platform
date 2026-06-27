@@ -1813,7 +1813,7 @@ const formatTime = (date: Date) => {
 /* ===== 移动窄屏专属覆盖 (max-width: 768px) ===== */
 @media (max-width: 768px) {
   .agent-container {
-    height: calc(100vh - 60px) !important;
+    height: calc(100dvh - 56px - 60px - env(safe-area-inset-bottom, 0px)) !important;
     padding: 0 !important;
     background: #ffffff !important;
   }
