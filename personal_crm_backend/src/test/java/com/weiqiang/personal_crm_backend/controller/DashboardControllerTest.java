@@ -229,4 +229,13 @@ public class DashboardControllerTest {
                 .andExpect(jsonPath("$.data[2].name", is("\u5973")))
                 .andExpect(jsonPath("$.data[2].count", is(initialFemaleGenderCount)));
     }
+
+    @Test
+    void testGetRelationshipHealth_Success() throws Exception {
+        mockMvc.perform(get("/api/v1/dashboard/relationship-health")
+                        .header("Authorization", token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)))
+                .andExpect(jsonPath("$.data.total", is(initialContactCount + 2)));
+    }
 }

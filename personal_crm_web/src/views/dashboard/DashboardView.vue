@@ -187,16 +187,16 @@
 
     <!-- 底部图表区 -->
     <section class="charts-layout">
-      <!-- 性别比例环形图 -->
+      <!-- 关系维护状态环形图 -->
       <div class="card chart-card">
         <div class="card-header">
-          <h3 class="card-title">联系人性别比例</h3>
+          <h3 class="card-title">关系维护状态</h3>
           <div class="card-actions-inline">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;cursor:pointer;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <router-link to="/contacts" class="action-link">查看详情</router-link>
           </div>
         </div>
-        <div ref="genderChartRef" id="genderChart" style="width: 100%;"></div>
+        <div ref="healthChartRef" id="healthChart" style="width: 100%; min-height: 176px; height: 176px;"></div>
       </div>
 
       <!-- 未来 7 天事项 Entry Overview 卡片 (Apple 终极定稿版) -->
@@ -609,8 +609,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { gsap } from 'gsap'
-import { getDashboardOverview, getTodoTrend, getContactGenderDistribution } from '@/api/dashboard'
-import type { DashboardOverview, TodoTrendItem, ContactGenderDistributionItem } from '@/api/dashboard'
+import { getDashboardOverview, getTodoTrend, getRelationshipHealth } from '@/api/dashboard'
+import type { DashboardOverview, TodoTrendItem, RelationshipHealth } from '@/api/dashboard'
 import { getContactsApi } from '@/api/contact'
 import type { ContactInfo } from '@/api/contact'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
@@ -1021,13 +1021,13 @@ async function fetchRecentContacts() {
 
 // 5. ECharts 初始化
 const trendChartRef = ref<HTMLDivElement | null>(null)
-const genderChartRef = ref<HTMLDivElement | null>(null)
+const healthChartRef = ref<HTMLDivElement | null>(null)
 let trendChartInstance: echarts.ECharts | null = null
-let genderChartInstance: echarts.ECharts | null = null
+let healthChartInstance: echarts.ECharts | null = null
 
 function handleResize() {
   trendChartInstance?.resize()
-  genderChartInstance?.resize()
+  healthChartInstance?.resize()
 }
 
 async function initTrendChart() {
@@ -1114,44 +1114,68 @@ async function initTrendChart() {
   }
 }
 
-async function initGenderChart() {
-  if (!genderChartRef.value) return
+async function initRelationshipHealthChart() {
+  if (!healthChartRef.value) return
   try {
-    const data: ContactGenderDistributionItem[] = await getContactGenderDistribution()
+    const data: RelationshipHealth = await getRelationshipHealth()
     
-    const chartData = data.map(item => {
-      let color = '#9ca3af'
-      if (item.gender === 1) color = '#3b82f6'
-      if (item.gender === 2) color = '#10b981'
-      return {
-        value: item.count,
-        name: item.name,
-        gender: item.gender,
-        itemStyle: { color }
-      }
-    })
+    const chartData = [
+      { value: data.active, name: '活跃', itemStyle: { color: '#3B82F6' } },
+      { value: data.followUp, name: '待跟进', itemStyle: { color: '#8B5CF6' } },
+      { value: data.inactive, name: '长期未联系', itemStyle: { color: '#F59E0B' } },
+      { value: data.noActivity, name: '无动态', itemStyle: { color: '#CBD5E1' } }
+    ]
 
-    // 按指定顺序排序：男(1) -> 女(2) -> 未知(0)
-    const genderOrder: Record<number, number> = { 1: 1, 2: 2, 0: 3 }
-    chartData.sort((a, b) => {
-      const orderA = genderOrder[a.gender] ?? 99
-      const orderB = genderOrder[b.gender] ?? 99
-      return orderA - orderB
-    })
+    const totalCount = data.total || 0
 
-    const totalCount = data.reduce((sum, item) => sum + item.count, 0)
-
-    if (!genderChartInstance) {
-      genderChartInstance = echarts.init(genderChartRef.value)
+    if (!healthChartInstance) {
+      healthChartInstance = echarts.init(healthChartRef.value)
     }
 
     const option = {
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderColor: '#e2e8f0',
         borderWidth: 1,
-        formatter: '{b}: {c} ({d}%)'
+        padding: [10, 14],
+        extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05); border-radius: 12px;',
+        formatter: (params: any) => {
+          const name = params.name
+          const count = params.value
+          const percent = params.percent
+          const color = params.color
+
+          let list: any[] = []
+          if (name === '活跃') list = data.activeList || []
+          else if (name === '待跟进') list = data.followUpList || []
+          else if (name === '长期未联系') list = data.inactiveList || []
+          else if (name === '无动态') list = data.noActivityList || []
+
+          let header = `<div style="font-weight:700; font-size:13px; color:#1e293b; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background-color:${color};"></span>
+            <span>${name} (${count}人 · ${percent}%)</span>
+          </div>`
+
+          if (list.length === 0) {
+            return header + `<div style="font-size:12px; color:#94a3b8; padding:2px 0;">暂无该分类联系人</div>`
+          }
+
+          let itemsHtml = list.slice(0, 5).map(item => {
+            const timeInfo = item.daysAgo !== undefined && item.daysAgo !== null 
+              ? `<span style="color:#64748b; font-size:11px;">${item.daysAgo === 0 ? '今天' : item.daysAgo + '天前'}</span>` 
+              : `<span style="color:#94a3b8; font-size:11px;">无轨迹</span>`
+            const titleInfo = item.lastEventTitle ? `<span style="color:#94a3b8; font-size:11px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-block;"> · ${item.lastEventTitle}</span>` : ''
+            return `<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:12px; padding:3px 0; border-top:1px dashed #f1f5f9;">
+              <strong style="color:#334155; font-weight:600;">${item.name}</strong>
+              <div style="display:flex; align-items:center; gap:4px;">${timeInfo}${titleInfo}</div>
+            </div>`
+          }).join('')
+
+          let moreNotice = list.length > 5 ? `<div style="font-size:11px; color:#94a3b8; margin-top:4px; text-align:right;">等共 ${list.length} 人...</div>` : ''
+
+          return `<div style="min-width:180px; max-width:260px;">${header}${itemsHtml}${moreNotice}</div>`
+        }
       },
       legend: {
         orient: 'vertical',
@@ -1160,18 +1184,18 @@ async function initGenderChart() {
         icon: 'circle',
         itemWidth: 10,
         itemHeight: 10,
-        itemGap: 18,
+        itemGap: 14,
         textStyle: { fontSize: 12, color: '#6b7280' },
         formatter: (name: string) => {
           const item = chartData.find(d => d.name === name)
           const val = item ? item.value : 0
           const percent = totalCount > 0 ? ((val / totalCount) * 100).toFixed(1) : '0.0'
-          return `${name.padEnd(2, ' ')}  ${val} (${percent}%)`
+          return `${name.padEnd(6, ' ')}  ${val} (${percent}%)`
         }
       },
       series: [
         {
-          name: '性别分布',
+          name: '关系维护状态',
           type: 'pie',
           radius: ['62%', '84%'],
           center: ['31%', '52%'],
@@ -1179,7 +1203,7 @@ async function initGenderChart() {
           label: {
             show: true,
             position: 'center',
-            formatter: `{total|${totalCount}}\n{sub|总人数}`,
+            formatter: `{total|${totalCount}}\n{sub|总联系人}`,
             rich: {
               total: {
                 fontSize: 24,
@@ -1201,9 +1225,9 @@ async function initGenderChart() {
         }
       ]
     }
-    genderChartInstance.setOption(option)
+    healthChartInstance.setOption(option)
   } catch (e) {
-    console.error('Failed to init gender chart:', e)
+    console.error('Failed to init relationship health chart:', e)
   }
 }
 
@@ -1517,7 +1541,7 @@ onMounted(async () => {
   ])
 
   await initMicroSchedule()
-  await initGenderChart()
+  await initRelationshipHealthChart()
 
   window.addEventListener('resize', handleResize)
 
@@ -1529,7 +1553,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
   trendChartInstance?.dispose()
-  genderChartInstance?.dispose()
+  healthChartInstance?.dispose()
   carouselCtx?.revert()
 })
 </script>
@@ -2136,7 +2160,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
 }
 
-#genderChart,
+#healthChart,
 #trendChart {
   height: 176px !important;
 }
@@ -3024,7 +3048,7 @@ onBeforeUnmount(() => {
     overflow: hidden !important;
   }
   
-  #genderChart,
+  #healthChart,
   #trendChart {
     height: 180px !important; /* 图表高度压缩至 180px */
     width: 100% !important;

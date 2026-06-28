@@ -613,9 +613,9 @@
 }
 ```
 
-### 8.3 联系人性别分布
+### 8.3 关系维护状态 (Relationship Health)
 
-- `GET /api/v1/dashboard/contact-gender-distribution`
+- `GET /api/v1/dashboard/relationship-health`
 
 响应体：
 
@@ -623,23 +623,13 @@
 {
   "code": 0,
   "message": "success",
-  "data": [
-    {
-      "gender": 0,
-      "name": "未知",
-      "count": 2
-    },
-    {
-      "gender": 1,
-      "name": "男",
-      "count": 10
-    },
-    {
-      "gender": 2,
-      "name": "女",
-      "count": 8
-    }
-  ]
+  "data": {
+    "active": 5,
+    "followUp": 2,
+    "inactive": 1,
+    "noActivity": 3,
+    "total": 11
+  }
 }
 ```
 

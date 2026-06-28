@@ -6,12 +6,18 @@ import com.weiqiang.personal_crm_backend.common.Result;
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.entity.Todo;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
+import com.weiqiang.personal_crm_backend.enums.RelationshipHealthStatus;
+import com.weiqiang.personal_crm_backend.mapper.ActivityLogMapper;
 import com.weiqiang.personal_crm_backend.mapper.ContactMapper;
 import com.weiqiang.personal_crm_backend.mapper.TodoMapper;
+import com.weiqiang.personal_crm_backend.model.dto.ContactLatestActivityDTO;
+import com.weiqiang.personal_crm_backend.model.vo.ContactHealthItemVO;
 import com.weiqiang.personal_crm_backend.model.vo.ContactGenderDistributionVO;
 import com.weiqiang.personal_crm_backend.model.vo.DashboardOverviewVO;
+import com.weiqiang.personal_crm_backend.model.vo.RelationshipHealthVO;
 import com.weiqiang.personal_crm_backend.model.vo.TodoTrendVO;
 import com.weiqiang.personal_crm_backend.security.UserContext;
+import com.weiqiang.personal_crm_backend.service.ContactHealthCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,8 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Controller for dashboard statistics
@@ -34,6 +43,8 @@ public class DashboardController {
 
     private final ContactMapper contactMapper;
     private final TodoMapper todoMapper;
+    private final ActivityLogMapper activityLogMapper;
+    private final ContactHealthCalculator contactHealthCalculator;
 
     /**
      * Get dashboard overview metrics
@@ -163,5 +174,91 @@ public class DashboardController {
         list.add(new ContactGenderDistributionVO(2, "\u5973", femaleCount));
 
         return Result.success(list);
+    }
+
+    /**
+     * Get contact relationship health status distribution
+     */
+    @GetMapping("/relationship-health")
+    public Result<RelationshipHealthVO> getRelationshipHealth() {
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // 1. Get all active contacts (status = 0) for current user
+        List<Contact> contacts = contactMapper.selectList(
+                new LambdaQueryWrapper<Contact>()
+                        .eq(Contact::getUserId, userId)
+                        .eq(Contact::getStatus, 0)
+        );
+
+        if (contacts.isEmpty()) {
+            return Result.success(new RelationshipHealthVO(0L, 0L, 0L, 0L, 0L));
+        }
+
+        // 2. Query latest activity timestamp and title for user's contacts in batch
+        List<ContactLatestActivityDTO> activityList = activityLogMapper.selectLatestActivityByUserId(userId);
+        Map<String, ContactLatestActivityDTO> latestActivityMap = activityList.stream()
+                .filter(a -> a.getContactId() != null && a.getLatestActivityTime() != null)
+                .collect(Collectors.toMap(ContactLatestActivityDTO::getContactId, a -> a, (k1, k2) -> k1));
+
+        // 3. Evaluate each contact's health status via calculator and collect details
+        List<ContactHealthItemVO> activeList = new ArrayList<>();
+        List<ContactHealthItemVO> followUpList = new ArrayList<>();
+        List<ContactHealthItemVO> inactiveList = new ArrayList<>();
+        List<ContactHealthItemVO> noActivityList = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (Contact contact : contacts) {
+            ContactLatestActivityDTO dto = latestActivityMap.get(contact.getCtId());
+            LocalDateTime latestTime = dto != null ? dto.getLatestActivityTime() : null;
+            RelationshipHealthStatus status = contactHealthCalculator.calculateStatus(contact, latestTime);
+
+            Long daysAgo = null;
+            String lastEventTitle = dto != null ? dto.getLastEventTitle() : null;
+            if (latestTime != null) {
+                long diff = ChronoUnit.DAYS.between(latestTime.toLocalDate(), today);
+                daysAgo = diff < 0 ? 0L : diff;
+            }
+
+            ContactHealthItemVO item = new ContactHealthItemVO(
+                    contact.getCtId(),
+                    contact.getName(),
+                    contact.getRemarks(), // avatarUrl/remarks fallback
+                    daysAgo,
+                    lastEventTitle
+            );
+
+            switch (status) {
+                case ACTIVE:
+                    activeList.add(item);
+                    break;
+                case FOLLOW_UP:
+                    followUpList.add(item);
+                    break;
+                case INACTIVE:
+                    inactiveList.add(item);
+                    break;
+                case NO_ACTIVITY:
+                    noActivityList.add(item);
+                    break;
+            }
+        }
+
+        RelationshipHealthVO vo = new RelationshipHealthVO(
+                (long) activeList.size(),
+                (long) followUpList.size(),
+                (long) inactiveList.size(),
+                (long) noActivityList.size(),
+                (long) contacts.size()
+        );
+        vo.setActiveList(activeList);
+        vo.setFollowUpList(followUpList);
+        vo.setInactiveList(inactiveList);
+        vo.setNoActivityList(noActivityList);
+
+        return Result.success(vo);
     }
 }

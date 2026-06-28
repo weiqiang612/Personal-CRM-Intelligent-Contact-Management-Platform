@@ -19,6 +19,26 @@ export interface ContactGenderDistributionItem {
   count: number
 }
 
+export interface ContactHealthItem {
+  contactId: string
+  name: string
+  avatarUrl?: string
+  daysAgo?: number
+  lastEventTitle?: string
+}
+
+export interface RelationshipHealth {
+  active: number
+  followUp: number
+  inactive: number
+  noActivity: number
+  total: number
+  activeList?: ContactHealthItem[]
+  followUpList?: ContactHealthItem[]
+  inactiveList?: ContactHealthItem[]
+  noActivityList?: ContactHealthItem[]
+}
+
 /**
  * 获取看板概览数据
  */
@@ -39,4 +59,11 @@ export function getTodoTrend(days: number = 7): Promise<TodoTrendItem[]> {
  */
 export function getContactGenderDistribution(): Promise<ContactGenderDistributionItem[]> {
   return request.get('/dashboard/contact-gender-distribution')
+}
+
+/**
+ * 获取联系人关系维护状态统计
+ */
+export function getRelationshipHealth(): Promise<RelationshipHealth> {
+  return request.get('/dashboard/relationship-health')
 }

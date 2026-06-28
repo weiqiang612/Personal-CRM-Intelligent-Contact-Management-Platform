@@ -3,12 +3,12 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-014-contact-activity-feed/`
+`docs/4-tasks/features/TASK-015-relationship-health-dashboard/`
 - spec.md ✅ Completed
 - tasks.md ✅ Completed
 
 ## Previous implementation task
-`docs/4-tasks/features/TASK-013-contact-todo-deletion/`
+`docs/4-tasks/features/TASK-014-contact-activity-feed/`
 - spec.md ✅ Completed
 - tasks.md ✅ Completed
 
@@ -85,6 +85,9 @@
 
 ### TASK-014: Contact Activity Feed Integration
 - [x] Implementation (16 tasks) Completed
+
+### TASK-015: Relationship Health Dashboard
+- [x] Implementation (11 tasks) Completed
 
 
 ## Backlog roadmap
