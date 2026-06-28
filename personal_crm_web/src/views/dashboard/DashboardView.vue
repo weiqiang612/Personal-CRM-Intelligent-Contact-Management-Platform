@@ -599,6 +599,51 @@
         <div class="chat-footer-note" style="padding-bottom:12px;">内容由 AI 生成，请仔细核对</div>
       </template>
     </MobileBottomSheet>
+
+    <!-- 移动端关系维护状态联系人明细 BottomSheet -->
+    <MobileBottomSheet
+      v-if="isMobile"
+      v-model="isHealthSheetOpen"
+      preset="custom"
+    >
+      <template #header>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="display:inline-block; width:10px; height:10px; border-radius:50%;" :style="{ backgroundColor: healthSheetCategory?.color || '#3B82F6' }"></span>
+          <strong style="font-size:16px; font-weight:600; color:var(--text-main);">{{ healthSheetCategory?.name }}联系人</strong>
+          <span style="font-size:12px; color:var(--text-muted); font-weight:normal;">({{ healthSheetCategory?.count }}人)</span>
+        </div>
+      </template>
+
+      <div style="padding: 8px 16px 20px 16px; display:flex; flex-direction:column; gap:10px;">
+        <div v-if="!healthSheetCategory?.list || healthSheetCategory.list.length === 0" style="text-align:center; color:var(--text-muted); padding:20px 0; font-size:14px;">
+          暂无该分类下的联系人
+        </div>
+        <div
+          v-else
+          v-for="item in healthSheetCategory.list"
+          :key="item.contactId"
+          class="drawer-contact-card"
+          @click="goToContactDetail(item.contactId)"
+          style="background-color: var(--bg-hover); padding: 12px; border-radius: 12px; display:flex; align-items:center; justify-content:space-between; cursor:pointer;"
+        >
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:36px; height:36px; border-radius:50%; background-color:#eff6ff; color:#3b82f6; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px;">
+              {{ item.name ? item.name.substring(0, 1) : '客' }}
+            </div>
+            <div>
+              <div style="font-size:14px; font-weight:600; color:var(--text-main);">{{ item.name }}</div>
+              <div style="font-size:12px; color:var(--text-muted);" v-if="item.lastEventTitle">{{ item.lastEventTitle }}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <span style="font-size:12px; font-weight:600; color:#475569;" v-if="item.daysAgo !== undefined && item.daysAgo !== null">
+              {{ item.daysAgo === 0 ? '今天' : item.daysAgo + '天前' }}
+            </span>
+            <span style="font-size:12px; color:#94a3b8;" v-else>无轨迹</span>
+          </div>
+        </div>
+      </div>
+    </MobileBottomSheet>
   </div>
 </template>
 
@@ -653,6 +698,15 @@ let startY = 0
 let initialLeft = 0
 let initialTop = 0
 
+
+// 移动端关系维护状态联系人明细 BottomSheet
+const isHealthSheetOpen = ref(false)
+const healthSheetCategory = ref<{
+  name: string
+  color: string
+  count: number
+  list: any[]
+} | null>(null)
 
 // 1. 数据定义与初始化
 const overview = ref<DashboardOverview>({
@@ -1028,6 +1082,7 @@ let healthChartInstance: echarts.ECharts | null = null
 function handleResize() {
   trendChartInstance?.resize()
   healthChartInstance?.resize()
+  initRelationshipHealthChart()
 }
 
 async function initTrendChart() {
@@ -1177,28 +1232,44 @@ async function initRelationshipHealthChart() {
           return `<div style="min-width:180px; max-width:260px;">${header}${itemsHtml}${moreNotice}</div>`
         }
       },
-      legend: {
-        orient: 'vertical',
-        right: '4%',
-        top: 'center',
-        icon: 'circle',
-        itemWidth: 10,
-        itemHeight: 10,
-        itemGap: 14,
-        textStyle: { fontSize: 12, color: '#6b7280' },
-        formatter: (name: string) => {
-          const item = chartData.find(d => d.name === name)
-          const val = item ? item.value : 0
-          const percent = totalCount > 0 ? ((val / totalCount) * 100).toFixed(1) : '0.0'
-          return `${name.padEnd(6, ' ')}  ${val} (${percent}%)`
-        }
-      },
+      legend: isMobile.value
+        ? {
+            orient: 'horizontal',
+            bottom: '0%',
+            left: 'center',
+            icon: 'circle',
+            itemWidth: 8,
+            itemHeight: 8,
+            itemGap: 10,
+            textStyle: { fontSize: 11, color: '#6b7280' },
+            formatter: (name: string) => {
+              const item = chartData.find(d => d.name === name)
+              const val = item ? item.value : 0
+              return `${name} ${val}`
+            }
+          }
+        : {
+            orient: 'vertical',
+            right: '4%',
+            top: 'center',
+            icon: 'circle',
+            itemWidth: 10,
+            itemHeight: 10,
+            itemGap: 14,
+            textStyle: { fontSize: 12, color: '#6b7280' },
+            formatter: (name: string) => {
+              const item = chartData.find(d => d.name === name)
+              const val = item ? item.value : 0
+              const percent = totalCount > 0 ? ((val / totalCount) * 100).toFixed(1) : '0.0'
+              return `${name.padEnd(6, ' ')}  ${val} (${percent}%)`
+            }
+          },
       series: [
         {
           name: '关系维护状态',
           type: 'pie',
-          radius: ['62%', '84%'],
-          center: ['31%', '52%'],
+          radius: isMobile.value ? ['52%', '74%'] : ['62%', '84%'],
+          center: isMobile.value ? ['50%', '38%'] : ['31%', '52%'],
           avoidLabelOverlap: false,
           label: {
             show: true,
@@ -1206,13 +1277,13 @@ async function initRelationshipHealthChart() {
             formatter: `{total|${totalCount}}\n{sub|总联系人}`,
             rich: {
               total: {
-                fontSize: 24,
+                fontSize: isMobile.value ? 20 : 24,
                 fontWeight: 'bold',
-                lineHeight: 34,
+                lineHeight: isMobile.value ? 28 : 34,
                 color: '#1f2937'
               },
               sub: {
-                fontSize: 12,
+                fontSize: 11,
                 color: '#9ca3af'
               }
             }
@@ -1226,6 +1297,25 @@ async function initRelationshipHealthChart() {
       ]
     }
     healthChartInstance.setOption(option)
+
+    healthChartInstance.off('click')
+    healthChartInstance.on('click', (params: any) => {
+      const name = params.name
+      const color = params.color || '#3B82F6'
+      let list: any[] = []
+      if (name === '活跃') list = data.activeList || []
+      else if (name === '待跟进') list = data.followUpList || []
+      else if (name === '长期未联系') list = data.inactiveList || []
+      else if (name === '无动态') list = data.noActivityList || []
+
+      healthSheetCategory.value = {
+        name,
+        color,
+        count: list.length,
+        list
+      }
+      isHealthSheetOpen.value = true
+    })
   } catch (e) {
     console.error('Failed to init relationship health chart:', e)
   }
