@@ -1189,6 +1189,7 @@ async function initRelationshipHealthChart() {
 
     const option = {
       tooltip: {
+        show: !isMobile.value,
         trigger: 'item',
         backgroundColor: 'rgba(255, 255, 255, 0.98)',
         borderColor: '#e2e8f0',
