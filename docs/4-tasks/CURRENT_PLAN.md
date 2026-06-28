@@ -3,7 +3,9 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-None (TASK-013 Contact and Todo Deletion Feature Completed)
+`docs/4-tasks/features/TASK-014-contact-activity-feed/`
+- spec.md ✅ Completed
+- tasks.md ✅ Completed
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-013-contact-todo-deletion/`
@@ -81,6 +83,9 @@ None (TASK-013 Contact and Todo Deletion Feature Completed)
 ### TASK-013: Contact and Todo Entity Deletion Support
 - [ ] Implementation (16 tasks)
 
+### TASK-014: Contact Activity Feed Integration
+- [x] Implementation (16 tasks) Completed
+
 
 ## Backlog roadmap
 
@@ -103,6 +108,7 @@ None (TASK-013 Contact and Todo Deletion Feature Completed)
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-28: completed TASK-014 Contact Activity Feed Integration (16 tasks, TDD-driven backend activity log entity + mapper + service trace logging + GET /api/v1/contacts/{id}/activities API + 103 JUnit tests passing + Vue 3 ContactDetailView timeline rendering + event type icons mapping + relative time formatting + empty state card + frontend build verified)
 - 2026-06-26: completed TASK-012 Mobile Responsive Adaptation (9 tasks, mobile bottom TabBar + hide Sidebar + stats-grid flow + touch-scroll contacts + charts resizing + full-screen chat tab + cards fallback lists for contacts and todos)
 - 2026-06-25: completed TASK-011 Contact Agent OpenAI-Compatible LLM Sessions (13 tasks, OpenAI-compatible model adapter + memory session state manager + multi-turn slot filling and database verification + Vue 3 chat flow E2E verification)
 - 2026-06-24: completed TASK-010 Contact Agent Todo Write Confirmation (16 tasks, rule-based NLP time/contact parsing + double-confirmation loop + Vue 3 layout & loading/disabled interaction E2E validation)
@@ -124,3 +130,4 @@ None (TASK-013 Contact and Todo Deletion Feature Completed)
 ## Notes for next session
 - 已于 2026-06-26 完成 TASK-012 Mobile Responsive Adaptation 任务，前端项目打包正常。针对移动端看板 Grid 列最小宽度隐式溢出以及 ECharts canvas 阻碍自适应收缩的 Bug 进行了深度修复。同时完成了对联系人详情页（ContactDetailView.vue）的移动端高保真自适应适配，引入了 2x2 按钮网格布局及垂直流待办事项卡片。在 E2E 移动视口模拟下通过完美验收，最新高保真截图已成功归档。
 - 本项目全部功能模块已开发交付完毕，后续将进入最后的交付收口和文档归档阶段。
+

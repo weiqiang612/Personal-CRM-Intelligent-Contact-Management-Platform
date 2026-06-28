@@ -321,13 +321,36 @@
         </div>
       </div>
     </div>
+
+    <!-- 添加自定义标签弹窗（复用通用 AppDialog 苹果风样式组件） -->
+    <AppDialog
+      v-model="showAddTagDialog"
+      title="添加自定义标签"
+      description="请输入新标签名称，系统将自动生成对应色彩的主题标签"
+      confirm-text="确定"
+      cancel-text="取消"
+      :loading="addTagLoading"
+      @confirm="confirmAddTag"
+      @cancel="cancelAddTag"
+    >
+      <div style="margin-top: 8px;">
+        <el-input
+          v-model="newTagName"
+          placeholder="例如：合作伙伴"
+          maxlength="20"
+          clearable
+          @keyup.enter="confirmAddTag"
+        />
+      </div>
+    </AppDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { getContactDetailApi, createContactApi, updateContactApi } from '@/api/contact'
 import type { ContactSaveParams } from '@/api/contact'
 import { getTagsApi, createTagApi } from '@/api/tag'
@@ -497,32 +520,48 @@ const getRandomTagColor = () => {
   return colors[Math.floor(Math.random() * colors.length)]
 }
 
+// 弹窗状态管理
+const showAddTagDialog = ref<boolean>(false)
+const addTagLoading = ref<boolean>(false)
+const newTagName = ref<string>('')
+
 // 动态弹窗创建新标签
 const handleAddTag = () => {
-  ElMessageBox.prompt('请输入新标签名称', '添加自定义标签', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputPattern: /\S+/,
-    inputErrorMessage: '标签名称不能为空',
-    inputPlaceholder: '例如：合作伙伴'
-  }).then(async ({ value }) => {
-    const tagName = value.trim()
-    if (tagList.value.some(t => t.name === tagName)) {
-      ElMessage.warning('该标签已存在！')
-      return
-    }
-    try {
-      const newTag = await createTagApi({
-        name: tagName,
-        color: getRandomTagColor()
-      })
-      ElMessage.success('标签创建成功！')
-      await fetchTagList()
-      form.tagIds.push(newTag.tagId)
-    } catch (err: any) {
-      ElMessage.error(err.message || '创建标签失败')
-    }
-  }).catch(() => {})
+  newTagName.value = ''
+  showAddTagDialog.value = true
+}
+
+const cancelAddTag = () => {
+  showAddTagDialog.value = false
+  newTagName.value = ''
+}
+
+const confirmAddTag = async () => {
+  const tagName = newTagName.value.trim()
+  if (!tagName) {
+    ElMessage.warning('标签名称不能为空')
+    return
+  }
+  if (tagList.value.some(t => t.name === tagName)) {
+    ElMessage.warning('该标签已存在！')
+    return
+  }
+  addTagLoading.value = true
+  try {
+    const newTag = await createTagApi({
+      name: tagName,
+      color: getRandomTagColor()
+    })
+    ElMessage.success('标签创建成功！')
+    await fetchTagList()
+    form.tagIds.push(newTag.tagId)
+    showAddTagDialog.value = false
+    newTagName.value = ''
+  } catch (err: any) {
+    ElMessage.error(err.message || '创建标签失败')
+  } finally {
+    addTagLoading.value = false
+  }
 }
 
 // 表单提交

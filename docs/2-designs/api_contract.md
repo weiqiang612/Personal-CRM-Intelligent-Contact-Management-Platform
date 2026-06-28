@@ -992,9 +992,60 @@
 }
 ```
 
-## 11. 当前实现状态 (Implementation Status)
+## 11. 活动日志模块 (Activity Feed APIs)
 
-- 后端 Controller 仍未开始实现。
-- 当前文档已经固定了开发第一阶段所需的最小接口集合。
-- 后续若新增管理员、批量导入或标签管理页面，需要在本文件继续追加契约，而不是绕过文档直接写接口。
+### 11.1 查询联系人活动轨迹时间线
+
+- `GET /api/v1/contacts/{contactId}/activities`
+
+#### 请求参数：
+
+| 参数名 | 类型 | 必填 | 说明 |
+|---|---|---|---|
+| contactId | string | 是 | 路径参数，联系人业务 ID（如 C000000001） |
+| limit | integer | 否 | 返回最大条数，默认 10，最大 50 |
+
+#### 响应体：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": [
+    {
+      "activityId": "ACT000000001",
+      "contactId": "C000000001",
+      "eventType": "TODO_COMPLETED",
+      "title": "完成了待办事项",
+      "description": "准备下周一的合作协议初稿",
+      "occurredAt": "2026-06-28T14:30:00Z"
+    },
+    {
+      "activityId": "ACT000000002",
+      "contactId": "C000000001",
+      "eventType": "TAG_CHANGED",
+      "title": "变更了联系人标签",
+      "description": "绑定标签：潜在客户, 战略伙伴",
+      "occurredAt": "2026-06-28T10:15:00Z"
+    },
+    {
+      "activityId": "ACT000000003",
+      "contactId": "C000000001",
+      "eventType": "CONTACT_CREATED",
+      "title": "创建了联系人",
+      "description": "新增联系人信息：张伟",
+      "occurredAt": "2026-06-27T09:00:00Z"
+    }
+  ]
+}
+```
+
+错误响应：
+- `40301`：无权访问当前联系人的活动日志（不属于当前登录用户）。
+- `40401`：联系人不存在。
+
+## 12. 当前实现状态 (Implementation Status)
+
+- 所有核心与扩展架构模块接口契约均已冻结与同步。
+- TASK-014 活动轨迹流接口规范已在本文件完成定义。
 

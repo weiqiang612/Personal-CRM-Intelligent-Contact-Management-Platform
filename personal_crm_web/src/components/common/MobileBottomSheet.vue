@@ -213,7 +213,7 @@ const onTouchStart = (e: TouchEvent) => {
   const target = e.target as HTMLElement
   if (target.closest('.sheet-close-btn') || target.closest('.chat-header-actions')) return
   
-  if (e.touches.length !== 1) return
+  if (e.touches.length !== 1 || !e.touches[0]) return
   isDragging.value = true
   dragStartY.value = e.touches[0].clientY
   if (sheetRef.value) {
@@ -223,7 +223,7 @@ const onTouchStart = (e: TouchEvent) => {
 }
 
 const onTouchMove = (e: TouchEvent) => {
-  if (!isDragging.value) return
+  if (!isDragging.value || !e.touches[0]) return
   const deltaY = e.touches[0].clientY - dragStartY.value
   let newHeight = startHeightPx.value - deltaY
   const windowHeight = window.innerHeight

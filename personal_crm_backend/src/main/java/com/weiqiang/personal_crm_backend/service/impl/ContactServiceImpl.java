@@ -18,6 +18,7 @@ import com.weiqiang.personal_crm_backend.model.dto.ContactSaveDTO;
 import com.weiqiang.personal_crm_backend.model.vo.ContactListVO;
 import com.weiqiang.personal_crm_backend.model.vo.ContactVO;
 import com.weiqiang.personal_crm_backend.security.UserContext;
+import com.weiqiang.personal_crm_backend.service.ActivityLogService;
 import com.weiqiang.personal_crm_backend.service.ContactService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -41,6 +42,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     private final TagMapper tagMapper;
     private final ContactTagMapper contactTagMapper;
     private final AvatarAccessService avatarAccessService;
+    private final ActivityLogService activityLogService;
 
     @Override
     public ContactListVO listContacts(ContactQueryParam param) {
@@ -156,6 +158,12 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         // 保存标签关联
         saveContactTags(ctId, dto.getTagIds(), userId);
 
+        // 活动轨迹留痕
+        activityLogService.saveActivity(userId, ctId, "CONTACT_CREATED", "创建了联系人", "新增联系人信息：" + contact.getName());
+        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
+            activityLogService.saveActivity(userId, ctId, "TAG_CHANGED", "变更了联系人标签", "绑定了联系人标签");
+        }
+
         return convertToVO(contact, userId);
     }
 
@@ -194,6 +202,12 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         // 保存新的标签关联
         saveContactTags(contactId, dto.getTagIds(), userId);
 
+        // 活动轨迹留痕
+        activityLogService.saveActivity(userId, contactId, "CONTACT_UPDATED", "修改了联系人资料", "更新联系人信息：" + contact.getName());
+        if (dto.getTagIds() != null) {
+            activityLogService.saveActivity(userId, contactId, "TAG_CHANGED", "变更了联系人标签", "更新了联系人标签设置");
+        }
+
         return convertToVO(contact, userId);
     }
 
@@ -207,6 +221,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         contact.setStatus(1);
         contact.setUpdatedAt(LocalDateTime.now());
         this.updateById(contact);
+
+        // 活动轨迹留痕
+        activityLogService.saveActivity(contact.getUserId(), contactId, "BLACKLIST_CHANGED", "移入黑名单", "将联系人 " + contact.getName() + " 移入黑名单");
     }
 
     @Override
@@ -219,6 +236,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         contact.setStatus(0);
         contact.setUpdatedAt(LocalDateTime.now());
         this.updateById(contact);
+
+        // 活动轨迹留痕
+        activityLogService.saveActivity(contact.getUserId(), contactId, "BLACKLIST_CHANGED", "移出黑名单", "将联系人 " + contact.getName() + " 从黑名单恢复");
     }
 
     @Override

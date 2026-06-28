@@ -249,17 +249,16 @@
       @confirm="executeDeleteContact"
     >
     </AppDialog>
-    <!-- 标签管理弹窗 -->
-    <el-dialog
+    <!-- 标签管理弹窗（复用通用 AppDialog 苹果风样式组件） -->
+    <AppDialog
       v-model="tagManagerVisible"
       title="标签管理"
-      width="500px"
-      @closed="handleTagManagerClosed"
-      destroy-on-close
+      description="统一创建、编辑与删除您的关系标签"
+      @cancel="handleTagManagerClosed"
     >
       <div class="tag-manager-container" v-loading="tagLoading">
         <!-- 新增/编辑表单 -->
-        <div class="tag-edit-form" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px;">
+        <div class="tag-edit-form" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
           <div style="flex: 1;">
             <div style="font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #475569;">
               {{ currentTagId ? '编辑标签' : '新增标签' }}
@@ -269,7 +268,8 @@
               class="input-control"
               v-model="tagForm.name"
               placeholder="输入标签名称 (如 工作)"
-              style="width: 100%; height: 36px;"
+              style="width: 100%; height: 38px; border-radius: 8px;"
+              @keyup.enter="saveTag"
             />
           </div>
           <div>
@@ -277,10 +277,10 @@
             <el-color-picker v-model="tagForm.color" :predefine="predefineColors" size="default" />
           </div>
           <div style="display: flex; gap: 6px;">
-            <button class="btn btn-primary" style="height: 36px; padding: 0 16px;" @click="saveTag">
+            <button class="btn btn-primary" style="height: 38px; padding: 0 16px; border-radius: 8px;" @click="saveTag">
               确定
             </button>
-            <button v-if="currentTagId" class="btn btn-secondary" style="height: 36px; padding: 0 12px;" @click="cancelEditTag">
+            <button v-if="currentTagId" class="btn btn-secondary" style="height: 38px; padding: 0 12px; border-radius: 8px;" @click="cancelEditTag">
               取消
             </button>
           </div>
@@ -288,24 +288,24 @@
 
         <!-- 标签列表 -->
         <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 8px;">标签列表 ({{ tagList.length }})</div>
-        <div class="tag-list-scroll" style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px;">
+        <div class="tag-list-scroll" style="max-height: 280px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; background: #ffffff;">
           <div v-if="tagList.length === 0" style="text-align: center; color: #94a3b8; padding: 30px 0; font-size: 13px;">
             暂无标签，请在上方创建第一个标签
           </div>
           <div
             v-for="item in tagList"
             :key="item.tagId"
-            style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #f1f5f9;"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #f1f5f9;"
           >
             <div style="display: flex; align-items: center; gap: 8px;">
               <span
-                style="width: 12px; height: 12px; border-radius: 50%; display: inline-block;"
+                style="width: 12px; height: 12px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 2px rgba(0,0,0,0.05);"
                 :style="{ backgroundColor: item.color }"
               ></span>
-              <span style="font-size: 13px; font-weight: 500; color: #334155;">{{ item.name }}</span>
+              <span style="font-size: 13px; font-weight: 600; color: #334155;">{{ item.name }}</span>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 12px;" @click="editTag(item)">
+              <button class="btn btn-secondary btn-sm" style="padding: 3px 10px; font-size: 12px; border-radius: 6px;" @click="editTag(item)">
                 编辑
               </button>
               
@@ -317,7 +317,7 @@
                 @confirm="deleteTag(item.tagId)"
               >
                 <template #reference>
-                  <button class="btn btn-danger-outline btn-sm" style="padding: 2px 8px; font-size: 12px;">
+                  <button class="btn btn-danger-outline btn-sm" style="padding: 3px 10px; font-size: 12px; border-radius: 6px;">
                     删除
                   </button>
                 </template>
@@ -326,12 +326,15 @@
           </div>
         </div>
       </div>
-    </el-dialog>
+      <template #footer>
+        <div></div>
+      </template>
+    </AppDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppDialog from '@/components/common/AppDialog.vue'
@@ -647,6 +650,11 @@ const confirmToBlacklist = async (id: string) => {
 }
 
 onMounted(() => {
+  fetchContactsList()
+  fetchTagList()
+})
+
+onActivated(() => {
   fetchContactsList()
   fetchTagList()
 })

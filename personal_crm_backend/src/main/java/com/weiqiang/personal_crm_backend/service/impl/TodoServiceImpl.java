@@ -15,6 +15,7 @@ import com.weiqiang.personal_crm_backend.model.dto.TodoQuery;
 import com.weiqiang.personal_crm_backend.model.vo.TodoListVO;
 import com.weiqiang.personal_crm_backend.model.vo.TodoVO;
 import com.weiqiang.personal_crm_backend.security.UserContext;
+import com.weiqiang.personal_crm_backend.service.ActivityLogService;
 import com.weiqiang.personal_crm_backend.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -33,6 +34,7 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
 
     private final TodoMapper todoMapper;
     private final ContactMapper contactMapper;
+    private final ActivityLogService activityLogService;
 
     @Override
     public TodoListVO listTodos(TodoQuery query) {
@@ -92,6 +94,9 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
 
         this.save(todo);
 
+        // 活动轨迹留痕
+        activityLogService.saveActivity(userId, dto.getContactId(), "TODO_CREATED", "创建了待办事项", todo.getContent());
+
         // 返回转换的 VO
         TodoVO vo = new TodoVO();
         BeanUtils.copyProperties(todo, vo);
@@ -112,6 +117,9 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
         todo.setCompletedAt(LocalDateTime.now());
         todo.setUpdatedAt(LocalDateTime.now());
         this.updateById(todo);
+
+        // 活动轨迹留痕
+        activityLogService.saveActivity(todo.getUserId(), todo.getContactId(), "TODO_COMPLETED", "完成了待办事项", todo.getContent());
     }
 
     @Override
@@ -126,6 +134,9 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
         todo.setCancelledAt(LocalDateTime.now());
         todo.setUpdatedAt(LocalDateTime.now());
         this.updateById(todo);
+
+        // 活动轨迹留痕
+        activityLogService.saveActivity(todo.getUserId(), todo.getContactId(), "TODO_CANCELLED", "取消了待办事项", todo.getContent());
     }
 
     @Override

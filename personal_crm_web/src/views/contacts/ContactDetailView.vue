@@ -366,52 +366,35 @@
           </h3>
         </div>
         
-        <div class="timeline" style="margin-top: 18px;">
-          <!-- 动态 1 -->
-          <div class="timeline-item">
-            <div class="timeline-node primary">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-                <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-              </svg>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <span class="timeline-title">修改了联系人资料</span>
-                <span class="timeline-time">刚刚</span>
-              </div>
-              <p class="timeline-body">您更新了联系人 {{ contact.name }} 的邮箱和详细工作地址。</p>
-            </div>
+        <div v-loading="activitiesLoading" style="min-height: 100px; margin-top: 18px;">
+          <!-- 无数据空态展示 -->
+          <div v-if="!activitiesLoading && activities.length === 0" class="activity-empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="activity-empty-icon">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h8"/><path d="M8 17h5"/>
+            </svg>
+            <div class="activity-empty-text">暂无业务活动记录</div>
+            <div class="activity-empty-subtext">联系人的资料变更、标签绑定及事项进展将实时展示在此处</div>
           </div>
 
-          <!-- 动态 2 -->
-          <div class="timeline-item">
-            <div class="timeline-node warning">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <span class="timeline-title">创建了一条新事项</span>
-                <span class="timeline-time">3 小时前</span>
+          <!-- 真实活动时间线列表 -->
+          <div v-else class="timeline">
+            <div
+              v-for="act in activities"
+              :key="act.activityId"
+              class="timeline-item"
+            >
+              <div :class="['timeline-node', getEventMeta(act.eventType).nodeClass]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
+                  <path v-for="(p, idx) in getEventMeta(act.eventType).paths" :key="idx" :d="p" />
+                </svg>
               </div>
-              <p class="timeline-body">创建了待办事项 “跟进产品合作需求”，设定在 2026-06-25 15:00 提醒。</p>
-            </div>
-          </div>
-
-          <!-- 动态 3 -->
-          <div class="timeline-item">
-            <div class="timeline-node success">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-              </svg>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-header">
-                <span class="timeline-title">录入了此联系人</span>
-                <span class="timeline-time">3 天前</span>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="timeline-title">{{ act.title }}</span>
+                  <span class="timeline-time" :title="formatFullTime(act.occurredAt)">{{ formatActivityTime(act.occurredAt) }}</span>
+                </div>
+                <p class="timeline-body" v-if="act.description">{{ act.description }}</p>
               </div>
-              <p class="timeline-body">创建了联系人档案，并设置了初始关系标签 同学、朋友。</p>
             </div>
           </div>
         </div>
@@ -425,8 +408,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import AppDialog from '@/components/common/AppDialog.vue'
-import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi, deleteContactApi } from '@/api/contact'
-import type { ContactInfo } from '@/api/contact'
+import { getContactDetailApi, addToBlacklistApi, restoreFromBlacklistApi, deleteContactApi, getContactActivitiesApi } from '@/api/contact'
+import type { ContactInfo, ContactActivity } from '@/api/contact'
 import { getTagsApi } from '@/api/tag'
 import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
@@ -555,6 +538,145 @@ const loadContactDetail = async () => {
   }
 }
 
+const activities = ref<ContactActivity[]>([])
+const activitiesLoading = ref<boolean>(false)
+
+const loadContactActivities = async () => {
+  if (!contactId.value) return
+  activitiesLoading.value = true
+  try {
+    const data = await getContactActivitiesApi(contactId.value, 10)
+    activities.value = data || []
+  } catch (error) {
+    console.error('Failed to load contact activities:', error)
+  } finally {
+    activitiesLoading.value = false
+  }
+}
+
+interface EventMeta {
+  nodeClass: string
+  paths: string[]
+}
+
+const getEventMeta = (eventType: string): EventMeta => {
+  switch (eventType) {
+    case 'CONTACT_CREATED':
+      return {
+        nodeClass: 'primary',
+        paths: [
+          'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2',
+          'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z'
+        ]
+      }
+    case 'CONTACT_UPDATED':
+      return {
+        nodeClass: 'info',
+        paths: [
+          'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7',
+          'M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z'
+        ]
+      }
+    case 'TAG_CHANGED':
+      return {
+        nodeClass: 'warning',
+        paths: [
+          'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z',
+          'M7 7h.01'
+        ]
+      }
+    case 'BLACKLIST_CHANGED':
+      return {
+        nodeClass: 'danger',
+        paths: [
+          'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'
+        ]
+      }
+    case 'TODO_CREATED':
+      return {
+        nodeClass: 'info',
+        paths: [
+          'M12 5v14',
+          'M5 12h14'
+        ]
+      }
+    case 'TODO_COMPLETED':
+      return {
+        nodeClass: 'success',
+        paths: [
+          'M20 6L9 17l-5-5'
+        ]
+      }
+    case 'TODO_CANCELLED':
+      return {
+        nodeClass: 'neutral',
+        paths: [
+          'M18 6L6 18',
+          'M6 6l12 12'
+        ]
+      }
+    default:
+      return {
+        nodeClass: 'info',
+        paths: [
+          'M12 8v4l3 3',
+          'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z'
+        ]
+      }
+  }
+}
+
+const formatFullTime = (timeStr: string): string => {
+  if (!timeStr) return ''
+  try {
+    const d = new Date(timeStr)
+    if (isNaN(d.getTime())) return timeStr
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const hours = String(d.getHours()).padStart(2, '0')
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    const seconds = String(d.getSeconds()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  } catch {
+    return timeStr
+  }
+}
+
+const formatActivityTime = (timeStr: string): string => {
+  if (!timeStr) return ''
+  try {
+    const d = new Date(timeStr)
+    if (isNaN(d.getTime())) return timeStr
+    const now = new Date()
+    const diffMs = now.getTime() - d.getTime()
+    
+    if (diffMs < 0) return '刚刚'
+    const diffSec = Math.floor(diffMs / 1000)
+    if (diffSec < 60) return '刚刚'
+    
+    const diffMin = Math.floor(diffSec / 60)
+    if (diffMin < 60) return `${diffMin} 分钟前`
+    
+    const diffHour = Math.floor(diffMin / 60)
+    if (diffHour < 24) return `${diffHour} 小时前`
+    
+    const diffDay = Math.floor(diffHour / 24)
+    if (diffDay === 1) {
+      const hours = String(d.getHours()).padStart(2, '0')
+      const minutes = String(d.getMinutes()).padStart(2, '0')
+      return `昨天 ${hours}:${minutes}`
+    }
+    if (diffDay < 7) return `${diffDay} 天前`
+    
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${month}-${day}`
+  } catch {
+    return timeStr
+  }
+}
+
 const loadContactTodos = async () => {
   if (!contactId.value) return
   todoLoading.value = true
@@ -580,6 +702,7 @@ const handleComplete = async (matterId: string) => {
     await completeTodo(matterId)
     ElMessage.success('事项标记已完成')
     loadContactTodos()
+    loadContactActivities()
   } catch (error) {
     console.error('Failed to complete todo:', error)
   }
@@ -590,6 +713,7 @@ const handleCancel = async (matterId: string) => {
     await cancelTodo(matterId)
     ElMessage.success('事项已取消')
     loadContactTodos()
+    loadContactActivities()
   } catch (error) {
     console.error('Failed to cancel todo:', error)
   }
@@ -661,6 +785,7 @@ const executeBlacklist = async () => {
     ElMessage.success('成功加入黑名单')
     showBlacklistConfirm.value = false
     loadContactDetail()
+    loadContactActivities()
   } catch (error) {
     console.error('Failed to blacklist contact:', error)
   }
@@ -674,6 +799,7 @@ const executeRestore = async () => {
     ElMessage.success('成功移出黑名单')
     showBlacklistConfirm.value = false
     loadContactDetail()
+    loadContactActivities()
   } catch (error) {
     console.error('Failed to restore contact:', error)
   }
@@ -736,6 +862,7 @@ onMounted(() => {
   loadContactDetail()
   loadContactTodos()
   fetchTagList()
+  loadContactActivities()
 })
 </script>
 
@@ -1135,6 +1262,41 @@ onMounted(() => {
 .timeline-node.primary { background-color: var(--color-primary-light); color: var(--color-primary); }
 .timeline-node.success { background-color: var(--color-success-bg); color: var(--color-success); }
 .timeline-node.warning { background-color: var(--color-warning-bg); color: var(--color-warning); }
+.timeline-node.info { background-color: #e0f2fe; color: #0284c7; }
+.timeline-node.danger { background-color: #fee2e2; color: #ef4444; }
+.timeline-node.neutral { background-color: #f1f5f9; color: #64748b; }
+
+/* 空态卡片样式 */
+.activity-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background-color: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.activity-empty-icon {
+  width: 40px;
+  height: 40px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.activity-empty-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.activity-empty-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+}
 
 .timeline-content {
   flex: 1;
@@ -1523,6 +1685,16 @@ onMounted(() => {
   .popconfirm-overlay {
     width: 260px !important;
     right: -10px !important;
+  }
+
+  /* 活动时间线移动端适配 */
+  .timeline-header {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+
+  .timeline-content {
+    word-break: break-word !important;
   }
 }
 </style>

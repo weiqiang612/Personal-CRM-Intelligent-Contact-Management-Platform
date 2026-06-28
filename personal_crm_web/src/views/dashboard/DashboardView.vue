@@ -938,10 +938,10 @@ async function initMicroSchedule() {
       const day = String(d.getDate()).padStart(2, '0')
       const fullDate = `${year}-${month}-${day}`
       const dateStr = `${d.getMonth() + 1}/${d.getDate()}`
-      const dayName = i === 0 ? '今天' : daysName[d.getDay()]
+      const dayName = i === 0 ? '今天' : (daysName[d.getDay()] || '')
       
       const match = data.find(item => item.date === fullDate || item.date === dateStr)
-      const count = match ? match.count : (data[i] ? data[i].count : 0)
+      const count = match ? match.count : (data[i]?.count ?? 0)
 
       result.push({
         dateStr,

@@ -105,8 +105,28 @@ export function restoreFromBlacklistApi(contactId: string): Promise<void> {
 }
 
 /**
- * 删除联系人 (逻辑删除)
+ * 联系人删除 (逻辑删除)
  */
 export function deleteContactApi(contactId: string): Promise<void> {
   return request.delete(`/contacts/${contactId}`)
 }
+
+/**
+ * 联系人活动轨迹数据结构
+ */
+export interface ContactActivity {
+  activityId: string
+  contactId: string
+  eventType: string
+  title: string
+  description: string | null
+  occurredAt: string
+}
+
+/**
+ * 查询联系人活动轨迹时间线
+ */
+export function getContactActivitiesApi(contactId: string, limit: number = 10): Promise<ContactActivity[]> {
+  return request.get(`/contacts/${contactId}/activities`, { params: { limit } })
+}
+
