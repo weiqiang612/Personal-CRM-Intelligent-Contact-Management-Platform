@@ -158,7 +158,7 @@
                 <!-- checked-icon -->
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="checked-icon"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
               </button>
-              <div class="todo-details">
+              <div class="todo-details" @click="goToTodoItem(todo)" style="cursor: pointer;">
                 <span class="todo-title">{{ todo.content }}</span>
                 <span class="todo-time">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;margin-right:2px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -199,11 +199,14 @@
         <div ref="genderChartRef" id="genderChart" style="width: 100%;"></div>
       </div>
 
-      <!-- 未来 7 天事项 Entry Overview 卡片 (Apple 极致打磨版) -->
+      <!-- 未来 7 天事项 Entry Overview 卡片 (Apple 终极定稿版) -->
       <div class="card chart-card timeline-overview-card">
         <div class="card-header">
           <div class="header-title-group">
             <h3 class="card-title">未来 7 天事项</h3>
+          </div>
+          <div class="card-actions-inline">
+            <span class="timeline-total-badge">{{ totalFutureTodos }} 待办</span>
           </div>
         </div>
         
@@ -229,7 +232,7 @@
         <div class="overview-divider"></div>
 
         <!-- 底部：Apple 风格精美事项 Card 视窗 (带切换平滑动效) -->
-        <transition name="fade-slide" mode="out-in">
+        <Transition name="fade-slide" mode="out-in">
           <div class="overview-focus-section" v-if="currentActiveDay" :key="activeDayIndex">
             <div class="focus-section-header">
               <span class="focus-title">{{ currentActiveDay.dayName }} · {{ currentActiveDay.count }} 项待办</span>
@@ -245,7 +248,7 @@
                   v-for="todo in (currentActiveDay.todos || []).slice(0, 2)" 
                   :key="todo.matterId" 
                   class="summary-card-item"
-                  @click="goToTodoDate(currentActiveDay.fullDate)"
+                  @click="goToTodoItem(todo, currentActiveDay.fullDate)"
                 >
                   <div class="card-item-top">
                     <span class="priority-mini-dot" :class="getPriorityClass(todo.priority)"></span>
@@ -259,13 +262,13 @@
             </div>
 
             <div class="focus-section-footer">
-              <router-link to="/todos" class="entry-more-link">
+              <router-link :to="{ path: '/todos', query: { date: currentActiveDay.fullDate } }" class="entry-more-link">
                 <span>查看全部</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="link-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </router-link>
             </div>
           </div>
-        </transition>
+        </Transition>
       </div>
     </section>
 
@@ -989,6 +992,17 @@ async function loadDayTodos(day: MicroScheduleDay) {
 
 function goToTodoDate(fullDate: string) {
   router.push({ path: '/todos', query: { date: fullDate } })
+}
+
+function goToTodoItem(todo: any, fullDate?: string) {
+  const query: Record<string, string> = {}
+  if (todo?.content) {
+    query.keyword = todo.content
+  }
+  if (fullDate) {
+    query.date = fullDate
+  }
+  router.push({ path: '/todos', query })
 }
 
 async function fetchRecentContacts() {
@@ -3069,6 +3083,13 @@ onBeforeUnmount(() => {
   padding: 16px 20px 14px 20px;
   height: 100%;
   min-height: 226px;
+}
+
+.timeline-total-badge {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: 0.1px;
 }
 
 /* 顶部：7天底线高亮极简导航条（无灰色大卡槽） */
