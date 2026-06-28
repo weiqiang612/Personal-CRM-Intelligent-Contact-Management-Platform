@@ -708,6 +708,13 @@ const healthSheetCategory = ref<{
   list: any[]
 } | null>(null)
 
+watch(isHealthSheetOpen, (isOpen) => {
+  if (!isOpen && healthChartInstance) {
+    healthChartInstance.dispatchAction({ type: 'downplay' })
+    healthChartInstance.dispatchAction({ type: 'unselect', seriesIndex: 0 })
+  }
+})
+
 // 1. 数据定义与初始化
 const overview = ref<DashboardOverview>({
   contactCount: 0,
@@ -1269,6 +1276,7 @@ async function initRelationshipHealthChart() {
         {
           name: '关系维护状态',
           type: 'pie',
+          selectedMode: false,
           radius: isMobile.value ? ['52%', '74%'] : ['62%', '84%'],
           center: isMobile.value ? ['50%', '38%'] : ['31%', '52%'],
           avoidLabelOverlap: false,
