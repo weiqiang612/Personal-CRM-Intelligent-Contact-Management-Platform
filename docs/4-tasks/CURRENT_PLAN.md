@@ -3,9 +3,9 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-`docs/4-tasks/features/TASK-016-resend-email-verification/`
-- spec.md ✅ Completed
-- tasks.md ✅ Completed
+`docs/4-tasks/features/TASK-017-performance-quality-cleanup/`
+- spec.md ⏳ In Progress (Ready for review)
+- tasks.md ⏳ In Progress (Ready for review)
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-015-relationship-health-dashboard/`
@@ -91,6 +91,9 @@
 
 ### TASK-016: Resend Email Verification & Account Security Closure
 - [x] Implementation (18 tasks) Completed
+
+### TASK-017: Final Performance & Quality Cleanup
+- [ ] Implementation (15 tasks)
 
 
 ## Backlog roadmap

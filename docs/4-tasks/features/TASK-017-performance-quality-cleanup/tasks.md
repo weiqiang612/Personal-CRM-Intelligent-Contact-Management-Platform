@@ -1,0 +1,22 @@
+# 任务列表 - TASK-017 性能优化与代码质量收尾
+
+- [ ] 准备工作与文档更新
+  - [ ] 同步修改架构设计文档 `docs/2-designs/architecture.md`，更新 Redis 的分布式会话及 Hash 缓存架构描述 <!-- id: T1, covers: doc-maintenance -->
+- [ ] 后端 Redis 看板缓存与 AI 会话分布式重构
+  - [ ] 新建统一常量类 `com.weiqiang.personal_crm_backend.common.Constants` 管理 Redis Key 前缀、TTL、时间日期格式 <!-- id: T2, covers: AC-CODE-STANDARDS -->
+  - [ ] 重构 `AgentSessionManager.java` 使用 Redis 存储 `AgentSessionState`，设置 10 分钟 TTL 并废弃 `@Scheduled` 清理任务 <!-- id: T3, covers: AC-REDIS-AGENT-SESSION -->
+  - [ ] 重构 `DashboardController.java` 对看板四个接口引入基于 Redis Hash 的二级缓存，缓存时间 300 秒 <!-- id: T4, covers: AC-REDIS-DASHBOARD-CACHE -->
+  - [ ] 修改 `ContactServiceImpl.java` 和 `TodoServiceImpl.java` 写操作方法，引入 `redisTemplate.delete("dashboard:cache:" + userId)` 缓存主动失效逻辑 <!-- id: T5, covers: AC-REDIS-DASHBOARD-CACHE -->
+- [ ] 后端代码质量收尾与异常信息汉化
+  - [ ] 清理全后端代码中的全限定类名，改为文件头 `import` 导包 <!-- id: T6, covers: AC-CODE-STANDARDS -->
+  - [ ] 检索并汉化所有业务 Service 中硬编码的英文异常，全部抽录为 `Constants.Message` 里的中文常量 <!-- id: T7, covers: AC-CODE-STANDARDS -->
+  - [ ] 移除全后端所有控制台 `System.out.println` 等残留，替换为 SLF4J 日志打印，并对强转等警告加上注解消除 <!-- id: T8, covers: AC-CODE-STANDARDS -->
+  - [ ] 在 `ContactHealthCalculator`、`AgentServiceImpl` 和 `WeatherServiceImpl` 的高开销逻辑中增加 System.currentTimeMillis() 时间打点监控日志 <!-- id: T9, covers: AC-CODE-STANDARDS -->
+- [ ] 前端性能与构建优化
+  - [ ] 修改 `DashboardView.vue`，在 `onBeforeUnmount` 中对图表的两个 ECharts 实例执行 `dispose()` 清理规避内存泄露 <!-- id: T10, covers: AC-FRONTEND-OPTIMIZATION -->
+  - [ ] 新建 `src/utils/constants.ts` 统一管理 `localStorage` 键名等魔术字符串 <!-- id: T11, covers: AC-FRONTEND-OPTIMIZATION -->
+  - [ ] 修改 `vite.config.ts` 引入 rollupOptions.output.manualChunks 分包配置，并开启 esbuild 的 console/debugger drop 配置 <!-- id: T12, covers: AC-FRONTEND-OPTIMIZATION -->
+- [ ] 系统验证与收尾
+  - [ ] 运行后端单元测试 `mvn -f personal_crm_backend/pom.xml test`，验证功能全部通过且无回归 <!-- id: T13, covers: AC-REDIS-AGENT-SESSION, AC-REDIS-DASHBOARD-CACHE, AC-CODE-STANDARDS -->
+  - [ ] 运行前端生产包构建 `npm --prefix personal_crm_web run build`，确保分包及优化符合预期且无构建报错 <!-- id: T14, covers: AC-FRONTEND-OPTIMIZATION -->
+  - [ ] 更新 `docs/4-tasks/CURRENT_PLAN.md` 标记任务状态 <!-- id: T15, covers: doc-maintenance -->
