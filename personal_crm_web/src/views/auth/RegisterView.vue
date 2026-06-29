@@ -274,6 +274,18 @@
                 </g>
               </svg>
             </div>
+            <!-- 密码长度实时提示 -->
+            <div class="feedback-msg" v-if="registerForm.password">
+              <span :class="{ 'valid': isPasswordLengthValid, 'invalid': !isPasswordLengthValid }">
+                <svg v-if="isPasswordLengthValid" class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <svg v-else class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                密码长度至少 8 位（当前: {{ registerForm.password.length }} 位）
+              </span>
+            </div>
           </div>
 
           <!-- 确认密码 -->
@@ -307,6 +319,18 @@
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                 </g>
               </svg>
+            </div>
+            <!-- 两次密码一致性实时提示 -->
+            <div class="feedback-msg" v-if="registerForm.confirmPassword">
+              <span :class="{ 'valid': isPasswordMatch === true, 'invalid': isPasswordMatch === false }">
+                <svg v-if="isPasswordMatch === true" class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <svg v-else class="feedback-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                {{ isPasswordMatch === true ? '两次密码输入一致' : '两次密码输入不一致' }}
+              </span>
             </div>
           </div>
 
@@ -374,6 +398,15 @@ const registerForm = reactive({
   code: '',
   password: '',
   confirmPassword: ''
+})
+
+const isPasswordLengthValid = computed(() => {
+  return registerForm.password.length >= 8
+})
+
+const isPasswordMatch = computed(() => {
+  if (!registerForm.confirmPassword) return null
+  return registerForm.password === registerForm.confirmPassword
 })
 
 const togglePasswordVisibility = () => {
@@ -877,7 +910,7 @@ const handleRegister = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 50px;
+  padding: 12px 40px;
   overflow-y: auto;
   height: 100%;
 }
@@ -886,9 +919,9 @@ const handleRegister = async () => {
   width: 100%;
   max-width: 420px;
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 16px;
   box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.08);
-  padding: 40px;
+  padding: 20px 30px;
   margin: auto 0;
   position: relative;
   text-align: left;
@@ -896,18 +929,18 @@ const handleRegister = async () => {
 
 /* 头部图标 */
 .auth-avatar-header {
-  width: 56px; height: 56px;
+  width: 40px; height: 40px;
   border-radius: 50%;
   background: #eff6ff;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #2f5bff;
-  margin: 0 auto 16px;
+  margin: 0 auto 6px;
   box-shadow: 0 8px 16px -8px rgba(47, 91, 255, 0.5);
 }
 .auth-avatar-header svg {
-  width: 26px; height: 26px;
+  width: 20px; height: 20px;
 }
 
 .auth-title {
@@ -924,7 +957,7 @@ const handleRegister = async () => {
   color: #64748b;
   font-weight: 500;
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 /* 错误提示 */
@@ -948,7 +981,7 @@ const handleRegister = async () => {
 
 /* 表单 */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .form-label {
@@ -965,13 +998,13 @@ const handleRegister = async () => {
 
 .input-wrap input {
   width: 100%;
-  height: 44px;
-  padding: 0 40px;
-  border-radius: 10px;
+  height: 36px;
+  padding: 0 36px;
+  border-radius: 8px;
   border: 1.5px solid #e2e8f0;
   background: #fff;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #0f172a;
   transition: all 0.2s ease;
@@ -1008,7 +1041,7 @@ const handleRegister = async () => {
 
 /* 服务协议勾选 */
 .agreement-row {
-  margin: 14px 0 20px 0;
+  margin: 8px 0 12px 0;
 }
 
 .checkbox-container {
@@ -1080,23 +1113,23 @@ const handleRegister = async () => {
 /* 注册按钮 */
 .btn-register {
   width: 100%;
-  height: 44px;
-  border-radius: 10px;
+  height: 38px;
+  border-radius: 8px;
   border: none;
   background: linear-gradient(135deg, #4f46e5 0%, #2f5bff 100%);
   color: #fff;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 20px -8px rgba(47, 91, 255, 0.4);
+  box-shadow: 0 8px 16px -8px rgba(47, 91, 255, 0.4);
   transition: all 0.2s ease;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   display: flex; align-items: center; justify-content: center;
 }
 .btn-register:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px -6px rgba(47, 91, 255, 0.5);
+  box-shadow: 0 10px 20px -6px rgba(47, 91, 255, 0.5);
   background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
 }
 .btn-register:active:not(:disabled) {
@@ -1117,7 +1150,7 @@ const handleRegister = async () => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
   position: relative;
 }
 .login-row::before, .login-row::after {
@@ -1228,7 +1261,7 @@ const handleRegister = async () => {
 .code-row :deep(.send-code-btn) {
   flex-shrink: 0;
   width: 110px;
-  height: 42px;
+  height: 36px;
 }
 
 /* 响应式 */
@@ -1250,5 +1283,29 @@ const handleRegister = async () => {
     box-shadow: none;
     border: 1px solid #e2e8f0;
   }
+}
+
+.feedback-msg {
+  margin-top: 3px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+}
+.feedback-msg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+.feedback-msg .valid {
+  color: #10b981;
+}
+.feedback-msg .invalid {
+  color: #ef4444;
+}
+.feedback-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
 }
 </style>

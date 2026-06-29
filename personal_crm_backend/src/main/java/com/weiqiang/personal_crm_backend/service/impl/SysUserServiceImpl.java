@@ -42,8 +42,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String username = loginRequest.getUsername();
         String password = loginRequest.getPassword();
 
-        // 1. 根据用户名查找用户
-        SysUser user = this.lambdaQuery().eq(SysUser::getUsername, username).one();
+        // 1. 根据用户名或邮箱查找用户
+        SysUser user = this.lambdaQuery()
+                .eq(SysUser::getUsername, username)
+                .or()
+                .eq(SysUser::getEmail, username)
+                .one();
         if (user == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid account or password");
         }
@@ -122,11 +126,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             }
         }
 
-        // 验证邮箱验证码是否正确
+        // 1.5 邮箱必须提供校验
         if (!org.springframework.util.StringUtils.hasText(email)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "Email is required for registration");
         }
-        emailVerificationRedisTemplate.verifyCode("REGISTER", email.trim(), registerRequest.getCode().trim());
 
         // 2. 基础校验
         if (username.contains("@")) {
@@ -143,6 +146,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (password.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password must be at least 8 characters");
         }
+
+        // 验证邮箱验证码是否正确
+        emailVerificationRedisTemplate.verifyCode("REGISTER", email.trim(), registerRequest.getCode().trim());
 
         // 3. 重名校验
         SysUser existingUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
