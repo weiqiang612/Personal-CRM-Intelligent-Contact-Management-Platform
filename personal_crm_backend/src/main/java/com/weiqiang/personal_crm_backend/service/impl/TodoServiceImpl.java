@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.entity.Todo;
@@ -19,6 +20,7 @@ import com.weiqiang.personal_crm_backend.service.ActivityLogService;
 import com.weiqiang.personal_crm_backend.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,12 +37,13 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
     private final TodoMapper todoMapper;
     private final ContactMapper contactMapper;
     private final ActivityLogService activityLogService;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public TodoListVO listTodos(TodoQuery query) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         int pageNum = query.getPage() == null ? 1 : query.getPage();
@@ -67,7 +70,7 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
     public TodoVO createTodo(TodoCreateDTO dto) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         // 1. 校验联系人存在且属于当前登录用户
@@ -75,10 +78,10 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
                 new LambdaQueryWrapper<Contact>().eq(Contact::getCtId, dto.getContactId())
         );
         if (contact == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "contact not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.CONTACT_NOT_FOUND);
         }
         if (!userId.equals(contact.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "access denied: contact belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.CONTACT_ACCESS_DENIED);
         }
 
         // 2. 生成 10 位随机唯一业务 ID matterId 并落库
@@ -97,7 +100,10 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
         // 活动轨迹留痕
         activityLogService.saveActivity(userId, dto.getContactId(), "TODO_CREATED", "创建了待办事项", todo.getContent());
 
-        // 返回转换的 VO
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + userId);
+
+        // 返回转换 of VO
         TodoVO vo = new TodoVO();
         BeanUtils.copyProperties(todo, vo);
         vo.setContactName(contact.getName());
@@ -110,7 +116,7 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
     public void completeTodo(String matterId) {
         Todo todo = getAndValidateTodo(matterId);
         if (!Integer.valueOf(0).equals(todo.getStatus())) {
-            throw new BusinessException(ErrorCode.CONFLICT, "todo status conflict: only pending todos can be completed");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.TODO_COMPLETE_CONFLICT);
         }
 
         todo.setStatus(2); // 2 Completed
@@ -120,6 +126,9 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
 
         // 活动轨迹留痕
         activityLogService.saveActivity(todo.getUserId(), todo.getContactId(), "TODO_COMPLETED", "完成了待办事项", todo.getContent());
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + todo.getUserId());
     }
 
     @Override
@@ -127,7 +136,7 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
     public void cancelTodo(String matterId) {
         Todo todo = getAndValidateTodo(matterId);
         if (!Integer.valueOf(0).equals(todo.getStatus())) {
-            throw new BusinessException(ErrorCode.CONFLICT, "todo status conflict: only pending todos can be cancelled");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.TODO_CANCEL_CONFLICT);
         }
 
         todo.setStatus(1); // 1 Cancelled
@@ -137,6 +146,9 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
 
         // 活动轨迹留痕
         activityLogService.saveActivity(todo.getUserId(), todo.getContactId(), "TODO_CANCELLED", "取消了待办事项", todo.getContent());
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + todo.getUserId());
     }
 
     @Override
@@ -144,21 +156,24 @@ public class TodoServiceImpl extends ServiceImpl<TodoMapper, Todo> implements To
     public void deleteTodo(String matterId) {
         Todo todo = getAndValidateTodo(matterId);
         this.removeById(todo.getId());
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + todo.getUserId());
     }
 
     private Todo getAndValidateTodo(String matterId) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         Todo todo = this.lambdaQuery().eq(Todo::getMatterId, matterId).one();
         if (todo == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "todo not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.TODO_NOT_FOUND);
         }
 
         if (!userId.equals(todo.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "access denied: this todo belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.TODO_ACCESS_DENIED);
         }
 
         return todo;

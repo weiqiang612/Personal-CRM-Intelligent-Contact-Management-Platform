@@ -2,6 +2,7 @@ package com.weiqiang.personal_crm_backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.ActivityLog;
 import com.weiqiang.personal_crm_backend.entity.Contact;
@@ -56,7 +57,7 @@ public class ActivityLogServiceImpl extends ServiceImpl<ActivityLogMapper, Activ
     public List<ActivityLogVO> listContactActivities(String contactId, Integer limit) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         // 校验联系人存在性与用户归属权限
@@ -64,10 +65,10 @@ public class ActivityLogServiceImpl extends ServiceImpl<ActivityLogMapper, Activ
                 new LambdaQueryWrapper<Contact>().eq(Contact::getCtId, contactId)
         );
         if (contact == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "contact not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.CONTACT_NOT_FOUND);
         }
         if (!userId.equals(contact.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "access denied: contact belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.CONTACT_ACCESS_DENIED);
         }
 
         int realLimit = (limit == null || limit <= 0) ? 10 : Math.min(limit, 50);

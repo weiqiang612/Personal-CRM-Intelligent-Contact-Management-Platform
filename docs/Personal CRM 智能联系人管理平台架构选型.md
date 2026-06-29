@@ -47,18 +47,22 @@ ECharts 用于实现数据看板中的联系人性别比例、未来 7 天事项
 后端建议采用：
 
 ```text
-Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
+Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + Redis 8 + JWT + Resend Email SDK
 ```
 
 ### 3.2 选型理由
 
-Spring Boot 适合构建 RESTful 后端服务，能够快速整合 Web、文件上传、参数校验、异常处理、拦截器和事务管理等能力。
+Spring Boot 适合构建 RESTful 后端服务，能够快速整合 Web、文件上传、参数校验、拦截器和事务管理等能力。
 
 MyBatis-Plus 在 MyBatis 基础上提供通用 CRUD、分页插件和条件构造器，适合联系人列表、黑名单列表、事项列表等大量增删改查场景。相比 JPA，它对 SQL 的控制更直观，更适合 Java 后端实习项目展示。
 
 MySQL 8 用于保存结构化业务数据，适合用户、联系人、事项、标签、头像记录和 Agent 操作记录等关系型数据。
 
+Redis 用于保存注册激活验证码、60 秒限流发送频率锁、防爆破的 5 次尝试计数。此外，Redis 还用于多用户仪表盘看板聚合数据缓存（Hash 结构，缓存 TTL 为 300 秒），以及 Agent 会话管理中的多轮澄清槽位和滑窗历史状态（String 结构，缓存 TTL 为 600 秒），从而实现高性能和服务器端的无状态自愈。
+
 JWT 用于登录认证和接口鉴权。用户登录成功后，后端签发 Token，前端保存并在后续请求中携带。后端通过拦截器解析 Token，获取当前用户 ID，保证用户只能访问自己的联系人和事项数据。
+
+Resend Email SDK 作为高效发信代理服务，封装异步邮件通知，在后端承担安全激活码和欢迎信发送职责，隔离发信协议底层复杂度。
 
 ## 4. 数据库选型
 
@@ -216,7 +220,7 @@ src
 
 ## 9. 部署架构选型
 
-课程验收阶段建议采用单机部署：
+课程验收与演示阶段建议采用单机容器化/微服务辅助部署：
 
 ```text
 Nginx
@@ -224,8 +228,8 @@ Nginx
 Vue 静态资源
   ↓
 Spring Boot Jar
-  ↓
-MySQL
+  ↓           ↓
+MySQL 8     Redis 8 (缓存/安全/会话)
   ↓
 本地 upload 文件目录
 ```
@@ -233,16 +237,16 @@ MySQL
 如果只是本地演示，也可以直接：
 
 ```text
-Vue dev server + Spring Boot + MySQL
+Vue dev server + Spring Boot + MySQL + Redis
 ```
 
 作品集部署阶段可以升级为：
 
 ```text
-Nginx + Spring Boot Jar + MySQL + OSS / 本地持久化目录
+Nginx + Spring Boot Jar + MySQL + Redis + OSS / 本地持久化目录 + Resend 邮件发信服务
 ```
 
-暂时不建议使用微服务、Kubernetes、RabbitMQ、Elasticsearch 等重型方案。它们会增加开发和部署复杂度，但对当前项目核心价值提升不明显。
+暂时不建议使用分布式微服务（Spring Cloud）、Kubernetes、RabbitMQ、Elasticsearch 等重型方案。它们会增加开发和部署复杂度，但对当前项目核心价值提升不明显。
 
 ## 10. 最终推荐技术栈
 
@@ -251,13 +255,13 @@ Nginx + Spring Boot Jar + MySQL + OSS / 本地持久化目录
 ```text
 前端：Vue 3 + Vite + TypeScript + Element Plus + Pinia + Vue Router + Axios + ECharts
 
-后端：Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + JWT + Spring Validation
+后端：Java 17 + Spring Boot 3.5 + MyBatis-Plus + MySQL 8 + Redis 8 + JWT + Resend SDK
 
 文件存储：本地文件存储为主，预留 OSS 扩展接口
 
-智能助手：后端内置 Contact Agent 模块，通过 LLM API + Tool Registry + 二次确认机制实现
+智能助手：后端内置 Contact Agent 模块，通过 LLM API + Tool Registry + 二次确认机制 + Redis 分布式会话状态持久化实现
 
-部署：Nginx + Spring Boot Jar + MySQL + 本地 upload 目录
+部署：Nginx + Spring Boot Jar + MySQL 8 + Redis 8 + 本地 upload 目录 + 异步邮件发送
 ```
 
 ## 11. 选型结论

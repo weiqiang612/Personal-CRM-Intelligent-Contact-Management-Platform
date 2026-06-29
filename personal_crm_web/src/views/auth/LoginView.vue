@@ -266,6 +266,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/constants'
 
 const router = useRouter()
 const route = useRoute()
@@ -289,8 +290,8 @@ onMounted(() => {
     loginForm.username = route.query.email
     loginForm.password = ''
   } else {
-    const savedUsername = localStorage.getItem('saved_username')
-    const savedPassword = localStorage.getItem('saved_password')
+    const savedUsername = localStorage.getItem(STORAGE_KEYS.SAVED_USERNAME)
+    const savedPassword = localStorage.getItem(STORAGE_KEYS.SAVED_PASSWORD)
     if (savedUsername) {
       loginForm.username = savedUsername
       rememberMe.value = true
@@ -334,11 +335,11 @@ const handleLogin = async () => {
     await authStore.login({ username, password })
 
     if (rememberMe.value) {
-      localStorage.setItem('saved_username', username)
-      localStorage.setItem('saved_password', btoa(password))
+      localStorage.setItem(STORAGE_KEYS.SAVED_USERNAME, username)
+      localStorage.setItem(STORAGE_KEYS.SAVED_PASSWORD, btoa(password))
     } else {
-      localStorage.removeItem('saved_username')
-      localStorage.removeItem('saved_password')
+      localStorage.removeItem(STORAGE_KEYS.SAVED_USERNAME)
+      localStorage.removeItem(STORAGE_KEYS.SAVED_PASSWORD)
     }
 
     ElMessage.success('登录成功')

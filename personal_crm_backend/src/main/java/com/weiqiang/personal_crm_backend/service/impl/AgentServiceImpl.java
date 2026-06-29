@@ -1,6 +1,7 @@
 package com.weiqiang.personal_crm_backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.AgentOperationLog;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
@@ -48,7 +49,7 @@ public class AgentServiceImpl implements AgentService {
     public AgentQueryResponseVO query(AgentQueryParam param) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         String input = param.getInput() != null ? param.getInput().trim() : "";
@@ -107,7 +108,7 @@ public class AgentServiceImpl implements AgentService {
     public AgentExecuteResponseVO execute(AgentExecuteParam param) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         String input = param.getInput() != null ? param.getInput().trim() : "";
@@ -122,6 +123,7 @@ public class AgentServiceImpl implements AgentService {
      * 通用的 Agent 自然语言核心流转处理（大模型解析 + 二阶段本地库校验 + 多轮澄清）
      */
     private AgentExecuteResponseVO processAgentRequest(String input, String sessionId, String userId) {
+        long startTime = System.currentTimeMillis();
         // 1. 获取或创建会话状态
         AgentSessionState sessionState = null;
         if (sessionId != null && !sessionId.trim().isEmpty()) {
@@ -432,8 +434,16 @@ public class AgentServiceImpl implements AgentService {
         if ("query_contact".equals(response.getActionType()) 
                 || "query_todo".equals(response.getActionType()) 
                 || ("create_todo".equals(response.getActionType()) && Integer.valueOf(1).equals(response.getNeedConfirm()))) {
-            sessionState.setAccumulatedParams(new java.util.HashMap<>());
+            sessionState.setAccumulatedParams(new HashMap<>());
         }
+
+        // 统一回写多轮会话状态至 Redis
+        if (sessionState != null) {
+            agentSessionManager.saveSession(sessionState);
+        }
+
+        long endTime = System.currentTimeMillis();
+        log.info("AgentService.processAgentRequest for input='{}' took {} ms", input, (endTime - startTime));
 
         return response;
     }
@@ -446,7 +456,7 @@ public class AgentServiceImpl implements AgentService {
     public Object confirm(AgentConfirmParam param) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "用户未登录");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         AgentOperationLog logRecord = agentOperationLogMapper.selectById(param.getLogId());

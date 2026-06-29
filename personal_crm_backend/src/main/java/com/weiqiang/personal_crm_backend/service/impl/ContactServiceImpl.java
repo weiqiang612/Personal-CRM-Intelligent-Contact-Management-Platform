@@ -3,6 +3,7 @@ package com.weiqiang.personal_crm_backend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.entity.ContactAvatar;
@@ -22,11 +23,13 @@ import com.weiqiang.personal_crm_backend.service.ActivityLogService;
 import com.weiqiang.personal_crm_backend.service.ContactService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,12 +46,13 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     private final ContactTagMapper contactTagMapper;
     private final AvatarAccessService avatarAccessService;
     private final ActivityLogService activityLogService;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public ContactListVO listContacts(ContactQueryParam param) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         Page<Contact> page = new Page<>(param.getPage(), param.getPageSize());
@@ -72,7 +76,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
             List<String> contactIds = contactMapper.getContactIdsByTagAndUser(tag.trim(), userId);
             if (contactIds.isEmpty()) {
                 ContactListVO listVO = new ContactListVO();
-                listVO.setList(java.util.Collections.emptyList());
+                listVO.setList(Collections.emptyList());
                 listVO.setPage(param.getPage());
                 listVO.setPageSize(param.getPageSize());
                 listVO.setTotal(0L);
@@ -133,7 +137,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     public ContactVO createContact(ContactSaveDTO dto) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         // 校验电话格式与合法性
@@ -163,6 +167,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
             activityLogService.saveActivity(userId, ctId, "TAG_CHANGED", "变更了联系人标签", "绑定了联系人标签");
         }
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + userId);
 
         return convertToVO(contact, userId);
     }
@@ -208,6 +215,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
             activityLogService.saveActivity(userId, contactId, "TAG_CHANGED", "变更了联系人标签", "更新了联系人标签设置");
         }
 
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + userId);
+
         return convertToVO(contact, userId);
     }
 
@@ -216,7 +226,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     public void addToBlacklist(String contactId) {
         Contact contact = getAndValidateContact(contactId);
         if (contact.getStatus() == 1) {
-            throw new BusinessException(ErrorCode.CONFLICT, "contact is already in the blacklist");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.CONTACT_ALREADY_BLACKLISTED);
         }
         contact.setStatus(1);
         contact.setUpdatedAt(LocalDateTime.now());
@@ -224,6 +234,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         // 活动轨迹留痕
         activityLogService.saveActivity(contact.getUserId(), contactId, "BLACKLIST_CHANGED", "移入黑名单", "将联系人 " + contact.getName() + " 移入黑名单");
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + contact.getUserId());
     }
 
     @Override
@@ -231,7 +244,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     public void restoreFromBlacklist(String contactId) {
         Contact contact = getAndValidateContact(contactId);
         if (contact.getStatus() == 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "contact is already active");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.CONTACT_ALREADY_ACTIVE);
         }
         contact.setStatus(0);
         contact.setUpdatedAt(LocalDateTime.now());
@@ -239,6 +252,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
 
         // 活动轨迹留痕
         activityLogService.saveActivity(contact.getUserId(), contactId, "BLACKLIST_CHANGED", "移出黑名单", "将联系人 " + contact.getName() + " 从黑名单恢复");
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + contact.getUserId());
     }
 
     @Override
@@ -255,6 +271,9 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
         wrapper.eq(ContactTag::getContactId, contactId)
                 .eq(ContactTag::getUserId, userId);
         contactTagMapper.delete(wrapper);
+
+        // 看板二级缓存失效
+        redisTemplate.delete(Constants.REDIS_KEY_DASHBOARD_CACHE + userId);
     }
 
     /**
@@ -285,18 +304,18 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     private Contact getAndValidateContact(String contactId) {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
 
         Contact contact = this.lambdaQuery()
                 .eq(Contact::getCtId, contactId)
                 .one();
         if (contact == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "contact not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.CONTACT_NOT_FOUND);
         }
 
         if (!userId.equals(contact.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "access denied: this contact belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.CONTACT_ACCESS_DENIED);
         }
 
         return contact;
@@ -308,7 +327,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
     private void validateSaveDTO(ContactSaveDTO dto) {
         // 生日校验，生日不能是未来时间
         if (dto.getBirthday() != null && dto.getBirthday().isAfter(LocalDate.now())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "birthday cannot be in the future");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.BIRTHDAY_FUTURE_INVALID);
         }
     }
 
@@ -351,7 +370,7 @@ public class ContactServiceImpl extends ServiceImpl<ContactMapper, Contact> impl
                 .eq(Tag::getUserId, userId));
 
         if (count.intValue() != uniqueTagIds.size()) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "invalid tag id or access denied");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.INVALID_TAG_ACCESS_DENIED);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.weiqiang.personal_crm_backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.entity.ContactAvatar;
@@ -64,10 +65,10 @@ public class UploadServiceImpl implements UploadService {
                         .eq(Contact::getCtId, contactId)
         );
         if (contact == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "Contact not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.CONTACT_NOT_FOUND);
         }
         if (!userId.equals(contact.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "Access denied: This contact belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.CONTACT_ACCESS_DENIED);
         }
 
         ContactAvatar oldAvatar = contactAvatarMapper.selectOne(
@@ -166,7 +167,7 @@ public class UploadServiceImpl implements UploadService {
         } catch (Exception exception) {
             deletePhysicalFile(targetFile.toString());
             log.error("Failed to persist avatar file or metadata", exception);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Failed to upload avatar");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.AVATAR_UPLOAD_FAILED);
         }
 
         deletePhysicalFile(oldFilePath);
@@ -183,24 +184,24 @@ public class UploadServiceImpl implements UploadService {
 
     private void validateAffectedRows(int affectedRows) {
         if (affectedRows != EXPECTED_AFFECTED_ROWS) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Failed to persist avatar metadata");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.AVATAR_PERSIST_FAILED);
         }
     }
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "File is empty");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.FILE_EMPTY);
         }
         if (file.getSize() > 2 * 1024 * 1024) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "File size exceeds 2MB limit");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.FILE_TOO_LARGE);
         }
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid file name");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.FILE_NAME_INVALID);
         }
         String extension = getFileExtension(originalFilename).toLowerCase();
         if (!extension.equals(".jpg") && !extension.equals(".jpeg") && !extension.equals(".png") && !extension.equals(".webp")) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Only JPG, JPEG, PNG and WEBP file types are supported");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.FILE_TYPE_UNSUPPORTED);
         }
     }
 

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { STORAGE_KEYS } from '@/utils/constants'
 
 // 全局重定向防抖标记
 let isRedirecting = false
@@ -14,7 +15,7 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -42,8 +43,8 @@ request.interceptors.response.use(
 
     // 40101 代表未登录或登录态失效
     if (res.code === 40101) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER)
       if (!isRedirecting && window.location.pathname !== '/login') {
         isRedirecting = true
         ElMessage.error(res.message || '登录失效，请重新登录')
@@ -61,8 +62,8 @@ request.interceptors.response.use(
   (error) => {
     let msg = error.message
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.USER)
       if (!isRedirecting && window.location.pathname !== '/login') {
         isRedirecting = true
         ElMessage.error('登录失效，请重新登录')

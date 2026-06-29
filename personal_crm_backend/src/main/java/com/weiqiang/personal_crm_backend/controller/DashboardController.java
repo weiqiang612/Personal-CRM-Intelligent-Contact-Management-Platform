@@ -1,6 +1,8 @@
 package com.weiqiang.personal_crm_backend.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.common.Result;
 import com.weiqiang.personal_crm_backend.entity.Contact;
@@ -19,6 +21,8 @@ import com.weiqiang.personal_crm_backend.model.vo.TodoTrendVO;
 import com.weiqiang.personal_crm_backend.security.UserContext;
 import com.weiqiang.personal_crm_backend.service.ContactHealthCalculator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,6 +35,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -39,12 +44,15 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/dashboard")
 @RequiredArgsConstructor
+@Slf4j
 public class DashboardController {
 
     private final ContactMapper contactMapper;
     private final TodoMapper todoMapper;
     private final ActivityLogMapper activityLogMapper;
     private final ContactHealthCalculator contactHealthCalculator;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * Get dashboard overview metrics
@@ -54,6 +62,18 @@ public class DashboardController {
         String userId = UserContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String cacheKey = Constants.REDIS_KEY_DASHBOARD_CACHE + userId;
+        String field = "overview";
+        try {
+            String cachedJson = (String) redisTemplate.opsForHash().get(cacheKey, field);
+            if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+                DashboardOverviewVO vo = objectMapper.readValue(cachedJson, DashboardOverviewVO.class);
+                return Result.success(vo);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read overview cache from Redis for user: {}", userId, e);
         }
 
         DashboardOverviewVO overview = new DashboardOverviewVO();
@@ -103,6 +123,14 @@ public class DashboardController {
         );
         overview.setOverdueTodoCount(overdueTodoCount);
 
+        try {
+            String json = objectMapper.writeValueAsString(overview);
+            redisTemplate.opsForHash().put(cacheKey, field, json);
+            redisTemplate.expire(cacheKey, Constants.DASHBOARD_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to write overview cache to Redis for user: {}", userId, e);
+        }
+
         return Result.success(overview);
     }
 
@@ -114,6 +142,21 @@ public class DashboardController {
         String userId = UserContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String cacheKey = Constants.REDIS_KEY_DASHBOARD_CACHE + userId;
+        String field = "todo-trend:" + days;
+        try {
+            String cachedJson = (String) redisTemplate.opsForHash().get(cacheKey, field);
+            if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+                List<TodoTrendVO> voList = objectMapper.readValue(
+                        cachedJson, 
+                        objectMapper.getTypeFactory().constructCollectionType(List.class, TodoTrendVO.class)
+                );
+                return Result.success(voList);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read todo-trend cache from Redis for user: {}", userId, e);
         }
 
         List<TodoTrendVO> trendList = new ArrayList<>();
@@ -134,6 +177,14 @@ public class DashboardController {
             trendList.add(new TodoTrendVO(targetDate.toString(), count));
         }
 
+        try {
+            String json = objectMapper.writeValueAsString(trendList);
+            redisTemplate.opsForHash().put(cacheKey, field, json);
+            redisTemplate.expire(cacheKey, Constants.DASHBOARD_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to write todo-trend cache to Redis for user: {}", userId, e);
+        }
+
         return Result.success(trendList);
     }
 
@@ -145,6 +196,21 @@ public class DashboardController {
         String userId = UserContext.getUserId();
         if (userId == null) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String cacheKey = Constants.REDIS_KEY_DASHBOARD_CACHE + userId;
+        String field = "contact-gender-distribution";
+        try {
+            String cachedJson = (String) redisTemplate.opsForHash().get(cacheKey, field);
+            if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+                List<ContactGenderDistributionVO> voList = objectMapper.readValue(
+                        cachedJson, 
+                        objectMapper.getTypeFactory().constructCollectionType(List.class, ContactGenderDistributionVO.class)
+                );
+                return Result.success(voList);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read gender distribution cache from Redis for user: {}", userId, e);
         }
 
         List<ContactGenderDistributionVO> list = new ArrayList<>();
@@ -173,6 +239,14 @@ public class DashboardController {
         list.add(new ContactGenderDistributionVO(1, "\u7537", maleCount));
         list.add(new ContactGenderDistributionVO(2, "\u5973", femaleCount));
 
+        try {
+            String json = objectMapper.writeValueAsString(list);
+            redisTemplate.opsForHash().put(cacheKey, field, json);
+            redisTemplate.expire(cacheKey, Constants.DASHBOARD_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to write gender distribution cache to Redis for user: {}", userId, e);
+        }
+
         return Result.success(list);
     }
 
@@ -186,6 +260,18 @@ public class DashboardController {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
 
+        String cacheKey = Constants.REDIS_KEY_DASHBOARD_CACHE + userId;
+        String field = "relationship-health";
+        try {
+            String cachedJson = (String) redisTemplate.opsForHash().get(cacheKey, field);
+            if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+                RelationshipHealthVO vo = objectMapper.readValue(cachedJson, RelationshipHealthVO.class);
+                return Result.success(vo);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to read relationship health cache from Redis for user: {}", userId, e);
+        }
+
         // 1. Get all active contacts (status = 0) for current user
         List<Contact> contacts = contactMapper.selectList(
                 new LambdaQueryWrapper<Contact>()
@@ -194,7 +280,15 @@ public class DashboardController {
         );
 
         if (contacts.isEmpty()) {
-            return Result.success(new RelationshipHealthVO(0L, 0L, 0L, 0L, 0L));
+            RelationshipHealthVO emptyVo = new RelationshipHealthVO(0L, 0L, 0L, 0L, 0L);
+            try {
+                String json = objectMapper.writeValueAsString(emptyVo);
+                redisTemplate.opsForHash().put(cacheKey, field, json);
+                redisTemplate.expire(cacheKey, Constants.DASHBOARD_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                log.error("Failed to write relationship health cache to Redis for user: {}", userId, e);
+            }
+            return Result.success(emptyVo);
         }
 
         // 2. Query latest activity timestamp and title for user's contacts in batch
@@ -258,6 +352,14 @@ public class DashboardController {
         vo.setFollowUpList(followUpList);
         vo.setInactiveList(inactiveList);
         vo.setNoActivityList(noActivityList);
+
+        try {
+            String json = objectMapper.writeValueAsString(vo);
+            redisTemplate.opsForHash().put(cacheKey, field, json);
+            redisTemplate.expire(cacheKey, Constants.DASHBOARD_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to write relationship health cache to Redis for user: {}", userId, e);
+        }
 
         return Result.success(vo);
     }

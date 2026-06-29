@@ -2,9 +2,10 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { loginApi, getMeApi } from '@/api/auth'
 import type { LoginParams } from '@/api/auth'
+import { STORAGE_KEYS } from '@/utils/constants'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string>(localStorage.getItem('token') || '')
+  const token = ref<string>(localStorage.getItem(STORAGE_KEYS.TOKEN) || '')
   const user = ref<{
     userId: string
     username: string
@@ -15,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // 从 localStorage 恢复初始用户信息
   try {
-    const savedUser = localStorage.getItem('user')
+    const savedUser = localStorage.getItem(STORAGE_KEYS.USER)
     if (savedUser) {
       user.value = JSON.parse(savedUser)
     }
@@ -31,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(params: LoginParams) {
     const data = await loginApi(params)
     token.value = data.token
-    localStorage.setItem('token', data.token)
+    localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
     // 立即拉取一次完整的用户信息（包含头像）
     await fetchUserProfile()
   }
@@ -48,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
       email: data.email,
       phone: data.phone,
     }
-    localStorage.setItem('user', JSON.stringify(user.value))
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user.value))
   }
 
   /**
@@ -57,8 +58,8 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     token.value = ''
     user.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    localStorage.removeItem(STORAGE_KEYS.USER)
   }
 
   /**
@@ -66,7 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function setSession(sessionData: { token: string; userId: string; username: string; email: string }) {
     token.value = sessionData.token
-    localStorage.setItem('token', sessionData.token)
+    localStorage.setItem(STORAGE_KEYS.TOKEN, sessionData.token)
     await fetchUserProfile()
   }
 

@@ -1,36 +1,38 @@
 package com.weiqiang.personal_crm_backend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.SysUser;
 import com.weiqiang.personal_crm_backend.entity.UserAvatar;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.mapper.SysUserMapper;
 import com.weiqiang.personal_crm_backend.mapper.UserAvatarMapper;
-import com.weiqiang.personal_crm_backend.model.dto.LoginRequest;
-import com.weiqiang.personal_crm_backend.model.dto.RegisterRequest;
+import com.weiqiang.personal_crm_backend.model.dto.*;
 import com.weiqiang.personal_crm_backend.model.vo.LoginVo;
 import com.weiqiang.personal_crm_backend.model.vo.UserMeVo;
+import com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo;
 import com.weiqiang.personal_crm_backend.security.JwtUtils;
 import com.weiqiang.personal_crm_backend.service.SysUserService;
 import com.weiqiang.personal_crm_backend.component.EmailVerificationRedisTemplate;
-import com.weiqiang.personal_crm_backend.model.dto.*;
-import com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo;
 import com.weiqiang.personal_crm_backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 用户服务实现类
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
-
-    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SysUserServiceImpl.class);
 
     private final UserAvatarMapper userAvatarMapper;
     private final PasswordEncoder passwordEncoder;
@@ -51,12 +53,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 .eq(SysUser::getEmail, username)
                 .one();
         if (user == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid account or password");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.INVALID_CREDENTIALS);
         }
 
         // 2. 校验密码是否匹配
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid account or password");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.INVALID_CREDENTIALS);
         }
 
         // 3. 校验账号状态
@@ -64,7 +66,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号未完成邮箱验证，请先验证邮箱");
         }
         if (user.getStatus() != 0) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "this account has been disabled");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.ACCOUNT_DISABLED);
         }
 
         // 4. 生成 JWT Token
@@ -88,12 +90,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 1. 查询用户是否存在
         SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.USER_PROFILE_NOT_FOUND);
         }
 
         // 2. 关联查询用户头像信息
         UserAvatar avatar = userAvatarMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<UserAvatar>()
+                new LambdaQueryWrapper<UserAvatar>()
                         .eq(UserAvatar::getUserId, userId)
         );
 
@@ -113,40 +115,40 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void register(RegisterRequest registerRequest) {
         // 1. 防御性空白校验
         if (registerRequest == null 
-                || !org.springframework.util.StringUtils.hasText(registerRequest.getUsername())
-                || !org.springframework.util.StringUtils.hasText(registerRequest.getPassword())
-                || !org.springframework.util.StringUtils.hasText(registerRequest.getCode())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username, password or verification code cannot be blank");
+                || !StringUtils.hasText(registerRequest.getUsername())
+                || !StringUtils.hasText(registerRequest.getPassword())
+                || !StringUtils.hasText(registerRequest.getCode())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.REGISTRATION_PARAMS_BLANK);
         }
 
         String username = registerRequest.getUsername().trim();
         String password = registerRequest.getPassword();
         String email = registerRequest.getEmail();
-        if (!org.springframework.util.StringUtils.hasText(email)) {
+        if (!StringUtils.hasText(email)) {
             if (username.contains("@")) {
                 email = username;
             }
         }
 
         // 1.5 邮箱必须提供校验
-        if (!org.springframework.util.StringUtils.hasText(email)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Email is required for registration");
+        if (!StringUtils.hasText(email)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.REGISTRATION_EMAIL_REQUIRED);
         }
 
         // 2. 基础校验
         if (username.contains("@")) {
             String emailPattern = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
             if (!username.matches(emailPattern)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "Invalid email address format");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.INVALID_EMAIL_FORMAT);
             }
         } else {
             if (username.length() < 3) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username must be at least 3 characters");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.USERNAME_TOO_SHORT);
             }
         }
 
         if (password.length() < 8) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Password must be at least 8 characters");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.PASSWORD_TOO_SHORT);
         }
 
         // 验证邮箱验证码是否正确
@@ -155,7 +157,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 3. 重名校验
         SysUser existingUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
         if (existingUser != null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username already exists");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.USERNAME_EXISTS);
         }
 
         // 4. 密码哈希预处理
@@ -183,20 +185,20 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 try {
                     emailService.sendWelcomeEmail(email, username);
                 } catch (Exception ex) {
-                    logger.error("[REGISTER] 发送欢迎邮件失败, user: {}", username, ex);
+                    log.error("[REGISTER] 发送欢迎邮件失败, user: {}", username, ex);
                 }
                 return; // 保存成功，直接结束
             } catch (org.springframework.dao.DuplicateKeyException e) {
                 // 如果是并发下由于用户名被其他线程抢先注册成功引发的唯一键冲突
                 SysUser doubleCheckUser = this.lambdaQuery().eq(SysUser::getUsername, username).one();
                 if (doubleCheckUser != null) {
-                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username already exists");
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.USERNAME_EXISTS);
                 }
                 
                 // 否则，说明是生成的 userId 撞车，递增重试次数并重新生成重试
                 retryCount++;
                 if (retryCount >= maxRetries) {
-                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "Registration failed due to system ID conflict, please try again");
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.REGISTRATION_ID_CONFLICT);
                 }
             }
         }
@@ -226,7 +228,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void updateEmail(String userId, String email) {
         SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.USER_PROFILE_NOT_FOUND);
         }
         user.setEmail(email);
         user.setUpdatedAt(LocalDateTime.now());
@@ -237,7 +239,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void updatePhone(String userId, String phone) {
         SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.USER_PROFILE_NOT_FOUND);
         }
         user.setPhone(phone);
         user.setUpdatedAt(LocalDateTime.now());
@@ -248,10 +250,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void updatePassword(String userId, String oldPassword, String newPassword) {
         SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
         if (user == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "user profile not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.USER_PROFILE_NOT_FOUND);
         }
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid old password");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.INVALID_OLD_PASSWORD);
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setUpdatedAt(LocalDateTime.now());
@@ -291,7 +293,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         // 生成 6 位随机数字验证码
-        String code = String.format("%06d", java.util.concurrent.ThreadLocalRandom.current().nextInt(1000000));
+        String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
 
         // Redis 存储 300秒
         emailVerificationRedisTemplate.saveCode(purpose, email, code);

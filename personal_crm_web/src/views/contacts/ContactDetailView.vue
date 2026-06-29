@@ -415,6 +415,7 @@ import type { TagInfo } from '@/api/tag'
 import { getTodos, completeTodo, cancelTodo } from '@/api/todo'
 import type { TodoInfo } from '@/types/todo'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { STORAGE_KEYS } from '@/utils/constants'
 import { getWeatherIconUrl } from '@/utils/weather-icons'
 import { getWeather } from '@/api/weather'
 import type { WeatherData } from '@/api/weather'
@@ -519,12 +520,12 @@ const loadContactDetail = async () => {
       }
       // 保存至最近查看联系人列表 (localStorage)，用于搜索框空值时快捷展示
       try {
-        const listJson = localStorage.getItem('recently_viewed_contacts')
+        const listJson = localStorage.getItem(STORAGE_KEYS.RECENTLY_VIEWED_CONTACTS)
         let list = listJson ? JSON.parse(listJson) : []
         list = list.filter((c: any) => c.id !== data.contactId)
         list.unshift({ id: data.contactId, name: data.name })
         if (list.length > 4) list.pop()
-        localStorage.setItem('recently_viewed_contacts', JSON.stringify(list))
+        localStorage.setItem(STORAGE_KEYS.RECENTLY_VIEWED_CONTACTS, JSON.stringify(list))
       } catch (e) {
         console.error('Failed to save recently viewed contact:', e)
       }

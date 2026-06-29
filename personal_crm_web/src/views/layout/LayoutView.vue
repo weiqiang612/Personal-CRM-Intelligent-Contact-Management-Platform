@@ -416,6 +416,7 @@ import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { resolveAvatarUrl } from '@/utils/avatar'
+import { STORAGE_KEYS } from '@/utils/constants'
 import { getWeatherIconUrl } from '@/utils/weather-icons'
 import { getWeather } from '@/api/weather'
 import type { WeatherData } from '@/api/weather'
@@ -448,7 +449,7 @@ const matchedTodos = ref<TodoInfo[]>([])
 const recentlyViewed = ref<Array<{ id: any; name: string }>>([])
 const loadRecentlyViewed = () => {
   try {
-    const stored = localStorage.getItem('recently_viewed_contacts')
+    const stored = localStorage.getItem(STORAGE_KEYS.RECENTLY_VIEWED_CONTACTS)
     if (stored) {
       recentlyViewed.value = JSON.parse(stored)
     } else {
@@ -921,7 +922,7 @@ const toggleNotifications = () => {
 
 const loadReadNotifications = () => {
   try {
-    const stored = localStorage.getItem('read_notifications')
+    const stored = localStorage.getItem(STORAGE_KEYS.READ_NOTIFICATIONS)
     readNotificationIds.value = stored ? JSON.parse(stored) : []
   } catch (e) {
     console.error('Failed to load read notifications:', e)
@@ -931,7 +932,7 @@ const loadReadNotifications = () => {
 const markAsRead = (id: string) => {
   if (!readNotificationIds.value.includes(id)) {
     readNotificationIds.value.push(id)
-    localStorage.setItem('read_notifications', JSON.stringify(readNotificationIds.value))
+    localStorage.setItem(STORAGE_KEYS.READ_NOTIFICATIONS, JSON.stringify(readNotificationIds.value))
   }
 }
 
@@ -941,7 +942,7 @@ const markAllAsRead = () => {
       readNotificationIds.value.push(item.id)
     }
   })
-  localStorage.setItem('read_notifications', JSON.stringify(readNotificationIds.value))
+  localStorage.setItem(STORAGE_KEYS.READ_NOTIFICATIONS, JSON.stringify(readNotificationIds.value))
 }
 
 const unreadNotifications = computed(() => {

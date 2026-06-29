@@ -1,22 +1,30 @@
 package com.weiqiang.personal_crm_backend.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.model.dto.AgentSessionState;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Agent 会话内存管理器，支持防越权检验和定时过期清理
+ * Agent 会话内存管理器，支持防越权检验和 Redis TTL 自动清理
  */
 @Component
-@EnableScheduling
+@Slf4j
+@RequiredArgsConstructor
 public class AgentSessionManager {
 
-    private final Map<String, AgentSessionState> sessions = new ConcurrentHashMap<>();
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+
+    private String getRedisKey(String sessionId) {
+        return Constants.REDIS_KEY_AGENT_SESSION + sessionId;
+    }
 
     /**
      * 获取会话状态，自带越权校验
@@ -25,16 +33,29 @@ public class AgentSessionManager {
         if (sessionId == null) {
             return null;
         }
-        AgentSessionState state = sessions.get(sessionId);
-        if (state != null) {
-            // 防越权：如果会话所有者非当前登录用户，则拒绝访问
-            if (!state.getUserId().equals(userId)) {
-                return null;
-            }
-            // 更新活跃时间
-            state.setLastAccessTime(System.currentTimeMillis());
+        String key = getRedisKey(sessionId);
+        String json = redisTemplate.opsForValue().get(key);
+        if (json == null || json.trim().isEmpty()) {
+            return null;
         }
-        return state;
+
+        try {
+            AgentSessionState state = objectMapper.readValue(json, AgentSessionState.class);
+            if (state != null) {
+                // 防越权：如果会话所有者非当前登录用户，则拒绝访问
+                if (!state.getUserId().equals(userId)) {
+                    return null;
+                }
+                // 更新活跃时间并重设 TTL
+                state.setLastAccessTime(System.currentTimeMillis());
+                String updatedJson = objectMapper.writeValueAsString(state);
+                redisTemplate.opsForValue().set(key, updatedJson, Constants.AGENT_SESSION_TTL_SECONDS, TimeUnit.SECONDS);
+                return state;
+            }
+        } catch (Exception e) {
+            log.error("Failed to deserialize or update AgentSessionState for sessionId: {}", sessionId, e);
+        }
+        return null;
     }
 
     /**
@@ -46,8 +67,32 @@ public class AgentSessionManager {
         state.setSessionId(sessionId);
         state.setUserId(userId);
         state.setLastAccessTime(System.currentTimeMillis());
-        sessions.put(sessionId, state);
+
+        String key = getRedisKey(sessionId);
+        try {
+            String json = objectMapper.writeValueAsString(state);
+            redisTemplate.opsForValue().set(key, json, Constants.AGENT_SESSION_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to serialize and save AgentSessionState for userId: {}", userId, e);
+        }
         return state;
+    }
+
+    /**
+     * 更新或保存现有的会话状态到 Redis
+     */
+    public void saveSession(AgentSessionState state) {
+        if (state == null || state.getSessionId() == null) {
+            return;
+        }
+        String key = getRedisKey(state.getSessionId());
+        try {
+            state.setLastAccessTime(System.currentTimeMillis());
+            String json = objectMapper.writeValueAsString(state);
+            redisTemplate.opsForValue().set(key, json, Constants.AGENT_SESSION_TTL_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Failed to save/update AgentSessionState for sessionId: {}", state.getSessionId(), e);
+        }
     }
 
     /**
@@ -55,17 +100,8 @@ public class AgentSessionManager {
      */
     public void removeSession(String sessionId) {
         if (sessionId != null) {
-            sessions.remove(sessionId);
+            String key = getRedisKey(sessionId);
+            redisTemplate.delete(key);
         }
-    }
-
-    /**
-     * 定时调度：每隔 60 秒运行一次，清理 10 分钟内未活跃的会话
-     */
-    @Scheduled(fixedRate = 60000)
-    public void cleanExpiredSessions() {
-        long now = System.currentTimeMillis();
-        // 600,000ms = 10分钟
-        sessions.entrySet().removeIf(entry -> now - entry.getValue().getLastAccessTime() > 600000);
     }
 }

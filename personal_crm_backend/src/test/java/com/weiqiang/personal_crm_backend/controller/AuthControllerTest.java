@@ -1,6 +1,7 @@
 package com.weiqiang.personal_crm_backend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.entity.SysUser;
 import com.weiqiang.personal_crm_backend.entity.UserAvatar;
 import com.weiqiang.personal_crm_backend.mapper.SysUserMapper;
@@ -140,7 +141,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request2)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001))) // ErrorCode.PARAMS_ERROR
-                .andExpect(jsonPath("$.message", containsString("Username already exists")));
+                .andExpect(jsonPath("$.message", containsString(Constants.Message.USERNAME_EXISTS)));
     }
 
     @Test
@@ -156,7 +157,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001)))
-                .andExpect(jsonPath("$.message", containsString("Email is required for registration")));
+                .andExpect(jsonPath("$.message", containsString(Constants.Message.REGISTRATION_EMAIL_REQUIRED)));
 
         // 2. 邮箱格式非法
         RegisterRequest request2 = new RegisterRequest();
@@ -169,7 +170,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request2)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001)))
-                .andExpect(jsonPath("$.message", containsString("Invalid email address format")));
+                .andExpect(jsonPath("$.message", containsString(Constants.Message.INVALID_EMAIL_FORMAT)));
 
         // 3. 密码太短
         emailVerificationRedisTemplate.saveCode("REGISTER", "validuser@example.com", "444444");
@@ -183,7 +184,7 @@ public class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request3)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001)))
-                .andExpect(jsonPath("$.message", containsString("Password must be at least 8 characters")));
+                .andExpect(jsonPath("$.message", containsString(Constants.Message.PASSWORD_TOO_SHORT)));
     }
 
     @Test

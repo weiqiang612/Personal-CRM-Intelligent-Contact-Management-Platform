@@ -2,6 +2,7 @@ package com.weiqiang.personal_crm_backend.service;
 
 import com.weiqiang.personal_crm_backend.entity.Contact;
 import com.weiqiang.personal_crm_backend.enums.RelationshipHealthStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ import java.time.temporal.ChronoUnit;
  * Standardizes calculation logic and facilitates future extension (e.g. dynamic threshold based on contact type).
  */
 @Component
+@Slf4j
 public class ContactHealthCalculator {
 
     /**
@@ -49,7 +51,11 @@ public class ContactHealthCalculator {
      * Overloaded helper method taking a Contact entity and latest activity time
      */
     public RelationshipHealthStatus calculateStatus(Contact contact, LocalDateTime latestActivityTime) {
-        // Future extensions can inspect contact attributes (e.g. contact.getTags(), category, etc.)
-        return calculateStatus(latestActivityTime);
+        long startTime = System.currentTimeMillis();
+        RelationshipHealthStatus status = calculateStatus(latestActivityTime);
+        long endTime = System.currentTimeMillis();
+        log.debug("ContactHealthCalculator.calculateStatus for contact '{}' took {} ms", 
+                contact != null ? contact.getName() : "unknown", (endTime - startTime));
+        return status;
     }
 }

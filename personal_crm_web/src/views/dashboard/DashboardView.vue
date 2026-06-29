@@ -1651,8 +1651,14 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  trendChartInstance?.dispose()
-  healthChartInstance?.dispose()
+  if (trendChartInstance) {
+    trendChartInstance.dispose()
+    trendChartInstance = null
+  }
+  if (healthChartInstance) {
+    healthChartInstance.dispose()
+    healthChartInstance = null
+  }
   carouselCtx?.revert()
 })
 </script>

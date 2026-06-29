@@ -9,6 +9,26 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  esbuild: {
+    drop: ['console', 'debugger'],
+  } as any,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('element-plus')) {
+              return 'element-plus'
+            }
+            if (id.includes('echarts')) {
+              return 'echarts'
+            }
+            return 'vendor'
+          }
+        }
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

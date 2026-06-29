@@ -2,6 +2,7 @@ package com.weiqiang.personal_crm_backend.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.entity.ContactTag;
 import com.weiqiang.personal_crm_backend.entity.Tag;
@@ -54,7 +55,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
                 .eq(Tag::getName, dto.getName().trim())
                 .count();
         if (count > 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "tag name already exists");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.TAG_NAME_EXISTS);
         }
 
         Tag tag = new Tag();
@@ -81,7 +82,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
                 .ne(Tag::getId, tagId)
                 .count();
         if (count > 0) {
-            throw new BusinessException(ErrorCode.CONFLICT, "tag name already exists");
+            throw new BusinessException(ErrorCode.CONFLICT, Constants.Message.TAG_NAME_EXISTS);
         }
 
         tag.setName(dto.getName().trim());
@@ -114,7 +115,7 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
     private String getValidatedUserId() {
         String userId = UserContext.getUserId();
         if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED, "user is not logged in");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED, Constants.Message.USER_NOT_LOGGED_IN);
         }
         return userId;
     }
@@ -127,11 +128,11 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
 
         Tag tag = this.getById(tagId);
         if (tag == null) {
-            throw new BusinessException(ErrorCode.NOT_FOUND, "tag not found");
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.TAG_NOT_FOUND);
         }
 
         if (!userId.equals(tag.getUserId())) {
-            throw new BusinessException(ErrorCode.FORBIDDEN, "access denied: this tag belongs to another user");
+            throw new BusinessException(ErrorCode.FORBIDDEN, Constants.Message.TAG_ACCESS_DENIED);
         }
 
         return tag;

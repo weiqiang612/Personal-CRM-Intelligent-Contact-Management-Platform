@@ -1,6 +1,7 @@
 package com.weiqiang.personal_crm_backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weiqiang.personal_crm_backend.common.Constants;
 import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.model.vo.WeatherVO;
@@ -15,7 +16,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,18 +53,25 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public WeatherVO getWeather(String address, Double latitude, Double longitude, String ip) {
-        validateCoordinates(latitude, longitude);
+        long startTime = System.currentTimeMillis();
+        try {
+            validateCoordinates(latitude, longitude);
 
-        if (hasText(address)) {
-            return getWeatherBySearchCity(extractCityName(address));
+            if (hasText(address)) {
+                return getWeatherBySearchCity(extractCityName(address));
+            }
+
+            if (latitude != null && longitude != null) {
+                ResolvedCity resolvedCity = resolveCityByCoordinates(latitude, longitude);
+                return getOrQueryWeather(resolvedCity, null);
+            }
+
+            return getWeatherBySearchCity(extractCityName(resolveCityByIp(ip)));
+        } finally {
+            long endTime = System.currentTimeMillis();
+            log.info("WeatherService.getWeather (address={}, lat={}, lon={}, ip={}) took {} ms",
+                    address, latitude, longitude, ip, (endTime - startTime));
         }
-
-        if (latitude != null && longitude != null) {
-            ResolvedCity resolvedCity = resolveCityByCoordinates(latitude, longitude);
-            return getOrQueryWeather(resolvedCity, null);
-        }
-
-        return getWeatherBySearchCity(extractCityName(resolveCityByIp(ip)));
     }
 
     private String getRedisKey(String key) {
@@ -149,13 +158,13 @@ public class WeatherServiceImpl implements WeatherService {
             Map<String, Object> geoRes = getMapResponse(geoUrl);
             if (geoRes == null || !"200".equals(geoRes.get("code"))) {
                 log.warn("GeoAPI returned non-200 code or null for {}: {}", sourceType, geoRes);
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "无法解析该地址对应的城市: " + location);
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.GEO_CITY_UNRESOLVABLE + location);
             }
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> locationList = (List<Map<String, Object>>) geoRes.get("location");
             if (locationList == null || locationList.isEmpty()) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "未找到该城市定位: " + location);
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.GEO_CITY_NOT_FOUND + location);
             }
 
             Map<String, Object> matchedCity = locationList.get(0);
@@ -167,7 +176,7 @@ public class WeatherServiceImpl implements WeatherService {
             throw e;
         } catch (Exception e) {
             log.error("Failed to query GeoAPI for {}: {}", sourceType, location, e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "城市定位解析失败，请稍后重试");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.GEO_RESOLVE_FAILED);
         }
     }
 
@@ -182,13 +191,13 @@ public class WeatherServiceImpl implements WeatherService {
             Map<String, Object> weatherRes = getMapResponse(weatherUrl);
             if (weatherRes == null || !"200".equals(weatherRes.get("code"))) {
                 log.warn("Weather API returned non-200 code or null: {}", weatherRes);
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取天气信息失败");
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.WEATHER_GET_FAILED);
             }
 
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> dailyList = (List<Map<String, Object>>) weatherRes.get("daily");
             if (dailyList == null || dailyList.isEmpty()) {
-                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "天气预报数据为空");
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.WEATHER_FORECAST_EMPTY);
             }
 
             WeatherVO weatherVO = new WeatherVO();
@@ -216,7 +225,7 @@ public class WeatherServiceImpl implements WeatherService {
             throw e;
         } catch (Exception e) {
             log.error("Failed to query Weather 3D API for cityId: {}", resolvedCity.getCityId(), e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "天气服务调用失败，请稍后重试");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.WEATHER_SERVICE_FAILED);
         }
     }
 
@@ -287,7 +296,7 @@ public class WeatherServiceImpl implements WeatherService {
             byte[] bytes = executeWithRetry(() -> restTemplate.getForObject(pconlineUrl, byte[].class), "请求太平洋IP定位服务");
             if (bytes != null) {
                 // 太平洋接口返回的中文字符编码为 GBK，使用 GBK 字符集解码
-                String jsonStr = new String(bytes, java.nio.charset.Charset.forName("GBK")).trim();
+                String jsonStr = new String(bytes, Charset.forName("GBK")).trim();
                 @SuppressWarnings("unchecked")
                 Map<String, Object> ipRes = objectMapper.readValue(jsonStr, Map.class);
                 if (ipRes != null) {
@@ -315,10 +324,10 @@ public class WeatherServiceImpl implements WeatherService {
             return;
         }
         if (latitude == null || longitude == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "latitude 与 longitude 必须同时传入");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.COORDINATES_BOTH_REQUIRED);
         }
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "GEO 坐标超出有效范围");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.COORDINATES_OUT_OF_BOUNDS);
         }
     }
 
@@ -373,7 +382,7 @@ public class WeatherServiceImpl implements WeatherService {
                         Thread.sleep(backoffMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "网络请求重试被中断");
+                        throw new BusinessException(ErrorCode.SYSTEM_ERROR, Constants.Message.NETWORK_RETRY_INTERRUPTED);
                     }
                 }
             }
@@ -382,7 +391,7 @@ public class WeatherServiceImpl implements WeatherService {
         if (lastException instanceof BusinessException) {
             throw (BusinessException) lastException;
         }
-        throw new BusinessException(ErrorCode.SYSTEM_ERROR, description + "失败，网络出现抖动，请稍后重试");
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, description + "失败，" + Constants.Message.WEATHER_SERVICE_FAILED);
     }
 
     /**
