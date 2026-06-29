@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/auth/ForgotPasswordView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/',
       component: () => import('../views/layout/LayoutView.vue'),
       redirect: '/dashboard',
@@ -115,7 +121,7 @@ router.beforeEach(async (to, from, next) => {
     }
   } else {
     // 登录用户访问公开页自动转去主页
-    if (authStore.isLoggedIn && to.name === 'login') {
+    if (authStore.isLoggedIn && (to.name === 'login' || to.name === 'forgot-password' || to.name === 'register')) {
       next({ name: 'dashboard' })
     } else {
       next()

@@ -56,6 +56,14 @@ public class EmailVerificationRedisTemplate {
      * @return true 校验成功
      */
     public boolean verifyCode(String purpose, String email, String inputCode) {
+        return verifyCode(purpose, email, inputCode, true);
+    }
+
+    /**
+     * 校验验证码，可选择成功后是否立即删除
+     * @return true 校验成功
+     */
+    public boolean verifyCode(String purpose, String email, String inputCode, boolean deleteOnSuccess) {
         String codeKey = KEY_PREFIX_CODE + purpose + ":" + email;
         String attemptKey = KEY_PREFIX_ATTEMPT + purpose + ":" + email;
 
@@ -88,8 +96,10 @@ public class EmailVerificationRedisTemplate {
             throw new BusinessException(ErrorCode.PARAMS_ERROR.getCode(), "验证码错误，还可尝试 " + remaining + " 次");
         }
 
-        // 校验成功，清除验证码与错误计数
-        redisTemplate.delete(codeKey);
+        // 校验成功，清除验证码（可选）与错误计数
+        if (deleteOnSuccess) {
+            redisTemplate.delete(codeKey);
+        }
         redisTemplate.delete(attemptKey);
         return true;
     }

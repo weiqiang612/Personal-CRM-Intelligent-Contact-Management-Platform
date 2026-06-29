@@ -284,8 +284,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         String code = request.getCode().trim();
         String purpose = request.getPurpose().trim().toUpperCase();
 
-        // 校验 Redis 验证码与防爆破
-        emailVerificationRedisTemplate.verifyCode(purpose, email, code);
+        // 校验 Redis 验证码与防爆破，对于密码恢复，第一步校验成功不删除验证码，以供第二步重置密码最终校验
+        boolean deleteOnSuccess = !"RESET_PASSWORD".equals(purpose);
+        emailVerificationRedisTemplate.verifyCode(purpose, email, code, deleteOnSuccess);
 
         // 查找对应用户进行激活
         SysUser user = this.lambdaQuery()
