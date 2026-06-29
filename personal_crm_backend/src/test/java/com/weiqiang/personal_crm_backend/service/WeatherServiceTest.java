@@ -10,6 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 
@@ -20,10 +22,14 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,13 +40,34 @@ class WeatherServiceTest {
     @Mock
     private RestTemplate restTemplate;
 
+    @Mock
+    private StringRedisTemplate redisTemplate;
+
+    @Mock
+    private ValueOperations<String, String> valueOperations;
+
     @InjectMocks
     private WeatherServiceImpl weatherService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+
+        Map<String, String> redisMockMap = new HashMap<>();
+        lenient().when(valueOperations.get(anyString())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            return redisMockMap.get(key);
+        });
+
+        lenient().doAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            String val = invocation.getArgument(1);
+            redisMockMap.put(key, val);
+            return null;
+        }).when(valueOperations).set(anyString(), anyString(), anyLong(), any(java.util.concurrent.TimeUnit.class));
+
         ReflectionTestUtils.setField(weatherService, "apiKey", "test-api-key");
         ReflectionTestUtils.setField(weatherService, "apiHost", "nk3dnacruh.re.qweatherapi.com");
         ReflectionTestUtils.setField(weatherService, "ipApiUrl", "http://ip-api.com/json/");
@@ -57,6 +84,16 @@ class WeatherServiceTest {
         assertEquals("武侯", weatherService.extractCityName("四川省成都市武侯区"));
         assertEquals("杭州", weatherService.extractCityName(null));
         assertEquals("杭州", weatherService.extractCityName(" "));
+    }
+
+    private void assertWeatherEquals(WeatherVO expected, WeatherVO actual) {
+        assertNotNull(expected);
+        assertNotNull(actual);
+        assertEquals(expected.getCityName(), actual.getCityName());
+        assertEquals(expected.getCurrentTemp(), actual.getCurrentTemp());
+        assertEquals(expected.getCurrentText(), actual.getCurrentText());
+        assertEquals(expected.getCurrentIcon(), actual.getCurrentIcon());
+        assertEquals(expected.getDailyForecast().size(), actual.getDailyForecast().size());
     }
 
     @Test
@@ -81,13 +118,33 @@ class WeatherServiceTest {
 
         WeatherVO vo2 = weatherService.getWeather(address, null, null, null);
         assertNotNull(vo2);
-        assertSame(vo1, vo2);
+        assertWeatherEquals(vo1, vo2);
 
         WeatherVO vo3 = weatherService.getWeather(standardCityName, null, null, null);
         assertNotNull(vo3);
-        assertSame(vo1, vo3);
+        assertWeatherEquals(vo1, vo3);
 
         verify(restTemplate, times(1)).getForObject(contains("/geo/v2/city/lookup"), eq(byte[].class));
+        verify(restTemplate, times(1)).getForObject(contains("/v7/weather/3d"), eq(byte[].class));
+    }
+
+    @Test
+    void testGetWeather_RetryOnFailure_Success() throws Exception {
+        String address = "西湖";
+        String cityId = "101210134";
+
+        when(restTemplate.getForObject(contains("/geo/v2/city/lookup"), eq(byte[].class)))
+                .thenThrow(new org.springframework.web.client.ResourceAccessException("Connection timeout"))
+                .thenReturn(objectMapper.writeValueAsBytes(buildGeoResponse(cityId, "西湖")));
+
+        when(restTemplate.getForObject(contains("/v7/weather/3d"), eq(byte[].class)))
+                .thenReturn(objectMapper.writeValueAsBytes(buildWeatherResponse("26", "20", "小雨", "中雨", "305")));
+
+        WeatherVO vo = weatherService.getWeather(address, null, null, null);
+        assertNotNull(vo);
+        assertEquals("西湖", vo.getCityName());
+
+        verify(restTemplate, times(2)).getForObject(contains("/geo/v2/city/lookup"), eq(byte[].class));
         verify(restTemplate, times(1)).getForObject(contains("/v7/weather/3d"), eq(byte[].class));
     }
 

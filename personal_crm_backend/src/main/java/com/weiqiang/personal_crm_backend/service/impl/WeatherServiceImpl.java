@@ -5,8 +5,10 @@ import com.weiqiang.personal_crm_backend.common.ErrorCode;
 import com.weiqiang.personal_crm_backend.exception.BusinessException;
 import com.weiqiang.personal_crm_backend.model.vo.WeatherVO;
 import com.weiqiang.personal_crm_backend.service.WeatherService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -26,7 +28,10 @@ import java.util.zip.GZIPInputStream;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class WeatherServiceImpl implements WeatherService {
+
+    private final StringRedisTemplate redisTemplate;
 
     @Value("${weather.api-key:your_qweather_api_key_placeholder}")
     private String apiKey;
@@ -44,8 +49,6 @@ public class WeatherServiceImpl implements WeatherService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Map<String, CachedWeather> weatherCache = new ConcurrentHashMap<>();
-
     @Override
     public WeatherVO getWeather(String address, Double latitude, Double longitude, String ip) {
         validateCoordinates(latitude, longitude);
@@ -62,13 +65,25 @@ public class WeatherServiceImpl implements WeatherService {
         return getWeatherBySearchCity(extractCityName(resolveCityByIp(ip)));
     }
 
+    private String getRedisKey(String key) {
+        return "weather:cache:" + key;
+    }
+
     private WeatherVO getWeatherBySearchCity(String searchCity) {
         log.info("Processing weather query for search term: {}", searchCity);
 
-        CachedWeather cached = weatherCache.get(searchCity);
-        if (cached != null && !cached.isExpired()) {
-            log.info("Weather cache hit for search term: {}", searchCity);
-            return cached.getWeatherVO();
+        String searchKey = getRedisKey(searchCity);
+        String cachedJson = redisTemplate.opsForValue().get(searchKey);
+        if (hasText(cachedJson)) {
+            try {
+                WeatherVO weatherVO = objectMapper.readValue(cachedJson, WeatherVO.class);
+                if (weatherVO != null) {
+                    log.info("Weather cache hit for search term: {}", searchCity);
+                    return weatherVO;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to deserialize WeatherVO from Redis key: {}", searchKey, e);
+            }
         }
 
         ResolvedCity resolvedCity = resolveCityBySearchTerm(searchCity);
@@ -76,23 +91,41 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     private WeatherVO getOrQueryWeather(ResolvedCity resolvedCity, String aliasKey) {
-        CachedWeather cached = weatherCache.get(resolvedCity.getStandardCityName());
-        if (cached != null && !cached.isExpired()) {
-            cacheAlias(aliasKey, cached);
-            log.info("Weather cache hit for standard city: {}", resolvedCity.getStandardCityName());
-            return cached.getWeatherVO();
+        String standardKey = getRedisKey(resolvedCity.getStandardCityName());
+        String cachedJson = redisTemplate.opsForValue().get(standardKey);
+        if (hasText(cachedJson)) {
+            try {
+                WeatherVO weatherVO = objectMapper.readValue(cachedJson, WeatherVO.class);
+                if (weatherVO != null) {
+                    cacheAlias(aliasKey, weatherVO);
+                    log.info("Weather cache hit for standard city: {}", resolvedCity.getStandardCityName());
+                    return weatherVO;
+                }
+            } catch (Exception e) {
+                log.warn("Failed to deserialize WeatherVO from Redis key: {}", standardKey, e);
+            }
         }
 
         WeatherVO weatherVO = queryWeather(resolvedCity);
-        CachedWeather cachedWeather = new CachedWeather(weatherVO, System.currentTimeMillis());
-        weatherCache.put(resolvedCity.getStandardCityName(), cachedWeather);
-        cacheAlias(aliasKey, cachedWeather);
+        try {
+            String json = objectMapper.writeValueAsString(weatherVO);
+            redisTemplate.opsForValue().set(standardKey, json, 2, TimeUnit.HOURS);
+            cacheAlias(aliasKey, weatherVO);
+        } catch (Exception e) {
+            log.error("Failed to serialize and cache WeatherVO for standard city: {}", resolvedCity.getStandardCityName(), e);
+        }
         return weatherVO;
     }
 
-    private void cacheAlias(String aliasKey, CachedWeather cachedWeather) {
-        if (hasText(aliasKey) && !aliasKey.equals(cachedWeather.getWeatherVO().getCityName())) {
-            weatherCache.put(aliasKey, cachedWeather);
+    private void cacheAlias(String aliasKey, WeatherVO weatherVO) {
+        if (hasText(aliasKey) && !aliasKey.equals(weatherVO.getCityName())) {
+            String aliasKeyStr = getRedisKey(aliasKey);
+            try {
+                String json = objectMapper.writeValueAsString(weatherVO);
+                redisTemplate.opsForValue().set(aliasKeyStr, json, 2, TimeUnit.HOURS);
+            } catch (Exception e) {
+                log.error("Failed to serialize and cache WeatherVO for alias key: {}", aliasKey, e);
+            }
         }
     }
 
@@ -251,7 +284,7 @@ public class WeatherServiceImpl implements WeatherService {
         // 2. 兜底尝试使用国内高精度的太平洋电脑网 IP 定位接口
         try {
             String pconlineUrl = "https://whois.pconline.com.cn/ipJson.jsp?ip=" + ip + "&json=true";
-            byte[] bytes = restTemplate.getForObject(pconlineUrl, byte[].class);
+            byte[] bytes = executeWithRetry(() -> restTemplate.getForObject(pconlineUrl, byte[].class), "请求太平洋IP定位服务");
             if (bytes != null) {
                 // 太平洋接口返回的中文字符编码为 GBK，使用 GBK 字符集解码
                 String jsonStr = new String(bytes, java.nio.charset.Charset.forName("GBK")).trim();
@@ -320,23 +353,52 @@ public class WeatherServiceImpl implements WeatherService {
         return value != null && !value.trim().isEmpty();
     }
 
+    @FunctionalInterface
+    private interface RetryableAction<T> {
+        T execute() throws Exception;
+    }
+
+    private <T> T executeWithRetry(RetryableAction<T> action, String description) {
+        int maxAttempts = 3;
+        long backoffMs = 1000L;
+        Exception lastException = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return action.execute();
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Attempt {} failed to {}: {}", attempt, description, e.getMessage());
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(backoffMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "网络请求重试被中断");
+                    }
+                }
+            }
+        }
+        log.error("All {} attempts failed to {}. Last exception: ", maxAttempts, description, lastException);
+        if (lastException instanceof BusinessException) {
+            throw (BusinessException) lastException;
+        }
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, description + "失败，网络出现抖动，请稍后重试");
+    }
+
     /**
      * 发送 HTTP GET 请求并获取 Map 响应，支持 GZIP 压缩解压
      */
     private Map<String, Object> getMapResponse(String url) {
-        byte[] bytes = restTemplate.getForObject(url, byte[].class);
-        if (bytes == null) {
-            return null;
-        }
-        try {
+        return executeWithRetry(() -> {
+            byte[] bytes = restTemplate.getForObject(url, byte[].class);
+            if (bytes == null) {
+                return null;
+            }
             byte[] decompressed = decompressGzipIfNeeded(bytes);
             @SuppressWarnings("unchecked")
             Map<String, Object> responseMap = objectMapper.readValue(decompressed, Map.class);
             return responseMap;
-        } catch (Exception e) {
-            log.error("Failed to parse response from url: {}", url, e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "解析响应数据失败");
-        }
+        }, "获取地图或天气响应数据");
     }
 
     /**
@@ -363,29 +425,6 @@ public class WeatherServiceImpl implements WeatherService {
             }
         }
         return data;
-    }
-
-    /**
-     * 天气缓存包装类
-     */
-    private static class CachedWeather implements Serializable {
-        private static final long serialVersionUID = 1L;
-
-        private final WeatherVO weatherVO;
-        private final long cacheTime;
-
-        public CachedWeather(WeatherVO weatherVO, long cacheTime) {
-            this.weatherVO = weatherVO;
-            this.cacheTime = cacheTime;
-        }
-
-        public boolean isExpired() {
-            return System.currentTimeMillis() - cacheTime > 2 * 60 * 60 * 1000L;
-        }
-
-        public WeatherVO getWeatherVO() {
-            return weatherVO;
-        }
     }
 
     private static class ResolvedCity {
