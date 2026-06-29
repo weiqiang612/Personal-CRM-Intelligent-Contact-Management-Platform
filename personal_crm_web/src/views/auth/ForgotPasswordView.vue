@@ -116,9 +116,9 @@
                       @blur="focusedField = ''"
                     />
                   </div>
-                  <!-- 验证码成功发送提示与邮箱脱敏细节 -->
+                  <!-- 验证码成功发送提示 -->
                   <p v-if="codeSent" class="send-success-tip">
-                    验证码已发送至 {{ maskedEmail }}
+                    ✓ 验证码已发送至 {{ forgotForm.email }}
                   </p>
                 </div>
 
@@ -455,7 +455,6 @@ const handleSendCode = async () => {
     startCountdown(60)
   } catch (error: any) {
     console.error('发送验证码失败:', error)
-    ElMessage.error(error.message || '验证码发送失败，请重试')
   } finally {
     codeLoading.value = false
   }
@@ -498,7 +497,6 @@ const handleVerifyCode = async () => {
     step.value = 2
   } catch (error: any) {
     console.error('验证验证码失败:', error)
-    ElMessage.error(error.message || '验证码错误或已过期')
   } finally {
     loading.value = false
   }
@@ -529,7 +527,6 @@ const handleResetPassword = async () => {
     step.value = 3
   } catch (error: any) {
     console.error('重置密码失败:', error)
-    ElMessage.error(error.message || '密码重置失败，请重试')
   } finally {
     loading.value = false
   }
