@@ -325,7 +325,7 @@
 
     <!-- ══ 页脚 (帮助提示邮箱极简排版) ══ -->
     <footer class="forgot-footer">
-      <span>需要帮助？<a href="mailto:support@personalcrm.com">support@personalcrm.com</a></span>
+      <span>需要帮助？<a href="mailto:weiqiang0322@gmail.com">weiqiang0322@gmail.com</a></span>
     </footer>
   </div>
 </template>
