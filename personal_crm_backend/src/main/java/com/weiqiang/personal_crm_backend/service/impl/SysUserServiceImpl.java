@@ -30,6 +30,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SysUserServiceImpl.class);
+
     private final UserAvatarMapper userAvatarMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
@@ -177,6 +179,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 sysUser.setUpdatedAt(LocalDateTime.now());
 
                 this.save(sysUser);
+                // 异步发送欢迎邮件
+                try {
+                    emailService.sendWelcomeEmail(email, username);
+                } catch (Exception ex) {
+                    logger.error("[REGISTER] 发送欢迎邮件失败, user: {}", username, ex);
+                }
                 return; // 保存成功，直接结束
             } catch (org.springframework.dao.DuplicateKeyException e) {
                 // 如果是并发下由于用户名被其他线程抢先注册成功引发的唯一键冲突

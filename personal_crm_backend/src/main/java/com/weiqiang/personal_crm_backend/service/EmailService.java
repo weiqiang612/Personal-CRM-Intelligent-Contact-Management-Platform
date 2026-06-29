@@ -12,4 +12,11 @@ public interface EmailService {
      * @param code 6位验证码
      */
     void sendVerificationCode(String toEmail, String purpose, String code);
+
+    /**
+     * 发送注册成功欢迎邮件
+     * @param toEmail 接收方邮箱
+     * @param username 用户名
+     */
+    void sendWelcomeEmail(String toEmail, String username);
 }

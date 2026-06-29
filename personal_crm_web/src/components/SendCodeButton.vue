@@ -1,6 +1,7 @@
 <template>
   <el-button
     class="send-code-btn"
+    :class="{ 'is-countdown': countdown > 0 }"
     :type="type"
     :size="size"
     :disabled="isButtonDisabled"
@@ -28,7 +29,7 @@ const props = withDefaults(
   }>(),
   {
     disabled: false,
-    type: 'primary',
+    type: '',
     size: 'default'
   }
 )
@@ -50,7 +51,7 @@ const buttonText = computed(() => {
     return '发送中...'
   }
   if (countdown.value > 0) {
-    return `${countdown.value}s 后重试`
+    return `重新发送 (${countdown.value}s)`
   }
   return '获取验证码'
 })
@@ -117,8 +118,31 @@ onUnmounted(() => {
 
 <style scoped>
 .send-code-btn {
+  background: transparent !important;
+  border: 1.5px solid #dbeafe !important;
+  color: #2563eb !important;
   font-weight: 600 !important;
-  border-radius: var(--radius-md, 8px) !important;
+  border-radius: 8px !important;
   white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+  font-size: 12.5px !important;
+}
+
+.send-code-btn:hover:not(:disabled) {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #2563eb !important;
+}
+
+.send-code-btn.is-countdown,
+.send-code-btn.is-countdown:disabled,
+.send-code-btn.is-countdown.is-disabled {
+  background-color: #f1f5f9 !important;
+  border: 1.5px solid #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
 }
 </style>

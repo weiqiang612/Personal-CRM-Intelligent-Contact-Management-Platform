@@ -203,11 +203,20 @@ const emailForm = ref({ newEmail: '', code: '' })
 const phoneForm = ref({ phone: '' })
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
+const validateEmailFormat = (rule: any, value: any, callback: any) => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+  if (value && !emailRegex.test(value)) {
+    callback(new Error('请输入正确的邮箱格式'))
+  } else {
+    callback()
+  }
+}
+
 // 表单验证规则
 const emailRules = ref<FormRules>({
   newEmail: [
     { required: true, message: '请输入新电子邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { validator: validateEmailFormat, trigger: 'blur' }
   ],
   code: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
