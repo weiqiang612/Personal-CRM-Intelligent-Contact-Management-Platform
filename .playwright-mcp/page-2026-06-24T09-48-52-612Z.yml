@@ -1,5 +1,0 @@
-- generic [ref=e3]:
-  - generic "Toggle devtools panel" [ref=e4] [cursor=pointer]:
-    - img [ref=e5]
-  - generic "Toggle Component Inspector" [ref=e10] [cursor=pointer]:
-    - img [ref=e11]
