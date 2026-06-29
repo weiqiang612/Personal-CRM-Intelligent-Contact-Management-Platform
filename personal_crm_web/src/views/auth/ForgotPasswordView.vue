@@ -118,7 +118,7 @@
                   </div>
                   <!-- 验证码成功发送提示 -->
                   <p v-if="codeSent" class="send-success-tip">
-                    ✓ 验证码已发送至 {{ forgotForm.email }}
+                    验证码已发送至 {{ forgotForm.email }}
                   </p>
                 </div>
 
