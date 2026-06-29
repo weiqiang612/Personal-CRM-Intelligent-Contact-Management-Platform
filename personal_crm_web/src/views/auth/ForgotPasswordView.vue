@@ -1128,6 +1128,26 @@ const goBackToLogin = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+}
+
+.result-container .title {
+  text-align: center;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.result-container .subtitle {
+  text-align: center;
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 4px 0 24px 0;
+  line-height: 1.6;
+  width: 100%;
+}
+
+.result-container .form-body {
+  width: 100%;
 }
 
 .success-icon-wrap {
