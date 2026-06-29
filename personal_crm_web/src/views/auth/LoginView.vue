@@ -257,6 +257,56 @@
         </div>
       </div>
     </section>
+
+    <!-- 忘记密码重置弹窗 -->
+    <AppDialog
+      v-model="forgotDialogVisible"
+      :title="forgotStep === 1 ? '重置密码 - 验证邮箱' : '重置密码 - 设置新密码'"
+      :description="forgotStep === 1 ? '请输入注册邮箱并接收验证码以验证身份' : '身份验证成功，请设置全新的登录密码'"
+      :confirm-text="forgotStep === 1 ? '下一步' : '确认重置'"
+      :loading="forgotLoading"
+      @confirm="handleForgotSubmit"
+    >
+      <el-form label-position="top" @submit.prevent="handleForgotSubmit">
+        <template v-if="forgotStep === 1">
+          <el-form-item label="注册邮箱">
+            <el-input v-model="forgotForm.email" placeholder="请输入绑定的注册邮箱" />
+          </el-form-item>
+          <el-form-item label="6位验证码">
+            <div style="display: flex; gap: 10px; width: 100%;">
+              <el-input
+                v-model="forgotForm.code"
+                placeholder="请输入 6 位验证码"
+                maxlength="6"
+                style="flex: 1;"
+              />
+              <SendCodeButton
+                :email="forgotForm.email"
+                purpose="RESET_PASSWORD"
+              />
+            </div>
+          </el-form-item>
+        </template>
+        <template v-else>
+          <el-form-item label="新密码">
+            <el-input
+              v-model="forgotForm.newPassword"
+              type="password"
+              show-password
+              placeholder="请输入 8 位以上新密码"
+            />
+          </el-form-item>
+          <el-form-item label="确认新密码">
+            <el-input
+              v-model="forgotForm.confirmPassword"
+              type="password"
+              show-password
+              placeholder="请再次输入新密码"
+            />
+          </el-form-item>
+        </template>
+      </el-form>
+    </AppDialog>
   </div>
 </template>
 
@@ -264,7 +314,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import AppDialog from '@/components/common/AppDialog.vue'
+import SendCodeButton from '@/components/SendCodeButton.vue'
 import { useAuthStore } from '@/stores/auth'
+import { resetPassword } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -280,6 +333,17 @@ const errorText = ref<string>('账号或密码错误')
 const loginForm = reactive({
   username: '',
   password: ''
+})
+
+// 忘记密码重置弹窗控制
+const forgotDialogVisible = ref<boolean>(false)
+const forgotStep = ref<1 | 2>(1)
+const forgotLoading = ref<boolean>(false)
+const forgotForm = reactive({
+  email: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
 })
 
 onMounted(() => {
@@ -347,7 +411,67 @@ const handleLogin = async () => {
 }
 
 const forgotPassword = () => {
-  ElMessage.info('请使用系统预置演示账号 ethan / 123456 进行登录')
+  forgotStep.value = 1
+  forgotForm.email = loginForm.username.includes('@') ? loginForm.username : ''
+  forgotForm.code = ''
+  forgotForm.newPassword = ''
+  forgotForm.confirmPassword = ''
+  forgotDialogVisible.value = true
+}
+
+const handleForgotSubmit = async () => {
+  if (forgotStep.value === 1) {
+    const email = forgotForm.email.trim()
+    const code = forgotForm.code.trim()
+    if (!email) {
+      ElMessage.warning('请输入注册邮箱')
+      return
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      ElMessage.warning('请输入正确的邮箱格式')
+      return
+    }
+    if (!code || code.length !== 6) {
+      ElMessage.warning('请输入 6 位数字验证码')
+      return
+    }
+    // 第一步校验通过，进入第二步设置新密码
+    forgotStep.value = 2
+    return
+  }
+
+  if (forgotStep.value === 2) {
+    const newPw = forgotForm.newPassword
+    const confirmPw = forgotForm.confirmPassword
+    if (!newPw || newPw.length < 8) {
+      ElMessage.warning('密码长度不能少于 8 位')
+      return
+    }
+    if (newPw !== confirmPw) {
+      ElMessage.warning('两次输入的新密码不一致')
+      return
+    }
+
+    forgotLoading.value = true
+    try {
+      await resetPassword({
+        email: forgotForm.email.trim(),
+        code: forgotForm.code.trim(),
+        newPassword: newPw
+      })
+      ElMessage.success('密码重置成功，请使用新密码登录')
+      forgotDialogVisible.value = false
+      
+      // 引导登录：回填邮箱到登录输入框
+      loginForm.username = forgotForm.email.trim()
+      loginForm.password = ''
+    } catch (error: any) {
+      console.error('Reset password error:', error)
+    } finally {
+      forgotLoading.value = false
+    }
+  }
 }
 
 const goToRegister = () => {

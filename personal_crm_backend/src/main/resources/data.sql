@@ -3,9 +3,9 @@
 -- 1. This file is only for local development bootstrap.
 -- 2. Password hash is seeded for username 'ethan' with password '123456'
 
-INSERT INTO sys_user (user_id, username, password_hash, status)
-VALUES ('U000000001', 'ethan', '$2a$10$z94Fnk1mXqA42RabilFEwu29iGVNVe15pMYLv9BaxBeHwTUDbbLI2', 0)
-ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash);
+INSERT INTO sys_user (user_id, username, password_hash, status, email_verified)
+VALUES ('U000000001', 'ethan', '$2a$10$z94Fnk1mXqA42RabilFEwu29iGVNVe15pMYLv9BaxBeHwTUDbbLI2', 0, 1)
+ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), status = 0, email_verified = 1;
 
 -- 2. 初始化 8 条高保真联系人种子数据 (归属 ethan 'U000000001')
 INSERT INTO contact (user_id, ct_id, name, gender, phone, email, birthday, status)

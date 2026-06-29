@@ -61,12 +61,22 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user')
   }
 
+  /**
+   * 邮箱校验/验证成功后直接设置 Token 与用户信息
+   */
+  async function setSession(sessionData: { token: string; userId: string; username: string; email: string }) {
+    token.value = sessionData.token
+    localStorage.setItem('token', sessionData.token)
+    await fetchUserProfile()
+  }
+
   return {
     token,
     user,
     isLoggedIn,
     login,
     fetchUserProfile,
+    setSession,
     logout,
   }
 })

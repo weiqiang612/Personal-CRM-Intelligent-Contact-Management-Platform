@@ -240,12 +240,12 @@
                 stroke-linejoin="round"
                 @click="togglePasswordVisibility"
               >
-                <template v-if="showPassword">
+                <g v-if="showPassword">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-                </template>
-                <template v-else>
+                </g>
+                <g v-else>
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </template>
+                </g>
               </svg>
             </div>
           </div>
@@ -274,12 +274,12 @@
                 stroke-linejoin="round"
                 @click="toggleConfirmPasswordVisibility"
               >
-                <template v-if="showConfirmPassword">
+                <g v-if="showConfirmPassword">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-                </template>
-                <template v-else>
+                </g>
+                <g v-else>
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                </template>
+                </g>
               </svg>
             </div>
           </div>
@@ -317,28 +317,47 @@
       </div>
     </section>
 
-    <!-- 成功提示弹窗 -->
-    <div v-if="showSuccessModal" class="success-modal">
-      <div class="modal-content">
-        <div class="success-icon-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
-        <h3>注册成功</h3>
-        <p>正在为您跳转到登录页面...</p>
-      </div>
-    </div>
+    <!-- 邮箱激活验证弹窗 -->
+    <AppDialog
+      v-model="activationDialogVisible"
+      title="邮箱激活验证"
+      :description="activationDescription"
+      confirm-text="确认激活"
+      :loading="activationLoading"
+      @confirm="handleVerifyActivation"
+    >
+      <el-form label-position="top" @submit.prevent="handleVerifyActivation">
+        <el-form-item label="6位邮箱验证码">
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <el-input
+              v-model="activationCode"
+              placeholder="请输入 6 位验证码"
+              maxlength="6"
+              style="flex: 1;"
+            />
+            <SendCodeButton
+              ref="sendCodeBtnRef"
+              :email="registerForm.username"
+              purpose="REGISTER"
+            />
+          </div>
+        </el-form-item>
+      </el-form>
+    </AppDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { registerApi } from '@/api/auth'
+import AppDialog from '@/components/common/AppDialog.vue'
+import SendCodeButton from '@/components/SendCodeButton.vue'
+import { registerApi, sendEmailCode, verifyEmailCode } from '@/api/auth'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const loading = ref<boolean>(false)
 const showPassword = ref<boolean>(false)
@@ -348,7 +367,16 @@ const agreement = ref<boolean>(false)
 // 错误提示控制
 const showError = ref<boolean>(false)
 const errorText = ref<string>('请完整填写注册信息')
-const showSuccessModal = ref<boolean>(false)
+
+// 邮箱激活弹窗控制
+const activationDialogVisible = ref<boolean>(false)
+const activationCode = ref<string>('')
+const activationLoading = ref<boolean>(false)
+const sendCodeBtnRef = ref<InstanceType<typeof SendCodeButton> | null>(null)
+
+const activationDescription = computed(() => {
+  return `验证码已发送至 ${registerForm.username}，请输入 6 位验证码以激活账号。`
+})
 
 const registerForm = reactive({
   username: '',
@@ -389,20 +417,12 @@ const handleRegister = async () => {
     return
   }
 
-  // 2. 账号或邮箱校验
-  if (username.includes('@')) {
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailPattern.test(username)) {
-      errorText.value = '请输入有效的邮箱地址'
-      showError.value = true
-      return
-    }
-  } else {
-    if (username.length < 3) {
-      errorText.value = '账号长度至少为 3 位'
-      showError.value = true
-      return
-    }
+  // 2. 邮箱格式校验（因为激活需要接收邮件，此处必须为有效邮箱）
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailPattern.test(username)) {
+    errorText.value = '请输入有效的电子邮箱地址作为注册账号'
+    showError.value = true
+    return
   }
 
   // 3. 密码长度校验
@@ -430,19 +450,57 @@ const handleRegister = async () => {
   try {
     // 6. 调用后端注册 API
     await registerApi({ username, password })
-    // 显示成功弹窗
-    showSuccessModal.value = true
-    // 2秒后跳转登录页
+    
+    // 7. 注册成功后发起验证码发送
+    try {
+      await sendEmailCode({ email: username, purpose: 'REGISTER' })
+      ElMessage.success('注册成功，验证码已发送至您的邮箱！')
+    } catch (e) {
+      console.error('Failed to auto send email code:', e)
+    }
+
+    // 8. 弹入激活对话框
+    activationDialogVisible.value = true
+    activationCode.value = ''
     setTimeout(() => {
-      router.push({ name: 'login' })
-    }, 2000)
+      sendCodeBtnRef.value?.startTimer(60)
+    }, 100)
+
   } catch (error: any) {
     console.error('Register error:', error)
-    // 显示 API 报错在红框中
     errorText.value = error.message || '注册失败，请稍后重试'
     showError.value = true
   } finally {
     loading.value = false
+  }
+}
+
+// 处理邮箱校验与激活
+const handleVerifyActivation = async () => {
+  const code = activationCode.value.trim()
+  if (!code || code.length !== 6) {
+    ElMessage.warning('请输入 6 位数字验证码')
+    return
+  }
+
+  activationLoading.value = true
+  try {
+    const res = await verifyEmailCode({
+      email: registerForm.username.trim(),
+      code,
+      purpose: 'REGISTER'
+    })
+
+    ElMessage.success('账号激活成功！自动为您登录')
+    activationDialogVisible.value = false
+    
+    // 自动登录并跳转到工作台
+    await authStore.setSession(res)
+    router.push('/dashboard')
+  } catch (error: any) {
+    console.error('Verify activation error:', error)
+  } finally {
+    activationLoading.value = false
   }
 }
 </script>

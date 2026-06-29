@@ -1,7 +1,7 @@
 package com.weiqiang.personal_crm_backend.controller;
 
 import com.weiqiang.personal_crm_backend.common.Result;
-import com.weiqiang.personal_crm_backend.model.dto.LoginRequest;
+import com.weiqiang.personal_crm_backend.model.dto.*;
 import com.weiqiang.personal_crm_backend.model.vo.LoginVo;
 import com.weiqiang.personal_crm_backend.model.vo.UserMeVo;
 import com.weiqiang.personal_crm_backend.security.UserContext;
@@ -9,11 +9,6 @@ import com.weiqiang.personal_crm_backend.service.SysUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import com.weiqiang.personal_crm_backend.model.dto.RegisterRequest;
-import com.weiqiang.personal_crm_backend.model.dto.UpdateEmailRequest;
-import com.weiqiang.personal_crm_backend.model.dto.UpdatePhoneRequest;
-import com.weiqiang.personal_crm_backend.model.dto.UpdatePasswordRequest;
 
 /**
  * 认证控制器
@@ -81,5 +76,32 @@ public class AuthController {
         String userId = UserContext.getUserId();
         sysUserService.updatePassword(userId, updatePasswordRequest.getOldPassword(), updatePasswordRequest.getNewPassword());
         return Result.success();
+    }
+
+    /**
+     * 发送邮箱验证码 (TASK-016)
+     */
+    @PostMapping("/email-code/send")
+    public Result<Void> sendEmailCode(@Validated @RequestBody EmailCodeSendRequest request) {
+        sysUserService.sendEmailCode(request);
+        return Result.success("验证码已发送至您的邮箱，请注意查收", null);
+    }
+
+    /**
+     * 校验邮箱验证码与激活 (TASK-016)
+     */
+    @PostMapping("/email-code/verify")
+    public Result<com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo> verifyEmailCode(@Validated @RequestBody com.weiqiang.personal_crm_backend.model.dto.EmailCodeVerifyRequest request) {
+        com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo vo = sysUserService.verifyEmailCode(request);
+        return Result.success("邮箱验证成功", vo);
+    }
+
+    /**
+     * 忘记密码重置 (TASK-016)
+     */
+    @PostMapping("/password/reset")
+    public Result<Void> resetPassword(@Validated @RequestBody com.weiqiang.personal_crm_backend.model.dto.PasswordResetRequest request) {
+        sysUserService.resetPassword(request);
+        return Result.success("密码重置成功，请使用新密码登录", null);
     }
 }

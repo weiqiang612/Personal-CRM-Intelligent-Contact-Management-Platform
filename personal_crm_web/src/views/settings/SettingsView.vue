@@ -85,14 +85,23 @@
     <AppDialog
       v-model="emailDialogVisible"
       title="修改电子邮箱"
-      description="请输入新的邮箱地址，用于登录和通知。"
+      description="请输入新的邮箱地址及验证码，校验成功后生效。"
       confirm-text="保存"
       :loading="submitLoading"
       @confirm="handleUpdateEmail"
     >
-      <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-position="top">
-        <el-form-item label="电子邮箱" prop="email">
-          <el-input v-model="emailForm.email" placeholder="请输入新电子邮箱" />
+      <el-form :model="emailForm" :rules="emailRules" ref="emailFormRef" label-position="top" @submit.prevent="handleUpdateEmail">
+        <el-form-item label="新电子邮箱" prop="newEmail">
+          <el-input v-model="emailForm.newEmail" placeholder="请输入新电子邮箱" />
+        </el-form-item>
+        <el-form-item label="6位验证码" prop="code">
+          <div style="display: flex; gap: 10px; width: 100%;">
+            <el-input v-model="emailForm.code" placeholder="请输入 6 位验证码" maxlength="6" style="flex: 1;" />
+            <SendCodeButton
+              :email="emailForm.newEmail"
+              purpose="CHANGE_EMAIL"
+            />
+          </div>
         </el-form-item>
       </el-form>
     </AppDialog>
@@ -140,6 +149,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import AppDialog from '@/components/common/AppDialog.vue'
+import SendCodeButton from '@/components/SendCodeButton.vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ElNotification, ElMessage } from 'element-plus'
@@ -147,7 +157,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { uploadUserAvatar } from '@/api/upload'
 import { resolveAvatarUrl } from '@/utils/avatar'
-import { updateEmailApi, updatePhoneApi, updatePasswordApi } from '@/api/auth'
+import { updatePhoneApi, updatePasswordApi, changeEmail } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -189,15 +199,19 @@ const emailFormRef = ref<FormInstance>()
 const phoneFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
 
-const emailForm = ref({ email: '' })
+const emailForm = ref({ newEmail: '', code: '' })
 const phoneForm = ref({ phone: '' })
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
 // 表单验证规则
 const emailRules = ref<FormRules>({
-  email: [
-    { required: true, message: '请输入电子邮箱', trigger: 'blur' },
+  newEmail: [
+    { required: true, message: '请输入新电子邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 6, message: '验证码必须为 6 位', trigger: 'blur' }
   ]
 })
 
@@ -256,9 +270,10 @@ function getFriendlyErrorMessage(msg: string): string {
   return msg
 }
 
-// 开启弹窗并填充现有值
+// 开启弹窗并重置表单
 function openEmailDialog() {
-  emailForm.value.email = user.value?.email || ''
+  emailForm.value.newEmail = ''
+  emailForm.value.code = ''
   emailDialogVisible.value = true
 }
 
@@ -281,11 +296,14 @@ async function handleUpdateEmail() {
     if (valid) {
       try {
         submitLoading.value = true
-        await updateEmailApi(emailForm.value.email)
+        await changeEmail({
+          newEmail: emailForm.value.newEmail,
+          code: emailForm.value.code
+        })
         await authStore.fetchUserProfile()
         ElNotification.success({
           title: '修改成功',
-          message: '您的电子邮箱已更新！',
+          message: '绑定电子邮箱修改成功！',
           duration: 3000
         })
         emailDialogVisible.value = false

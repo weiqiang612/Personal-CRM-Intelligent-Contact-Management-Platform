@@ -64,5 +64,11 @@ erDiagram
   - `occurred_at` DATETIME NOT NULL
   - `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   - 索引：`idx_user_contact_occurred(user_id, contact_id, occurred_at)`
+- **2026-06-28**：邮箱验证与账号安全架构扩展（TASK-016）：
+  - `sys_user` 表新增 `email_verified` (TINYINT NOT NULL DEFAULT 0 COMMENT '0未验证, 1已验证') 和 `email_verified_at` (DATETIME NULL COMMENT '激活时间')。状态 `status` 含义扩展为 `0: ACTIVE`, `1: DISABLED`, `2: UNVERIFIED`。
+  - Redis 内存缓存数据模型规范：
+    - 验证码 Key：`email:code:{purpose}:{email}` -> `codeHash` (TTL: 300秒)
+    - 发送限制锁 Key：`email:send:{purpose}:{email}` -> `1` (TTL: 60秒)
+    - 输错锁定 Key：`email:attempt:{purpose}:{email}` -> `attemptCount` (TTL: 300秒，上限5次)
 
 

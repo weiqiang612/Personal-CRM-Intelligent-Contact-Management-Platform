@@ -16,6 +16,8 @@ public class RegisterRequest implements Serializable {
     @NotBlank(message = "username cannot be blank")
     private String username;
 
+    private String email;
+
     @NotBlank(message = "password cannot be blank")
     private String password;
 }

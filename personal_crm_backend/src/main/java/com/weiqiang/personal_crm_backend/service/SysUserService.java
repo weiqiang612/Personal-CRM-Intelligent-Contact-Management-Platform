@@ -42,4 +42,24 @@ public interface SysUserService extends IService<SysUser> {
      * 修改用户密码
      */
     void updatePassword(String userId, String oldPassword, String newPassword);
+
+    /**
+     * 发送邮箱验证码
+     */
+    void sendEmailCode(com.weiqiang.personal_crm_backend.model.dto.EmailCodeSendRequest request);
+
+    /**
+     * 校验邮箱验证码并激活
+     */
+    com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo verifyEmailCode(com.weiqiang.personal_crm_backend.model.dto.EmailCodeVerifyRequest request);
+
+    /**
+     * 忘记密码重置
+     */
+    void resetPassword(com.weiqiang.personal_crm_backend.model.dto.PasswordResetRequest request);
+
+    /**
+     * 已登录更换绑定邮箱
+     */
+    void changeEmail(String currentUserId, com.weiqiang.personal_crm_backend.model.dto.EmailChangeRequest request);
 }

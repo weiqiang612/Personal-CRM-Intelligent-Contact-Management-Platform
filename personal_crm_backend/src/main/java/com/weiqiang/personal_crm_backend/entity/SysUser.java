@@ -33,7 +33,7 @@ public class SysUser {
     private String passwordHash;
 
     /**
-     * 状态: 0 正常, 1 禁用
+     * 状态: 0 正常, 1 禁用, 2 未验证
      */
     private Integer status;
 
@@ -41,6 +41,16 @@ public class SysUser {
      * 电子邮箱
      */
     private String email;
+
+    /**
+     * 邮箱是否验证: false 未验证, true 已验证
+     */
+    private Boolean emailVerified;
+
+    /**
+     * 邮箱验证时间
+     */
+    private LocalDateTime emailVerifiedAt;
 
     /**
      * 手机号码

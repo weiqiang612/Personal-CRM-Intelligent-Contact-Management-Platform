@@ -159,6 +159,17 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(0)));
 
+        // 模拟激活
+        SysUser createdUser = sysUserMapper.selectOne(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
+                        .eq(SysUser::getUsername, "loginuser")
+        );
+        if (createdUser != null) {
+            createdUser.setStatus(0);
+            createdUser.setEmailVerified(true);
+            sysUserMapper.updateById(createdUser);
+        }
+
         // 2. 使用新注册的用户成功登录
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("loginuser");

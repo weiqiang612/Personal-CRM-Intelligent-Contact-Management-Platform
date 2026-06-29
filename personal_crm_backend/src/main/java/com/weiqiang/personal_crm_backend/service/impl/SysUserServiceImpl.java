@@ -13,6 +13,10 @@ import com.weiqiang.personal_crm_backend.model.vo.LoginVo;
 import com.weiqiang.personal_crm_backend.model.vo.UserMeVo;
 import com.weiqiang.personal_crm_backend.security.JwtUtils;
 import com.weiqiang.personal_crm_backend.service.SysUserService;
+import com.weiqiang.personal_crm_backend.component.EmailVerificationRedisTemplate;
+import com.weiqiang.personal_crm_backend.model.dto.*;
+import com.weiqiang.personal_crm_backend.model.vo.EmailCodeVerifyVo;
+import com.weiqiang.personal_crm_backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,6 +34,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final AvatarAccessService avatarAccessService;
+    private final EmailVerificationRedisTemplate emailVerificationRedisTemplate;
+    private final EmailService emailService;
 
     @Override
     public LoginVo login(LoginRequest loginRequest) {
@@ -48,6 +54,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
 
         // 3. 校验账号状态
+        if (Integer.valueOf(2).equals(user.getStatus()) || Boolean.FALSE.equals(user.getEmailVerified())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN.getCode(), "账号未完成邮箱验证，请先验证邮箱");
+        }
         if (user.getStatus() != 0) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "this account has been disabled");
         }
@@ -105,6 +114,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         String username = registerRequest.getUsername().trim();
         String password = registerRequest.getPassword();
+        String email = registerRequest.getEmail();
+        if (!org.springframework.util.StringUtils.hasText(email)) {
+            if (username.contains("@")) {
+                email = username;
+            }
+        }
 
         // 2. 基础校验
         if (username.contains("@")) {
@@ -140,8 +155,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 SysUser sysUser = new SysUser();
                 sysUser.setUserId(userId);
                 sysUser.setUsername(username);
+                sysUser.setEmail(email);
                 sysUser.setPasswordHash(passwordHash);
-                sysUser.setStatus(0);
+                sysUser.setStatus(2); // UNVERIFIED
+                sysUser.setEmailVerified(false);
                 sysUser.setCreatedAt(LocalDateTime.now());
                 sysUser.setUpdatedAt(LocalDateTime.now());
 
@@ -215,6 +232,131 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "invalid old password");
         }
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+    }
+
+    @Override
+    public void sendEmailCode(EmailCodeSendRequest request) {
+        String email = request.getEmail().trim();
+        String purpose = request.getPurpose().trim().toUpperCase();
+
+        // 场景校验
+        if ("REGISTER".equals(purpose) || "CHANGE_EMAIL".equals(purpose)) {
+            SysUser existing = this.lambdaQuery()
+                    .eq(SysUser::getEmail, email)
+                    .eq(SysUser::getEmailVerified, true)
+                    .ne(SysUser::getStatus, 2)
+                    .one();
+            if (existing != null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "该邮箱已被其他有效账号绑定使用");
+            }
+        } else if ("RESET_PASSWORD".equals(purpose)) {
+            SysUser existing = this.lambdaQuery()
+                    .eq(SysUser::getEmail, email)
+                    .or()
+                    .eq(SysUser::getUsername, email)
+                    .one();
+            if (existing == null) {
+                throw new BusinessException(ErrorCode.NOT_FOUND, "目标账号/邮箱不存在");
+            }
+        }
+
+        // 防频繁发送限制锁 (60秒)
+        boolean lockAcquired = emailVerificationRedisTemplate.checkAndSetSendLock(purpose, email);
+        if (!lockAcquired) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请60秒后再试");
+        }
+
+        // 生成 6 位随机数字验证码
+        String code = String.format("%06d", java.util.concurrent.ThreadLocalRandom.current().nextInt(1000000));
+
+        // Redis 存储 300秒
+        emailVerificationRedisTemplate.saveCode(purpose, email, code);
+
+        // 调用 EmailService 发送
+        emailService.sendVerificationCode(email, purpose, code);
+    }
+
+    @Override
+    public EmailCodeVerifyVo verifyEmailCode(EmailCodeVerifyRequest request) {
+        String email = request.getEmail().trim();
+        String code = request.getCode().trim();
+        String purpose = request.getPurpose().trim().toUpperCase();
+
+        // 校验 Redis 验证码与防爆破
+        emailVerificationRedisTemplate.verifyCode(purpose, email, code);
+
+        // 查找对应用户进行激活
+        SysUser user = this.lambdaQuery()
+                .eq(SysUser::getEmail, email)
+                .or()
+                .eq(SysUser::getUsername, email)
+                .one();
+
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "注册用户不存在，请重新提交注册");
+        }
+
+        user.setStatus(0); // ACTIVE
+        user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+
+        String token = jwtUtils.generateToken(user.getUserId());
+
+        return EmailCodeVerifyVo.builder()
+                .token(token)
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
+    }
+
+    @Override
+    public void resetPassword(PasswordResetRequest request) {
+        String email = request.getEmail().trim();
+        String code = request.getCode().trim();
+        String newPassword = request.getNewPassword();
+
+        emailVerificationRedisTemplate.verifyCode("RESET_PASSWORD", email, code);
+
+        SysUser user = this.lambdaQuery()
+                .eq(SysUser::getEmail, email)
+                .or()
+                .eq(SysUser::getUsername, email)
+                .one();
+
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "账号不存在");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+    }
+
+    @Override
+    public void changeEmail(String currentUserId, EmailChangeRequest request) {
+        String newEmail = request.getNewEmail().trim();
+        String code = request.getCode().trim();
+
+        SysUser existing = this.lambdaQuery().eq(SysUser::getEmail, newEmail).one();
+        if (existing != null && !existing.getUserId().equals(currentUserId)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "新邮箱已被其他账号使用");
+        }
+
+        emailVerificationRedisTemplate.verifyCode("CHANGE_EMAIL", newEmail, code);
+
+        SysUser user = this.lambdaQuery().eq(SysUser::getUserId, currentUserId).one();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "当前用户不存在");
+        }
+
+        user.setEmail(newEmail);
+        user.setEmailVerified(true);
+        user.setEmailVerifiedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         this.updateById(user);
     }

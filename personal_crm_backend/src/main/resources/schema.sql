@@ -14,9 +14,11 @@ CREATE TABLE IF NOT EXISTS sys_user (
     user_id CHAR(10) NOT NULL COMMENT 'Guide-aligned business user id',
     username VARCHAR(50) NOT NULL COMMENT 'Login username',
     password_hash VARCHAR(255) NOT NULL COMMENT 'Password hash',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '0 active, 1 disabled',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '0 active, 1 disabled, 2 unverified',
     email VARCHAR(100) DEFAULT NULL COMMENT 'Email',
     phone VARCHAR(30) DEFAULT NULL COMMENT 'Phone',
+    email_verified TINYINT NOT NULL DEFAULT 0 COMMENT '0 unverified, 1 verified',
+    email_verified_at DATETIME DEFAULT NULL COMMENT 'Verification timestamp',
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Created time',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Updated time',
     PRIMARY KEY (id),
@@ -156,5 +158,9 @@ CREATE TABLE IF NOT EXISTS activity_log (
     UNIQUE KEY uk_activity_id (activity_id),
     KEY idx_user_contact_occurred (user_id, contact_id, occurred_at)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = 'Contact activity feed log';
+
+-- TASK-016: Smooth schema adjustments for existing databases
+-- ALTER TABLE sys_user ADD COLUMN email_verified TINYINT NOT NULL DEFAULT 0 COMMENT '0 unverified, 1 verified';
+-- ALTER TABLE sys_user ADD COLUMN email_verified_at DATETIME DEFAULT NULL COMMENT 'Verification timestamp';
 
 SET FOREIGN_KEY_CHECKS = 1;

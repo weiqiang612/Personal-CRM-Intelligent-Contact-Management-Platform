@@ -2,7 +2,9 @@ package com.weiqiang.personal_crm_backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
+@EnableAsync
 @SpringBootApplication
 public class PersonalCrmBackendApplication {
 

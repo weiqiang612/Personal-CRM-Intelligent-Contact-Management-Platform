@@ -3,17 +3,17 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
+`docs/4-tasks/features/TASK-016-resend-email-verification/`
+- spec.md ✅ Completed
+- tasks.md ✅ Completed
+
+## Previous implementation task
 `docs/4-tasks/features/TASK-015-relationship-health-dashboard/`
 - spec.md ✅ Completed
 - tasks.md ✅ Completed
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-014-contact-activity-feed/`
-- spec.md ✅ Completed
-- tasks.md ✅ Completed
-
-## Previous implementation task
-`docs/4-tasks/features/TASK-011-agent-llm-session/`
 - spec.md ✅ Completed
 - tasks.md ✅ Completed
 
@@ -89,6 +89,9 @@
 ### TASK-015: Relationship Health Dashboard
 - [x] Implementation (11 tasks) Completed
 
+### TASK-016: Resend Email Verification & Account Security Closure
+- [x] Implementation (18 tasks) Completed
+
 
 ## Backlog roadmap
 
@@ -111,6 +114,7 @@
   - 范围：部署说明、演示环境验证、用户使用说明、答辩材料、README/docs 收口和版本归档
 
 ## Completed
+- 2026-06-28: completed TASK-016 Resend Email Verification & Account Security Closure (18 tasks, production-ready Redis temporary code & rate limiting & lockout + Resend Java SDK email service + Spring Boot 4 REST APIs + 108 JUnit tests passing + Vue 3 SendCodeButton & activation/reset/change-email dialogs + E2E Chrome audit verified)
 - 2026-06-28: completed TASK-014 Contact Activity Feed Integration (16 tasks, TDD-driven backend activity log entity + mapper + service trace logging + GET /api/v1/contacts/{id}/activities API + 103 JUnit tests passing + Vue 3 ContactDetailView timeline rendering + event type icons mapping + relative time formatting + empty state card + frontend build verified)
 - 2026-06-26: completed TASK-012 Mobile Responsive Adaptation (9 tasks, mobile bottom TabBar + hide Sidebar + stats-grid flow + touch-scroll contacts + charts resizing + full-screen chat tab + cards fallback lists for contacts and todos)
 - 2026-06-25: completed TASK-011 Contact Agent OpenAI-Compatible LLM Sessions (13 tasks, OpenAI-compatible model adapter + memory session state manager + multi-turn slot filling and database verification + Vue 3 chat flow E2E verification)

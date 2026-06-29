@@ -90,3 +90,76 @@ export interface UpdatePasswordParams {
 export function updatePasswordApi(data: UpdatePasswordParams): Promise<void> {
   return request.put('/auth/profile/password', data)
 }
+
+/**
+ * 邮箱验证码发送请求参数接口
+ */
+export interface SendEmailCodeParams {
+  email: string
+  purpose: 'REGISTER' | 'RESET_PASSWORD' | 'CHANGE_EMAIL'
+}
+
+/**
+ * 发送邮箱验证码 API
+ */
+export function sendEmailCode(data: SendEmailCodeParams): Promise<void> {
+  return request.post('/auth/email-code/send', data)
+}
+
+/**
+ * 邮箱验证码校验请求参数接口
+ */
+export interface VerifyEmailCodeParams {
+  email: string
+  code: string
+  purpose: 'REGISTER' | 'RESET_PASSWORD' | 'CHANGE_EMAIL'
+}
+
+/**
+ * 邮箱校验与激活响应接口
+ */
+export interface VerifyEmailResult {
+  token: string
+  userId: string
+  username: string
+  email: string
+}
+
+/**
+ * 校验邮箱验证码与激活 API
+ */
+export function verifyEmailCode(data: VerifyEmailCodeParams): Promise<VerifyEmailResult> {
+  return request.post('/auth/email-code/verify', data)
+}
+
+/**
+ * 重置密码请求参数接口
+ */
+export interface ResetPasswordParams {
+  email: string
+  code: string
+  newPassword: string
+}
+
+/**
+ * 忘记密码重置 API
+ */
+export function resetPassword(data: ResetPasswordParams): Promise<void> {
+  return request.post('/auth/password/reset', data)
+}
+
+/**
+ * 修改绑定邮箱请求参数接口
+ */
+export interface ChangeEmailParams {
+  newEmail: string
+  code: string
+}
+
+/**
+ * 登录状态下修改绑定邮箱 API
+ */
+export function changeEmail(data: ChangeEmailParams): Promise<void> {
+  return request.post('/user/email/change', data)
+}
+

@@ -194,6 +194,106 @@
 }
 ```
 
+### 4.7 发送邮箱验证码 (TASK-016)
+
+- `POST /api/v1/auth/email-code/send`
+
+请求体：
+
+```json
+{
+  "email": "user@example.com",
+  "purpose": "REGISTER"
+}
+```
+*注：purpose 支持 `REGISTER` (注册激活)、`RESET_PASSWORD` (重置密码)、`CHANGE_EMAIL` (更换邮箱)*
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "验证码已发送至您的邮箱，请注意查收",
+  "data": null
+}
+```
+
+### 4.8 校验邮箱验证码与激活 (TASK-016)
+
+- `POST /api/v1/auth/email-code/verify`
+
+请求体：
+
+```json
+{
+  "email": "user@example.com",
+  "code": "638521",
+  "purpose": "REGISTER"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "邮箱验证成功",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "userId": "U000000001",
+    "username": "user123",
+    "email": "user@example.com"
+  }
+}
+```
+
+### 4.9 忘记密码重置 (TASK-016)
+
+- `POST /api/v1/auth/password/reset`
+
+请求体：
+
+```json
+{
+  "email": "user@example.com",
+  "code": "638521",
+  "newPassword": "MyNewPassword123!"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "密码重置成功，请使用新密码登录",
+  "data": null
+}
+```
+
+### 4.10 登录状态下修改绑定邮箱 (TASK-016)
+
+- `POST /api/v1/user/email/change`
+
+请求体：
+
+```json
+{
+  "newEmail": "new_email@example.com",
+  "code": "638521"
+}
+```
+
+响应体：
+
+```json
+{
+  "code": 0,
+  "message": "绑定邮箱修改成功",
+  "data": null
+}
+```
+
 ## 5. Contact APIs (联系人模块)
 
 
