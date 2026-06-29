@@ -108,8 +108,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         // 1. 防御性空白校验
         if (registerRequest == null 
                 || !org.springframework.util.StringUtils.hasText(registerRequest.getUsername())
-                || !org.springframework.util.StringUtils.hasText(registerRequest.getPassword())) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username or password cannot be blank");
+                || !org.springframework.util.StringUtils.hasText(registerRequest.getPassword())
+                || !org.springframework.util.StringUtils.hasText(registerRequest.getCode())) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Username, password or verification code cannot be blank");
         }
 
         String username = registerRequest.getUsername().trim();
@@ -120,6 +121,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 email = username;
             }
         }
+
+        // 验证邮箱验证码是否正确
+        if (!org.springframework.util.StringUtils.hasText(email)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "Email is required for registration");
+        }
+        emailVerificationRedisTemplate.verifyCode("REGISTER", email.trim(), registerRequest.getCode().trim());
 
         // 2. 基础校验
         if (username.contains("@")) {
@@ -157,8 +164,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 sysUser.setUsername(username);
                 sysUser.setEmail(email);
                 sysUser.setPasswordHash(passwordHash);
-                sysUser.setStatus(2); // UNVERIFIED
-                sysUser.setEmailVerified(false);
+                sysUser.setStatus(0); // ACTIVE
+                sysUser.setEmailVerified(true);
+                sysUser.setEmailVerifiedAt(LocalDateTime.now());
                 sysUser.setCreatedAt(LocalDateTime.now());
                 sysUser.setUpdatedAt(LocalDateTime.now());
 

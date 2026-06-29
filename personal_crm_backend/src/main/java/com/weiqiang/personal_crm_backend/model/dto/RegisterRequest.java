@@ -20,4 +20,7 @@ public class RegisterRequest implements Serializable {
 
     @NotBlank(message = "password cannot be blank")
     private String password;
+
+    @NotBlank(message = "verification code cannot be blank")
+    private String code;
 }

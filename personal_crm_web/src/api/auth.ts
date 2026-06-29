@@ -52,6 +52,8 @@ export function getMeApi(): Promise<UserMeResult> {
  */
 export interface RegisterParams {
   username: string
+  email: string
+  code: string
   password: string
 }
 

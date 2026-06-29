@@ -49,11 +49,25 @@ public class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private com.weiqiang.personal_crm_backend.component.EmailVerificationRedisTemplate emailVerificationRedisTemplate;
+
+    @Autowired
+    private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+
+    @Test
+    public void testGetCodeForE2E() {
+        System.out.println("CODE_FOR_E2E:" + redisTemplate.opsForValue().get("email:code:REGISTER:e2etest@example.com"));
+    }
+
     @Test
     public void testRegisterSuccess() throws Exception {
+        emailVerificationRedisTemplate.saveCode("REGISTER", "newtestuser@example.com", "111111");
+
         RegisterRequest request = new RegisterRequest();
-        request.setUsername("newtestuser");
+        request.setUsername("newtestuser@example.com");
         request.setPassword("securepassword123");
+        request.setCode("111111");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,22 +76,27 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.message", is("success")));
 
-        // 验证数据库中用户已落库并加密
+        // 验证数据库中用户已落库并加密，且状态为 ACTIVE 0
         SysUser user = sysUserMapper.selectOne(
                 new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, "newtestuser")
+                        .eq(SysUser::getUsername, "newtestuser@example.com")
         );
         assertNotNull(user);
         assertNotNull(user.getUserId());
         assertTrue(user.getUserId().startsWith("U"));
         assertTrue(passwordEncoder.matches("securepassword123", user.getPasswordHash()));
+        assertTrue(user.getEmailVerified());
+        org.junit.jupiter.api.Assertions.assertEquals(0, user.getStatus());
     }
 
     @Test
     public void testRegisterEmailSuccess() throws Exception {
+        emailVerificationRedisTemplate.saveCode("REGISTER", "testemail@example.com", "222222");
+
         RegisterRequest request = new RegisterRequest();
         request.setUsername("testemail@example.com");
         request.setPassword("securepassword123");
+        request.setCode("222222");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,37 +113,56 @@ public class AuthControllerTest {
 
     @Test
     public void testRegisterDuplicateUsername() throws Exception {
-        // ethan 已由 data.sql 种子数据初始化
-        RegisterRequest request = new RegisterRequest();
-        request.setUsername("ethan");
-        request.setPassword("password12345");
+        // 先成功注册一个邮箱用户
+        emailVerificationRedisTemplate.saveCode("REGISTER", "duplicate@example.com", "333333");
+        RegisterRequest request1 = new RegisterRequest();
+        request1.setUsername("duplicate@example.com");
+        request1.setEmail("duplicate@example.com");
+        request1.setPassword("password12345");
+        request1.setCode("333333");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk()) // 后端返回 200 OK，包含统一错误 JSON 包
+                        .content(objectMapper.writeValueAsString(request1)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(0)));
+
+        // 再次用相同的邮箱注册，期望报“Username already exists”错误
+        emailVerificationRedisTemplate.saveCode("REGISTER", "duplicate@example.com", "333333");
+        RegisterRequest request2 = new RegisterRequest();
+        request2.setUsername("duplicate@example.com");
+        request2.setEmail("duplicate@example.com");
+        request2.setPassword("password12345");
+        request2.setCode("333333");
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request2)))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001))) // ErrorCode.PARAMS_ERROR
                 .andExpect(jsonPath("$.message", containsString("Username already exists")));
     }
 
     @Test
     public void testRegisterValidationFailures() throws Exception {
-        // 1. 用户名过短（非邮箱）
+        // 1. 用户名过短且非邮箱（由于没传email字段，将触发 "Email is required for registration"）
         RegisterRequest request1 = new RegisterRequest();
         request1.setUsername("ab");
         request1.setPassword("password123");
+        request1.setCode("444444");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request1)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(40001)))
-                .andExpect(jsonPath("$.message", containsString("Username must be at least 3 characters")));
+                .andExpect(jsonPath("$.message", containsString("Email is required for registration")));
 
         // 2. 邮箱格式非法
         RegisterRequest request2 = new RegisterRequest();
         request2.setUsername("abc@invalid");
         request2.setPassword("password123");
+        request2.setCode("444444");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -134,9 +172,11 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.message", containsString("Invalid email address format")));
 
         // 3. 密码太短
+        emailVerificationRedisTemplate.saveCode("REGISTER", "validuser@example.com", "444444");
         RegisterRequest request3 = new RegisterRequest();
-        request3.setUsername("validuser");
+        request3.setUsername("validuser@example.com");
         request3.setPassword("1234567");
+        request3.setCode("444444");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -147,11 +187,29 @@ public class AuthControllerTest {
     }
 
     @Test
+    public void testRegisterWrongCode() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("wrongcode@example.com");
+        request.setPassword("securepassword123");
+        request.setCode("999999"); // 错误的 code
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is(40001)))
+                // 用 Unicode 规避编译/运行环境的中文字符集乱码问题 "\u9a8c\u8bc1\u7801" 为 "验证码"
+                .andExpect(jsonPath("$.message", containsString("\u9a8c\u8bc1\u7801")));
+    }
+
+    @Test
     public void testRegisterAndLogin() throws Exception {
-        // 1. 注册新用户
+        // 1. 注册新用户并验证
+        emailVerificationRedisTemplate.saveCode("REGISTER", "loginuser@example.com", "555555");
         RegisterRequest registerRequest = new RegisterRequest();
-        registerRequest.setUsername("loginuser");
+        registerRequest.setUsername("loginuser@example.com");
         registerRequest.setPassword("loginpassword123");
+        registerRequest.setCode("555555");
 
         mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -159,20 +217,9 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(0)));
 
-        // 模拟激活
-        SysUser createdUser = sysUserMapper.selectOne(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysUser>()
-                        .eq(SysUser::getUsername, "loginuser")
-        );
-        if (createdUser != null) {
-            createdUser.setStatus(0);
-            createdUser.setEmailVerified(true);
-            sysUserMapper.updateById(createdUser);
-        }
-
-        // 2. 使用新注册的用户成功登录
+        // 2. 使用新注册的用户成功登录（无需模拟激活，注册成功即为 ACTIVE 状态）
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUsername("loginuser");
+        loginRequest.setUsername("loginuser@example.com");
         loginRequest.setPassword("loginpassword123");
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -181,14 +228,14 @@ public class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code", is(0)))
                 .andExpect(jsonPath("$.data.token", notNullValue()))
-                .andExpect(jsonPath("$.data.user.username", is("loginuser")));
+                .andExpect(jsonPath("$.data.user.username", is("loginuser@example.com")));
     }
 
     @Test
     public void testGetMeShouldFallbackWhenLocalAvatarFileIsMissing() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("ethan");
-        loginRequest.setPassword("123456");
+        loginRequest.setPassword("Aa123456");
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -260,14 +307,20 @@ public class AuthControllerTest {
 
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
-            String uniqueUsername = "concurrent_" + System.currentTimeMillis() + "_" + index;
+            String uniqueUsername = "concurrent_" + System.currentTimeMillis() + "_" + index + "@example.com";
             usernames[index] = uniqueUsername;
+
+            // 为每个并发线程预埋验证码
+            String code = "12345" + index;
+            emailVerificationRedisTemplate.saveCode("REGISTER", uniqueUsername, code);
 
             executorService.execute(() -> {
                 try {
                     RegisterRequest request = new RegisterRequest();
                     request.setUsername(uniqueUsername);
+                    request.setEmail(uniqueUsername);
                     request.setPassword("securepassword123");
+                    request.setCode(code);
 
                     mockMvc.perform(post("/api/v1/auth/register")
                                     .contentType(MediaType.APPLICATION_JSON)
@@ -308,7 +361,7 @@ public class AuthControllerTest {
     public void testUpdateEmail_Success() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("ethan");
-        loginRequest.setPassword("123456");
+        loginRequest.setPassword("Aa123456");
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -343,7 +396,7 @@ public class AuthControllerTest {
     public void testUpdatePhone_Success() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("ethan");
-        loginRequest.setPassword("123456");
+        loginRequest.setPassword("Aa123456");
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -378,7 +431,7 @@ public class AuthControllerTest {
     public void testUpdatePassword_SuccessAndFail() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername("ethan");
-        loginRequest.setPassword("123456");
+        loginRequest.setPassword("Aa123456");
 
         String loginResponse = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -403,7 +456,7 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("$.code", is(40001))); // PARAMS_ERROR
 
         // 2. 使用正确的密码修改密码，应该成功
-        updatePasswordRequest.setOldPassword("123456");
+        updatePasswordRequest.setOldPassword("Aa123456");
         updatePasswordRequest.setNewPassword("newpassword123");
 
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/auth/profile/password")
@@ -416,7 +469,7 @@ public class AuthControllerTest {
         // 3. 验证使用老密码登录失败
         LoginRequest failLogin = new LoginRequest();
         failLogin.setUsername("ethan");
-        failLogin.setPassword("123456");
+        failLogin.setPassword("Aa123456");
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(failLogin)))

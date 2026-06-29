@@ -199,19 +199,45 @@
         </div>
 
         <form @submit.prevent="handleRegister">
-          <!-- 账号或邮箱 -->
+          <!-- 注册邮箱 -->
           <div class="form-group">
-            <label class="form-label" for="usernameOrEmail">账号或邮箱</label>
+            <label class="form-label" for="email">注册邮箱</label>
             <div class="input-wrap">
               <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
               </svg>
               <input
-                id="usernameOrEmail"
-                v-model="registerForm.username"
+                id="email"
+                v-model="registerForm.email"
                 type="text"
-                placeholder="请输入账号或邮箱"
-                autocomplete="username"
+                placeholder="请输入您的注册邮箱"
+                autocomplete="email"
+              />
+            </div>
+          </div>
+
+          <!-- 邮箱验证码 -->
+          <div class="form-group">
+            <label class="form-label" for="code">邮箱验证码</label>
+            <div class="code-row">
+              <div class="input-wrap">
+                <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input
+                  id="code"
+                  v-model="registerForm.code"
+                  type="text"
+                  placeholder="6位验证码"
+                  maxlength="6"
+                />
+              </div>
+              <SendCodeButton
+                ref="sendCodeBtnRef"
+                purpose="REGISTER"
+                :email="registerForm.email"
               />
             </div>
           </div>
@@ -317,33 +343,7 @@
       </div>
     </section>
 
-    <!-- 邮箱激活验证弹窗 -->
-    <AppDialog
-      v-model="activationDialogVisible"
-      title="邮箱激活验证"
-      :description="activationDescription"
-      confirm-text="确认激活"
-      :loading="activationLoading"
-      @confirm="handleVerifyActivation"
-    >
-      <el-form label-position="top" @submit.prevent="handleVerifyActivation">
-        <el-form-item label="6位邮箱验证码">
-          <div style="display: flex; gap: 10px; width: 100%;">
-            <el-input
-              v-model="activationCode"
-              placeholder="请输入 6 位验证码"
-              maxlength="6"
-              style="flex: 1;"
-            />
-            <SendCodeButton
-              ref="sendCodeBtnRef"
-              :email="registerForm.username"
-              purpose="REGISTER"
-            />
-          </div>
-        </el-form-item>
-      </el-form>
-    </AppDialog>
+
   </div>
 </template>
 
@@ -351,9 +351,8 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import AppDialog from '@/components/common/AppDialog.vue'
+import { registerApi } from '@/api/auth'
 import SendCodeButton from '@/components/SendCodeButton.vue'
-import { registerApi, sendEmailCode, verifyEmailCode } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -368,18 +367,11 @@ const agreement = ref<boolean>(false)
 const showError = ref<boolean>(false)
 const errorText = ref<string>('请完整填写注册信息')
 
-// 邮箱激活弹窗控制
-const activationDialogVisible = ref<boolean>(false)
-const activationCode = ref<string>('')
-const activationLoading = ref<boolean>(false)
 const sendCodeBtnRef = ref<InstanceType<typeof SendCodeButton> | null>(null)
 
-const activationDescription = computed(() => {
-  return `验证码已发送至 ${registerForm.username}，请输入 6 位验证码以激活账号。`
-})
-
 const registerForm = reactive({
-  username: '',
+  email: '',
+  code: '',
   password: '',
   confirmPassword: ''
 })
@@ -406,40 +398,48 @@ const goToLogin = () => {
 
 const handleRegister = async () => {
   showError.value = false
-  const username = registerForm.username.trim()
+  const email = registerForm.email.trim()
+  const code = registerForm.code.trim()
   const password = registerForm.password
   const confirmPassword = registerForm.confirmPassword
 
   // 1. 非空校验
-  if (!username || !password || !confirmPassword) {
+  if (!email || !code || !password || !confirmPassword) {
     errorText.value = '请完整填写注册信息'
     showError.value = true
     return
   }
 
-  // 2. 邮箱格式校验（因为激活需要接收邮件，此处必须为有效邮箱）
+  // 2. 邮箱格式校验
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailPattern.test(username)) {
-    errorText.value = '请输入有效的电子邮箱地址作为注册账号'
+  if (!emailPattern.test(email)) {
+    errorText.value = '请输入有效的电子邮箱地址'
     showError.value = true
     return
   }
 
-  // 3. 密码长度校验
+  // 3. 验证码格式校验
+  if (code.length !== 6) {
+    errorText.value = '请输入 6 位数字验证码'
+    showError.value = true
+    return
+  }
+
+  // 4. 密码长度校验
   if (password.length < 8) {
     errorText.value = '密码长度至少为 8 位'
     showError.value = true
     return
   }
 
-  // 4. 两次密码一致性校验
+  // 5. 两次密码一致性校验
   if (password !== confirmPassword) {
     errorText.value = '两次密码输入不一致'
     showError.value = true
     return
   }
 
-  // 5. 用户协议校验
+  // 6. 用户协议校验
   if (!agreement.value) {
     errorText.value = '请先阅读并同意用户协议和隐私政策'
     showError.value = true
@@ -448,59 +448,29 @@ const handleRegister = async () => {
 
   loading.value = true
   try {
-    // 6. 调用后端注册 API
-    await registerApi({ username, password })
+    // 7. 调用后端注册 API (同时将 username 设为 email 以保持兼容)
+    await registerApi({
+      username: email,
+      email: email,
+      code: code,
+      password: password
+    })
     
-    // 7. 注册成功后发起验证码发送
-    try {
-      await sendEmailCode({ email: username, purpose: 'REGISTER' })
-      ElMessage.success('注册成功，验证码已发送至您的邮箱！')
-    } catch (e) {
-      console.error('Failed to auto send email code:', e)
-    }
-
-    // 8. 弹入激活对话框
-    activationDialogVisible.value = true
-    activationCode.value = ''
-    setTimeout(() => {
-      sendCodeBtnRef.value?.startTimer(60)
-    }, 100)
-
+    ElMessage.success('注册并激活成功！正在为您自动登录...')
+    
+    // 8. 自动静默登录并跳转至 dashboard
+    await authStore.login({
+      username: email,
+      password: password
+    })
+    
+    router.push('/dashboard')
   } catch (error: any) {
     console.error('Register error:', error)
     errorText.value = error.message || '注册失败，请稍后重试'
     showError.value = true
   } finally {
     loading.value = false
-  }
-}
-
-// 处理邮箱校验与激活
-const handleVerifyActivation = async () => {
-  const code = activationCode.value.trim()
-  if (!code || code.length !== 6) {
-    ElMessage.warning('请输入 6 位数字验证码')
-    return
-  }
-
-  activationLoading.value = true
-  try {
-    const res = await verifyEmailCode({
-      email: registerForm.username.trim(),
-      code,
-      purpose: 'REGISTER'
-    })
-
-    ElMessage.success('账号激活成功！自动为您登录')
-    activationDialogVisible.value = false
-    
-    // 自动登录并跳转到工作台
-    await authStore.setSession(res)
-    router.push('/dashboard')
-  } catch (error: any) {
-    console.error('Verify activation error:', error)
-  } finally {
-    activationLoading.value = false
   }
 }
 </script>
@@ -1243,6 +1213,22 @@ const handleVerifyActivation = async () => {
 @keyframes scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+.code-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.code-row .input-wrap {
+  flex: 1;
+}
+
+.code-row :deep(.send-code-btn) {
+  flex-shrink: 0;
+  width: 110px;
+  height: 42px;
 }
 
 /* 响应式 */
