@@ -36,4 +36,5 @@ tmp/
 temp/
 *.tmp
 personal_crm_backend/src/main/resources/application-local.yaml
+deploy/data/
 

@@ -3,7 +3,9 @@
 > Session entry point. Read this first every session.
 
 ## Active feature
-None - All tasks completed ✅
+`docs/4-tasks/features/TASK-018-deployment-assets-agent-delivery/`
+- spec.md ✅ Completed
+- tasks.md ✅ Completed
 
 ## Previous implementation task
 `docs/4-tasks/features/TASK-017-performance-quality-cleanup/`
@@ -98,6 +100,9 @@ None - All tasks completed ✅
 ### TASK-017: Final Performance & Quality Cleanup
 - [x] Implementation (15 tasks) Completed
 
+### TASK-018: Deployment Assets and Agent Delivery
+- [x] Implementation (11 tasks) Completed
+
 
 ## Backlog roadmap
 
@@ -142,4 +147,7 @@ None - All tasks completed ✅
 - 2026-06-20: completed TASK-004 Contact Tag and Blacklist Polish (frontend & backend integration and E2E verification)
 
 ## Notes for next session
-- 已于 2026-06-29 完成 TASK-017 Final Performance & Quality Cleanup，项目前后端全量优化通过验收。后端通过 111 个单测用例，前端以低内存限额打包通过且无任何 TS 校验警告，包体积已深度瘦身。项目进入最终整体验收收尾。
+- 已于 2026-06-30 完成 TASK-018 Deployment Assets and Agent Delivery：仓库已补齐单机 Docker Compose 部署资产、Agent 部署流程文档、环境变量模板、本地验证与失败诊断说明；`docker compose config`、前端生产构建和后端 111 个单测均已完成验证。后续如需继续推进，应转入真实目标主机部署演练或答辩演示收口。
+
+
+

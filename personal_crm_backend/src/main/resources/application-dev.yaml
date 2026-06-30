@@ -13,11 +13,11 @@ spring:
       max-request-size: 5MB
   data:
     redis:
-      host: 10.67.215.250
-      port: 6379
-      password: ethan_pass
-      database: 1
-      timeout: 3000ms
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:1}
+      timeout: ${REDIS_TIMEOUT_MS:3000}ms
       lettuce:
         pool:
           max-active: 16
@@ -79,7 +79,6 @@ weather:
 resend:
   api-key: ${RESEND_API_KEY:mock-key}
   from-email: ${RESEND_FROM_EMAIL:Personal CRM <no-reply@mail.weiqiang.me>}
-
 
 
 

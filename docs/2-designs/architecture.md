@@ -38,7 +38,36 @@ flowchart TD
 - 前端开发端口：Vite 默认 `5173`
 - 推荐联调方式：前端开发代理转发 `/api` 到后端，后端负责 JWT 鉴权和统一错误响应。
 
-## 5. 原始方案索引 (Source Reference)
+## 5. 单机部署拓扑与 Agent 交付边界 (TASK-018)
+
+### 5.1 部署拓扑
+```mermaid
+flowchart LR
+    Browser["Browser"] --> Nginx["Nginx Container :80"]
+    Nginx -->|/api/*| Backend["Spring Boot Container :8080"]
+    Nginx -->|SPA 静态资源| FrontDist["Host dist/ Mount"]
+    Nginx -->|/uploads/* 转发| Backend
+    Backend --> Mysql["MySQL 8 Container :3306"]
+    Backend --> Redis["Redis Container :6379"]
+    Backend --> Uploads["Host uploads/ Mount"]
+    Backend --> Resend["Resend API"]
+    Backend --> OpenAI["OpenAI Compatible API"]
+    Backend --> QWeather["QWeather API"]
+```
+
+### 5.2 服务职责
+- `nginx`：托管前端 `dist` 静态资源，处理 Vue Router 的 `try_files` 回退，并把 `/api/` 与 `/uploads/` 反向代理到后端。
+- `backend`：以 Spring Boot Jar 形式运行，负责业务接口、JWT 鉴权、文件访问、Redis 缓存、MySQL 读写以及第三方服务调用。
+- `mysql`：承载业务数据；首次部署可通过 `SPRING_SQL_INIT_MODE=always` 执行 `schema.sql` 与 `data.sql` 初始化演示数据。
+- `redis`：承载验证码、频控、Agent 会话状态与看板缓存。
+- `uploads`：必须使用宿主机持久化目录挂载到后端容器，避免容器重建导致联系人头像与用户头像丢失。
+
+### 5.3 Agent 部署职责边界
+- 本地开发者负责定稿并提交部署文件，包括 `.env.example`、`docker-compose.yml`、`personal_crm_backend/Dockerfile`、`deploy/nginx.conf` 与 `docs/5-deploy/` 文档。
+- 服务器上的 Agent 只负责拉取仓库、在宿主机构建前端 `dist`、校验环境变量、执行 `docker compose up`、按文档完成验证与排障。
+- 本任务不引入镜像仓库、CI/CD 流水线、多机编排或云资源管理。
+
+## 6. 原始方案索引 (Source Reference)
 - 本文为结构化架构摘要。
 - 若需要查看更完整的技术选型理由、部署建议和 Agent 模块边界，请回看：`docs/Personal CRM 智能联系人管理平台架构选型.md`。
 
