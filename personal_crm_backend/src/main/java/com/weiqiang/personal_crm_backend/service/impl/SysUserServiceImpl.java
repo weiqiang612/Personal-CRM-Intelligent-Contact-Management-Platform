@@ -363,6 +363,41 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
+    public void changeUsername(String userId, String newUsername) {
+        if (!StringUtils.hasText(newUsername)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名不能为空");
+        }
+        String trimmedUsername = newUsername.trim();
+        if (trimmedUsername.length() < 3) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.USERNAME_TOO_SHORT);
+        }
+        if (trimmedUsername.length() > 50) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名长度不能超过 50 位");
+        }
+        if (trimmedUsername.contains(" ") || trimmedUsername.contains("\t") || trimmedUsername.contains("\r") || trimmedUsername.contains("\n")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名不能包含空格或空白字符");
+        }
+
+        SysUser user = this.lambdaQuery().eq(SysUser::getUserId, userId).one();
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, Constants.Message.USER_PROFILE_NOT_FOUND);
+        }
+
+        if (trimmedUsername.equals(user.getUsername())) {
+            return;
+        }
+
+        SysUser existingUser = this.lambdaQuery().eq(SysUser::getUsername, trimmedUsername).one();
+        if (existingUser != null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, Constants.Message.USERNAME_EXISTS);
+        }
+
+        user.setUsername(trimmedUsername);
+        user.setUpdatedAt(LocalDateTime.now());
+        this.updateById(user);
+    }
+
+    @Override
     public void changeEmail(String currentUserId, EmailChangeRequest request) {
         String newEmail = request.getNewEmail().trim();
         String code = request.getCode().trim();

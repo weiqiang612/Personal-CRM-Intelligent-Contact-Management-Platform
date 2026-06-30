@@ -2,6 +2,7 @@ package com.weiqiang.personal_crm_backend.controller;
 
 import com.weiqiang.personal_crm_backend.common.Result;
 import com.weiqiang.personal_crm_backend.model.dto.EmailChangeRequest;
+import com.weiqiang.personal_crm_backend.model.dto.UsernameChangeRequest;
 import com.weiqiang.personal_crm_backend.security.UserContext;
 import com.weiqiang.personal_crm_backend.service.SysUserService;
 import lombok.RequiredArgsConstructor;
@@ -29,5 +30,15 @@ public class UserController {
         String currentUserId = UserContext.getUserId();
         sysUserService.changeEmail(currentUserId, request);
         return Result.success("绑定邮箱修改成功", null);
+    }
+
+    /**
+     * 登录状态下修改用户名 (收尾阶段)
+     */
+    @PostMapping("/username/change")
+    public Result<Void> changeUsername(@Validated @RequestBody UsernameChangeRequest request) {
+        String currentUserId = UserContext.getUserId();
+        sysUserService.changeUsername(currentUserId, request.getNewUsername());
+        return Result.success("用户名修改成功", null);
     }
 }

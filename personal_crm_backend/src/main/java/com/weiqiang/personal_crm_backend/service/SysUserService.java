@@ -62,4 +62,9 @@ public interface SysUserService extends IService<SysUser> {
      * 已登录更换绑定邮箱
      */
     void changeEmail(String currentUserId, com.weiqiang.personal_crm_backend.model.dto.EmailChangeRequest request);
+
+    /**
+     * 修改用户名 (收尾阶段)
+     */
+    void changeUsername(String userId, String newUsername);
 }

@@ -163,7 +163,7 @@ public class EmailServiceImpl implements EmailService {
                 + "🤖 <strong>AI 智能决策助手</strong>：提供基于自然语言的高效查询与人脉跟进建议。"
                 + "</p>"
                 + "<div style=\"text-align: center; margin: 30px 0;\">"
-                + "<a href=\"http://localhost:5173/login\" style=\"background-color: #1a73e8; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 15px;\">立即登录平台</a>"
+                + "<a href=\"https://crm.weiqiang.me/login\" style=\"background-color: #1a73e8; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 15px;\">立即登录平台</a>"
                 + "</div>"
                 + "<p style=\"font-size: 13px; color: #999;\">本邮件由系统自动发出，请勿直接回复。如有疑问，请咨询系统管理员。</p>"
                 + "<hr style=\"border: none; border-top: 1px solid #eee; margin: 20px 0;\">"

@@ -36,6 +36,14 @@
         <div class="info-list" style="margin-top: 20px;">
           <div class="settings-row">
             <div class="settings-info">
+              <span class="settings-title">用户名</span>
+              <span class="settings-desc">{{ user?.username || '未设置用户名' }}</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" @click="openUsernameDialog">修改用户名</button>
+          </div>
+
+          <div class="settings-row">
+            <div class="settings-info">
               <span class="settings-title">电子邮箱</span>
               <span class="settings-desc">{{ user?.email || '未绑定电子邮箱' }}</span>
             </div>
@@ -80,6 +88,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 修改用户名弹窗 -->
+    <AppDialog
+      v-model="usernameDialogVisible"
+      title="修改用户名"
+      description="请输入新的用户名。用户名长度为 3 到 50 个字符，不能包含空格。"
+      confirm-text="保存"
+      :loading="submitLoading"
+      @confirm="handleUpdateUsername"
+    >
+      <el-form :model="usernameForm" :rules="usernameRules" ref="usernameFormRef" label-position="top" @submit.prevent="handleUpdateUsername">
+        <el-form-item label="新用户名" prop="newUsername">
+          <el-input v-model="usernameForm.newUsername" placeholder="请输入新用户名" />
+        </el-form-item>
+      </el-form>
+    </AppDialog>
 
     <!-- 修改邮箱弹窗 -->
     <AppDialog
@@ -157,7 +181,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import { uploadUserAvatar } from '@/api/upload'
 import { resolveAvatarUrl } from '@/utils/avatar'
-import { updatePhoneApi, updatePasswordApi, changeEmail } from '@/api/auth'
+import { updatePhoneApi, updatePasswordApi, changeEmail, changeUsername } from '@/api/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -190,18 +214,38 @@ function handleLogout() {
 }
 
 // 弹窗可见性与状态
+const usernameDialogVisible = ref(false)
 const emailDialogVisible = ref(false)
 const phoneDialogVisible = ref(false)
 const passwordDialogVisible = ref(false)
 const submitLoading = ref(false)
 
+const usernameFormRef = ref<FormInstance>()
 const emailFormRef = ref<FormInstance>()
 const phoneFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
 
+const usernameForm = ref({ newUsername: '' })
 const emailForm = ref({ newEmail: '', code: '' })
 const phoneForm = ref({ phone: '' })
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
+
+const validateUsernameSpace = (rule: any, value: any, callback: any) => {
+  if (value && (value.includes(' ') || value.includes('\t') || value.includes('\r') || value.includes('\n'))) {
+    callback(new Error('用户名不能包含空格或空白字符'))
+  } else {
+    callback()
+  }
+}
+
+// 表单验证规则
+const usernameRules = ref<FormRules>({
+  newUsername: [
+    { required: true, message: '请输入新用户名', trigger: 'blur' },
+    { min: 3, max: 50, message: '用户名长度必须在 3 到 50 个字符之间', trigger: 'blur' },
+    { validator: validateUsernameSpace, trigger: 'blur' }
+  ]
+})
 
 const validateEmailFormat = (rule: any, value: any, callback: any) => {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
@@ -276,10 +320,24 @@ function getFriendlyErrorMessage(msg: string): string {
   if (message.includes('invalid phone number format')) {
     return '手机号码格式不正确'
   }
+  if (message.includes('username exists') || message.includes('用户名已存在')) {
+    return '用户名已存在，请换一个'
+  }
+  if (message.includes('username too short') || message.includes('用户名长度不能少于')) {
+    return '用户名长度不能少于 3 位'
+  }
+  if (message.includes('用户名不能包含空格')) {
+    return '用户名不能包含空格或空白字符'
+  }
   return msg
 }
 
 // 开启弹窗并重置表单
+function openUsernameDialog() {
+  usernameForm.value.newUsername = user.value?.username || ''
+  usernameDialogVisible.value = true
+}
+
 function openEmailDialog() {
   emailForm.value.newEmail = ''
   emailForm.value.code = ''
@@ -296,6 +354,36 @@ function openPasswordDialog() {
   passwordForm.value.newPassword = ''
   passwordForm.value.confirmPassword = ''
   passwordDialogVisible.value = true
+}
+
+// 修改用户名提交
+async function handleUpdateUsername() {
+  if (!usernameFormRef.value) return
+  await usernameFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        submitLoading.value = true
+        await changeUsername({
+          newUsername: usernameForm.value.newUsername
+        })
+        await authStore.fetchUserProfile()
+        ElNotification.success({
+          title: '修改成功',
+          message: '用户名修改成功！',
+          duration: 3000
+        })
+        usernameDialogVisible.value = false
+      } catch (error: any) {
+        ElNotification.error({
+          title: '修改失败',
+          message: getFriendlyErrorMessage(error.message),
+          duration: 5000
+        })
+      } finally {
+        submitLoading.value = false
+      }
+    }
+  })
 }
 
 // 修改邮箱提交

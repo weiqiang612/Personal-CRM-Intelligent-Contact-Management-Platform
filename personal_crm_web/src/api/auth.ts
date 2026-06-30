@@ -165,3 +165,17 @@ export function changeEmail(data: ChangeEmailParams): Promise<void> {
   return request.post('/user/email/change', data)
 }
 
+/**
+ * 修改用户名请求参数接口
+ */
+export interface ChangeUsernameParams {
+  newUsername: string
+}
+
+/**
+ * 登录状态下修改用户名 API
+ */
+export function changeUsername(data: ChangeUsernameParams): Promise<void> {
+  return request.post('/user/username/change', data)
+}
+
