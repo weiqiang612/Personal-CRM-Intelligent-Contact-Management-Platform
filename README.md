@@ -1,6 +1,6 @@
 # Personal CRM Intelligent Contact Management Platform
 
-一个面向个人联系人管理场景的智能 CRM Web 应用。项目将联系人资料、关系标签、事项提醒、活动轨迹、头像上传、数据看板与轻量 Contact Agent 能力整合到同一个前后端分离系统中，并补齐了面向课设答辩与作品集展示的单机部署资产。
+一个面向个人联系人管理场景的智能 CRM Web 应用。项目将联系人资料、关系标签、事项提醒、活动轨迹、头像上传、数据看板与轻量 Contact Agent 能力整合到同一个前后端分离系统中，并已完成面向公网演示的服务器部署。公网访问地址：`http://crm.weiqiang.me`。
 
 ## Highlights
 
@@ -11,7 +11,7 @@
 - 数据看板：联系人总数、待办统计、趋势图、性别分布、关系维护健康度
 - 头像上传：联系人头像与用户头像双链路、本地文件持久化、失败兜底
 - Contact Agent：支持联系人/事项查询，以及“创建事项”写操作预确认与二次确认执行
-- Agent-ready 部署：仓库内提供 Docker Compose、Nginx、环境变量模板与部署文档，可由 Agent 拉取后执行部署
+- 已上线部署：已通过 Docker Compose 与 Nginx 部署到公网服务器，访问地址 `http://crm.weiqiang.me`
 
 ## Tech Stack
 
@@ -97,7 +97,7 @@ npm run dev
 
 ## Docker Deployment
 
-项目已提供单机 Docker Compose 部署基线：
+项目已提供 Docker Compose 部署基线，并已用于公网环境部署：
 
 - [docker-compose.yml](D:/project/Personal%20CRM%20Intelligent%20Contact%20Management%20Platform/docker-compose.yml)
 - [backend Dockerfile](D:/project/Personal%20CRM%20Intelligent%20Contact%20Management%20Platform/personal_crm_backend/Dockerfile)
@@ -116,12 +116,12 @@ docker compose --env-file .env.deploy up -d --build
 
 - `mysql` 和 `redis` 仅保留在 Compose 内部网络，不直接暴露公网端口
 - `backend` 仅绑定宿主机 `127.0.0.1:8080`
-- `nginx` 对外暴露 `80`
+- `nginx` 对外暴露 `80`，公网域名 `crm.weiqiang.me` 指向该入口
 - 上传目录挂载到 `deploy/data/uploads`
 
 ## Agent Deployment Flow
 
-本项目支持“本地定稿部署文件 -> 提交仓库 -> 服务器 Agent 拉取并部署”的交付模式。
+本项目已完成“本地定稿部署文件 -> 提交仓库 -> 服务器拉取并部署 -> 公网域名访问验证”的交付闭环。
 
 推荐 Agent 执行顺序：
 
@@ -166,9 +166,11 @@ prototype/              prototype assets
 - [x] 联系人、标签、事项、看板、上传、活动轨迹、邮箱安全闭环
 - [x] Contact Agent 查询与创建事项确认链路
 - [x] 单机 Docker Compose 部署资产与 Agent 部署文档
-- [ ] 真实目标主机部署演练
+- [x] 真实目标主机部署演练与公网访问验证（http://crm.weiqiang.me）
 - [ ] 可选的 CI / 镜像仓库发布链路
 
 ## License
 
 当前仓库未声明开源许可证。如需公开发布，建议补充 `LICENSE` 文件后再对外开源。
+
+
